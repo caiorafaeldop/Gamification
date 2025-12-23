@@ -1,0 +1,158 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  FolderOpen, 
+  Trophy, 
+  Medal, 
+  Calendar, 
+  CheckSquare, 
+  Rocket, 
+  Menu, 
+  Bell, 
+  Sun, 
+  Moon, 
+  Network,
+  LogOut,
+  User
+} from 'lucide-react';
+
+const ThemeToggle = () => {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDark) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [isDark]);
+
+  return (
+    <button
+      onClick={() => setIsDark(!isDark)}
+      className="p-2 rounded-lg bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors text-gray-600 dark:text-gray-300"
+    >
+      {isDark ? <Sun size={20} /> : <Moon size={20} />}
+    </button>
+  );
+};
+
+const SidebarItem = ({ to, icon: Icon, label }: { to: string; icon: any; label: string }) => {
+  const location = useLocation();
+  const isActive = location.pathname === to || location.pathname.startsWith(to + '/');
+
+  return (
+    <Link
+      to={to}
+      className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group relative
+          ${isActive
+          ? 'bg-primary text-white shadow-lg shadow-primary/25'
+          : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-darker hover:text-primary dark:hover:text-primary'
+        }
+      `}
+    >
+      <Icon size={20} />
+      <span className="font-medium text-sm">{label}</span>
+    </Link>
+  );
+};
+
+const Layout = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location]);
+
+  return (
+    <div className="flex h-screen bg-background-light dark:bg-background-dark text-slate-800 dark:text-gray-100 font-sans transition-colors duration-300 overflow-hidden">
+      
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
+
+      {/* Sidebar */}
+      <aside className={`
+          fixed md:static inset-y-0 left-0 z-50 w-64 bg-surface-light dark:bg-surface-dark border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 transform 
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
+      `}>
+        <div className="h-16 flex items-center px-6 border-b border-gray-100 dark:border-gray-800/50">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/dashboard')}>
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/30">
+              <Network size={18} />
+            </div>
+            <span className="font-display font-bold text-xl text-secondary dark:text-white tracking-tight">connecta</span>
+          </div>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1 custom-scrollbar">
+          <p className="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Menu</p>
+          <SidebarItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+          <SidebarItem to="/projects" icon={FolderOpen} label="Projetos" />
+          <SidebarItem to="/ranking" icon={Trophy} label="Ranking" />
+          <SidebarItem to="/achievements" icon={Medal} label="Conquistas" />
+          <SidebarItem to="/activities" icon={Calendar} label="Atividades" />
+
+          <div className="my-4 border-t border-gray-100 dark:border-gray-800"></div>
+
+          <p className="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Ações</p>
+          <SidebarItem to="/new-task" icon={CheckSquare} label="Nova Tarefa" />
+          <SidebarItem to="/new-project" icon={Rocket} label="Criar Projeto" />
+        </nav>
+
+        <div className="p-4 border-t border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-sky-400 p-0.5">
+              <div className="w-full h-full rounded-full bg-white dark:bg-surface-dark flex items-center justify-center overflow-hidden">
+                <User size={16} className="text-gray-400" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-secondary dark:text-white truncate">Lucas Silva</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Nível 5 • Explorador</p>
+            </div>
+            <button onClick={() => navigate('/')} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500">
+              <LogOut size={16} />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="h-16 flex items-center justify-between px-4 sm:px-6 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300"
+            >
+              <Menu size={24} />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 relative group">
+              <Bell size={20} />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border border-white dark:border-surface-dark"></span>
+            </button>
+            <ThemeToggle />
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto overflow-x-hidden relative custom-scrollbar bg-background-light dark:bg-background-dark">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default Layout;
