@@ -1,20 +1,97 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, User, AlignLeft, Folder, ArrowLeft, Check, Clock, Zap, BarChart3, AlertCircle } from 'lucide-react';
-import { MOCK_PROJECTS, TOP_STUDENTS } from '../constants';
+import { createTask } from '../services/task.service';
+import { useProjects } from '../hooks/useProjects';
+import { getAllUsers } from '../services/user.service';
+import { useAuth } from '../hooks/useAuth';
 
 const NewTaskScreen = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const { projects, loading: loadingProjects } = useProjects();
+  const [users, setUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  
   const [taskLevel, setTaskLevel] = useState<'basic' | 'medium' | 'large'>('medium');
-  const [points, setPoints] = useState(150);
+  const [points, setPoints] = useState(150); // This is visual only, backend calculates real points
+  
+  // Form State
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  // Initialize projectId from location state if available
+  const [projectId, setProjectId] = useState(location.state?.projectId || '');
+  const [assignedToId, setAssignedToId] = useState('');
+  const [estimatedTime, setEstimatedTime] = useState('');
+  const [deadline, setDeadline] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoadingUsers(true);
+        const data = await getAllUsers();
+        setUsers(data || []);
+      } catch (err) {
+        console.error("Failed to fetch users", err);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+    fetchUsers();
+  }, []);
 
   useEffect(() => {
     switch (taskLevel) {
-      case 'basic': setPoints(50); break; // Level 1
-      case 'medium': setPoints(150); break; // Level 2
-      case 'large': setPoints(300); break; // Level 3
+      case 'basic': setPoints(50); break; // Visual cue
+      case 'medium': setPoints(150); break;
+      case 'large': setPoints(300); break;
     }
   }, [taskLevel]);
+
+  const mapLevelToDifficulty = (level: string) => {
+      switch(level) {
+          case 'basic': return 3;
+          case 'medium': return 6;
+          case 'large': return 9;
+          default: return 5;
+      }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+
+    if (!title || !projectId) {
+        setError("Título e Projeto são obrigatórios.");
+        setSubmitting(false);
+        return;
+    }
+
+    try {
+        const payload = {
+            title,
+            description,
+            projectId,
+            assignedToId: assignedToId || undefined, // Send undefined if empty to avoid invalid UUID
+            difficulty: mapLevelToDifficulty(taskLevel),
+            estimatedTimeMinutes: estimatedTime ? parseInt(estimatedTime) * 60 : undefined, // hours to minutes
+            dueDate: deadline ? new Date(deadline).toISOString() : undefined,
+            isExternalDemand: false // Default
+        };
+
+        await createTask(payload);
+        navigate('/project-details', { state: { projectId } }); // Navigate back to project details
+    } catch (err: any) {
+        console.error(err);
+        setError(err.response?.data?.message || "Erro ao criar tarefa. Verifique os dados.");
+    } finally {
+        setSubmitting(false);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -36,9 +113,15 @@ const NewTaskScreen = () => {
             </p>
           </header>
 
-          <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); navigate('/project-details'); }}>
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 space-y-6">
               
+              {error && (
+                  <div className="p-4 bg-red-100 text-red-700 rounded-lg text-sm">
+                      {error}
+                  </div>
+              )}
+
               {/* Title Input */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
@@ -46,6 +129,9 @@ const NewTaskScreen = () => {
                 </label>
                 <input 
                   type="text" 
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
                   className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
                   placeholder="Ex: Implementar autenticação via Google"
                 />
@@ -58,6 +144,8 @@ const NewTaskScreen = () => {
                 </label>
                 <textarea 
                   rows={4}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400 resize-none"
                   placeholder="Descreva o que precisa ser feito, critérios de aceitação e recursos necessários..."
                 />
@@ -69,9 +157,14 @@ const NewTaskScreen = () => {
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                     <Folder size={16} className="text-primary" /> Projeto
                   </label>
-                  <select className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none">
-                    <option value="" disabled selected>Selecione um projeto</option>
-                    {MOCK_PROJECTS.map(project => (
+                  <select 
+                    value={projectId}
+                    onChange={(e) => setProjectId(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none"
+                  >
+                    <option value="" disabled>Selecione um projeto</option>
+                    {loadingProjects ? <option>Carregando...</option> : projects.map((project: any) => (
                       <option key={project.id} value={project.id}>{project.title}</option>
                     ))}
                   </select>
@@ -82,10 +175,14 @@ const NewTaskScreen = () => {
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                     <User size={16} className="text-primary" /> Responsável
                   </label>
-                  <select className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none">
-                    <option value="" disabled selected>Atribuir a...</option>
-                    {TOP_STUDENTS.map(student => (
-                      <option key={student.id} value={student.id}>{student.name}</option>
+                  <select 
+                    value={assignedToId}
+                    onChange={(e) => setAssignedToId(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none"
+                  >
+                    <option value="">Atribuir a...</option>
+                    {loadingUsers ? <option>Carregando...</option> : users.map((u: any) => (
+                      <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
                     ))}
                   </select>
                 </div>
@@ -114,7 +211,7 @@ const NewTaskScreen = () => {
                     >
                       <div className="text-xs font-bold uppercase tracking-wider mb-1 text-gray-500 dark:text-gray-400">{level.label}</div>
                       <div className={`text-lg font-black ${taskLevel === level.id ? 'text-primary' : 'text-gray-400'}`}>
-                        {level.pts} CP
+                        ~{level.pts} CP
                       </div>
                       {taskLevel === level.id && (
                         <div className="absolute top-0 right-0 p-1">
@@ -127,7 +224,7 @@ const NewTaskScreen = () => {
                 
                 <div className="flex items-center gap-2 text-sm text-sky-700 dark:text-sky-300 bg-white dark:bg-surface-dark p-3 rounded-lg border border-sky-100 dark:border-sky-800/50">
                    <Zap size={18} className="text-yellow-500 fill-yellow-500" />
-                   <span>Esta tarefa gerará <strong>{points} Connecta Points</strong> para o responsável após a conclusão.</span>
+                   <span>Esta tarefa gerará aproximadamente <strong>{points} Connecta Points</strong> para o responsável.</span>
                 </div>
               </div>
 
@@ -139,7 +236,10 @@ const NewTaskScreen = () => {
                   </label>
                   <input 
                     type="number" 
-                    min="1"
+                    min="0.5"
+                    step="0.5"
+                    value={estimatedTime}
+                    onChange={(e) => setEstimatedTime(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
                     placeholder="Ex: 4"
                   />
@@ -151,7 +251,9 @@ const NewTaskScreen = () => {
                     <Calendar size={16} className="text-primary" /> Prazo de Entrega
                   </label>
                   <input 
-                    type="date" 
+                    type="date"
+                    value={deadline}
+                    onChange={(e) => setDeadline(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
                   />
                 </div>
@@ -164,14 +266,17 @@ const NewTaskScreen = () => {
                 type="button" 
                 onClick={() => navigate(-1)}
                 className="px-6 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                disabled={submitting}
               >
                 Cancelar
               </button>
               <button 
                 type="submit"
-                className="px-8 py-3 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:bg-blue-600 transition-all transform hover:-translate-y-0.5 flex items-center gap-2"
+                disabled={submitting}
+                className="px-8 py-3 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:bg-blue-600 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Check size={20} /> Criar Tarefa
+                {submitting ? <Clock size={20} className="animate-spin"/> : <Check size={20} />} 
+                {submitting ? 'Criando...' : 'Criar Tarefa'}
               </button>
             </div>
           </form>

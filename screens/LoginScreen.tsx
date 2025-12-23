@@ -1,13 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Network, Rocket, Mail, Lock, EyeOff } from 'lucide-react';
+import { login } from '../services/auth.service';
 
 const LoginScreen = () => {
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/dashboard');
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const data = await login(email, password);
+      localStorage.setItem('token', data.accessToken);
+      localStorage.setItem('user', JSON.stringify(data.user)); // Store user info
+      navigate('/dashboard');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Falha ao realizar login. Verifique suas credenciais.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,6 +63,13 @@ const LoginScreen = () => {
             <h1 className="text-3xl font-display font-extrabold text-secondary dark:text-white mb-2">Bem-vindo de volta!</h1>
             <p className="text-gray-500 dark:text-gray-400">Insira suas credenciais para acessar sua conta.</p>
           </div>
+          
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+              <span className="block sm:inline">{error}</span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               <div>
@@ -59,6 +84,9 @@ const LoginScreen = () => {
                     name="email"
                     placeholder="exemplo@academico.ufpb.br"
                     type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
                   />
                 </div>
               </div>
@@ -77,6 +105,9 @@ const LoginScreen = () => {
                     name="password"
                     placeholder="••••••••"
                     type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
                     <EyeOff size={20} />
@@ -86,10 +117,11 @@ const LoginScreen = () => {
             </div>
             <div>
               <button
-                className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-lg shadow-lg shadow-primary/20 text-sm font-bold text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all transform hover:-translate-y-0.5"
+                className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-lg shadow-lg shadow-primary/20 text-sm font-bold text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 type="submit"
+                disabled={loading}
               >
-                Entrar na Plataforma
+                {loading ? 'Entrando...' : 'Entrar na Plataforma'}
               </button>
             </div>
           </form>

@@ -1,9 +1,31 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Star, LogIn } from 'lucide-react';
+import { Plus, Search, Star, LogIn, Loader } from 'lucide-react';
+import { useProjects } from '../hooks/useProjects';
+import { joinProject } from '../services/project.service';
+import api from '../services/api';
 
 const ProjectListScreen = () => {
   const navigate = useNavigate();
+  const { projects, loading, error, refetch } = useProjects();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const handleJoin = async (projectId: string) => {
+      try {
+          await joinProject(projectId);
+          alert('Você entrou no projeto com sucesso!');
+          refetch();
+      } catch (err: any) {
+          alert('Erro ao entrar no projeto: ' + (err.response?.data?.message || err.message));
+      }
+  };
+
+  const filteredProjects = projects.filter((p: any) => 
+    p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) return <div className="flex justify-center items-center h-screen"><Loader className="animate-spin text-primary" size={48} /></div>;
 
   return (
     <div className="min-h-full">
@@ -24,7 +46,13 @@ const ProjectListScreen = () => {
               <span className="absolute inset-y-0 left-0 flex items-center pl-3">
                 <Search className="text-gray-400" size={20} />
               </span>
-              <input className="w-full py-2.5 pl-10 pr-4 rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-surface-darker text-gray-700 dark:text-gray-200 focus:ring-primary focus:border-primary" placeholder="Buscar projetos..." type="text" />
+              <input 
+                className="w-full py-2.5 pl-10 pr-4 rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-surface-darker text-gray-700 dark:text-gray-200 focus:ring-primary focus:border-primary" 
+                placeholder="Buscar projetos..." 
+                type="text" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
             <button onClick={() => navigate('/new-project')} className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:bg-sky-500 transition-colors flex items-center gap-2 whitespace-nowrap">
               <Plus size={16} /> Novo
@@ -35,73 +63,35 @@ const ProjectListScreen = () => {
 
       <section className="py-10 px-4 sm:px-8">
         <div className="space-y-12">
-          {/* Featured Project */}
-          <div onClick={() => navigate('/project-details')} className="cursor-pointer bg-white dark:bg-surface-dark rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden relative group">
-            <div className="absolute top-0 right-0 w-full h-2 bg-gradient-to-r from-primary via-blue-600 to-sky-400"></div>
-            <div className="p-8 lg:p-10 flex flex-col justify-center relative z-10">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Destaque da Semana</span>
-                <span className="flex items-center text-xs font-bold text-gray-500 dark:text-gray-400 gap-1">
-                  <Star size={14} className="text-yellow-500 fill-yellow-500" /> 4.9 XP Boost
-                </span>
-              </div>
-              <h2 className="text-3xl lg:text-4xl font-display font-bold text-secondary dark:text-white mb-4">
-                Connecta Gamification Module
-              </h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg leading-relaxed">
-                Desenvolvimento do novo sistema de recompensas e níveis para a plataforma Connecta.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <button className="flex-1 sm:flex-none bg-primary hover:bg-sky-500 text-white font-bold py-3 px-8 rounded-lg transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2">
-                  Entrar no projeto <LogIn size={18} />
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Grid of Projects */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <article onClick={() => navigate('/join-project')} className="cursor-pointer bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full group">
-              <div className="h-32 bg-gray-200 relative">
-                <div className="absolute bottom-3 left-4 z-20">
-                  <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">Mobile Dev</span>
+            {filteredProjects.length === 0 ? (
+                <p className="col-span-3 text-center text-gray-500">Nenhum projeto encontrado.</p>
+            ) : filteredProjects.map((project: any) => (
+                <article key={project.id} onClick={() => navigate(`/projects/${project.id}`)} className="cursor-pointer bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full group">
+                <div className="h-32 bg-gray-200 relative">
+                    <div className="absolute bottom-3 left-4 z-20">
+                    <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">{project.category || 'Geral'}</span>
+                    </div>
                 </div>
-              </div>
-              <div className="p-5 flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="text-lg font-display font-bold text-secondary dark:text-white leading-tight group-hover:text-primary transition-colors">App de Monitoria</h4>
+                <div className="p-5 flex-1 flex flex-col">
+                    <div className="flex justify-between items-start mb-2">
+                    <h4 className="text-lg font-display font-bold text-secondary dark:text-white leading-tight group-hover:text-primary transition-colors">{project.title}</h4>
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 mb-4">
+                    {project.description}
+                    </p>
+                    <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); handleJoin(project.id); }}
+                        className="w-full bg-primary/10 hover:bg-primary text-primary hover:text-white font-bold py-2 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+                    >
+                        Entrar no projeto
+                    </button>
+                    </div>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 mb-4">
-                  Criar um aplicativo mobile em Flutter para conectar alunos e monitores em tempo real.
-                </p>
-                <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
-                  <button className="w-full bg-primary/10 hover:bg-primary text-primary hover:text-white font-bold py-2 rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
-                    Entrar no projeto
-                  </button>
-                </div>
-              </div>
-            </article>
-            
-            <article className="cursor-pointer bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full group">
-              <div className="h-32 bg-gray-200 relative">
-                <div className="absolute bottom-3 left-4 z-20">
-                   <span className="bg-green-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">Data Science</span>
-                </div>
-              </div>
-              <div className="p-5 flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="text-lg font-display font-bold text-secondary dark:text-white leading-tight group-hover:text-primary transition-colors">Análise de Dados Acadêmicos</h4>
-                </div>
-                 <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 mb-4">
-                  Pipeline de dados para analisar desempenho estudantil usando Python e Pandas.
-                </p>
-                <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
-                  <button className="w-full bg-primary/10 hover:bg-primary text-primary hover:text-white font-bold py-2 rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
-                    Entrar no projeto
-                  </button>
-                </div>
-              </div>
-            </article>
+                </article>
+            ))}
           </div>
         </div>
       </section>

@@ -51,7 +51,7 @@ const AchievementsScreen = () => {
                 <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${achievement.unlocked ? achievement.color : 'from-gray-300 to-gray-400'} flex items-center justify-center text-white shadow-lg mb-4`}>
                   <Icon size={32} />
                 </div>
-                <h3 className="text-lg font-bold text-secondary dark:text-white mb-2">{achievement.title}</h3>
+                <h3 className="text-lg font-bold text-secondary dark:text-white mb-2">{achievement.name}</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">{achievement.description}</p>
               </div>
             );

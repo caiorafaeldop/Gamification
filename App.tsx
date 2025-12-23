@@ -21,8 +21,8 @@ const App = () => {
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<DashboardScreen />} />
           <Route path="/projects" element={<ProjectListScreen />} />
-          <Route path="/project-details" element={<ProjectDetailsScreen />} />
-          <Route path="/kanban" element={<ProjectDetailsScreen />} /> {/* Reusing details for kanban view */}
+          <Route path="/project-details/:id" element={<ProjectDetailsScreen />} />
+          <Route path="/kanban/:id" element={<ProjectDetailsScreen />} /> {/* Reusing details for kanban view */}
           <Route path="/ranking" element={<RankingScreen />} />
           <Route path="/achievements" element={<AchievementsScreen />} />
           <Route path="/activities" element={<ActivitiesScreen />} />
