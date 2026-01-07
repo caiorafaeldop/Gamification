@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.authorize = void 0;
+// Removida a interface AuthenticatedRequest e agora confiamos na declaração global em express.d.ts
+// Isso garante que req.user.userId seja usado consistentemente.
+const authorize = (allowedRoles) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(403).json({ message: 'Access denied. User not authenticated.' });
+        }
+        if (!allowedRoles.includes(req.user.role)) {
+            return res.status(403).json({ message: 'Access denied. Insufficient permissions.' });
+        }
+        next();
+    };
+};
+exports.authorize = authorize;
