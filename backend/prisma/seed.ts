@@ -1,5 +1,5 @@
 import { PrismaClient, Role, TaskStatus } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -208,11 +208,73 @@ async function main() {
   console.log('📝 Tasks created.');
 
   // Create Achievements
+  // Create Achievements
   await prisma.achievement.createMany({
     data: [
-      { name: 'First Steps', description: 'Complete your first task.', points: 50, icon: '🌟', color: '#Gold', criteria: 'task_count >= 1' },
-      { name: 'Bug Hunter', description: 'Find and fix a bug.', points: 100, icon: '🐛', color: '#Red', criteria: 'bug_fixed >= 1' },
-      { name: 'Team Player', description: 'Join a project.', points: 200, icon: '🤝', color: '#Blue', criteria: 'project_joined >= 1' },
+      { 
+        name: 'Bem-vindo a bordo', 
+        description: 'Complete seu cadastro inicial e configure seu perfil de estudante.', 
+        points: 50, 
+        icon: 'rocket_launch', 
+        color: 'from-blue-400 to-primary', 
+        criteria: 'profile_completed' 
+      },
+      { 
+        name: 'Primeira Classe', 
+        description: 'Receba a nota máxima no seu primeiro projeto colaborativo.', 
+        points: 200, 
+        icon: 'workspace_premium', 
+        color: 'from-yellow-300 to-gold', 
+        criteria: 'max_score_project' 
+      },
+      { 
+        name: 'Super Produtivo', 
+        description: 'Atingir 1000 Connecta Points em uma única semana.', 
+        points: 150, 
+        icon: 'bolt', 
+        color: 'from-yellow-400 to-orange-500', 
+        criteria: 'weekly_points >= 1000' 
+      },
+      { 
+        name: 'Mente Brilhante', 
+        description: 'Receba 5 avaliações positivas consecutivas de membros da equipe.', 
+        points: 300, 
+        icon: 'psychology', 
+        color: 'from-purple-400 to-purple-600', 
+        criteria: 'consecutive_likes >= 5' 
+      },
+      { 
+        name: 'Líder Nato', 
+        description: 'Lidere uma equipe de 5 pessoas até a conclusão de um projeto.', 
+        points: 500, 
+        icon: 'groups', 
+        color: 'from-blue-600 to-indigo-700', 
+        criteria: 'lead_team >= 1' 
+      },
+      { 
+        name: 'Bug Hunter', 
+        description: 'Encontre e reporte um bug na plataforma que seja validado.', 
+        points: 100, 
+        icon: 'pest_control', 
+        color: 'from-green-400 to-green-600', 
+        criteria: 'bug_report_validated' 
+      },
+      { 
+        name: 'O Comunicador', 
+        description: 'Faça 50 comentários construtivos em projetos de colegas.', 
+        points: 120, 
+        icon: 'forum', 
+        color: 'from-pink-400 to-rose-500', 
+        criteria: 'comments_count >= 50' 
+      },
+      { 
+        name: 'Lenda Viva', 
+        description: 'Complete 100 projetos com avaliação máxima.', 
+        points: 1000, 
+        icon: 'whatshot', 
+        color: 'from-red-500 to-orange-600', 
+        criteria: 'legendary_status' 
+      },
     ],
   });
 

@@ -12,9 +12,22 @@ import NewProjectScreen from './screens/NewProjectScreen';
 import JoinProjectScreen from './screens/JoinProjectScreen';
 import ActivitiesScreen from './screens/ActivitiesScreen';
 
+import { Toaster } from 'react-hot-toast';
+
 const App = () => {
   return (
     <HashRouter>
+      <Toaster 
+          position="top-center"
+          reverseOrder={false}
+          toastOptions={{
+            style: {
+              borderRadius: '10px',
+              background: '#333',
+              color: '#fff',
+            },
+          }}
+      />
       <Routes>
         <Route path="/" element={<LoginScreen />} />
         

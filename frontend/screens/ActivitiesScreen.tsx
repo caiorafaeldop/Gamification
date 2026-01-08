@@ -1,23 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, AlertCircle, MapPin, Video, ArrowRight, Kanban, CheckSquare } from 'lucide-react';
+import { Calendar, Clock, AlertCircle, MapPin, Video, Kanban } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import api from '../services/api'; // Direct API call for now to get all user tasks if service doesn't support 'all'
-// Or simpler: fetch user's tasks. Usually getTasks(projectId) is what we have.
-// We need an endpoint to get "My Tasks" across all projects.
-// Let's assume /tasks?userId=... or /tasks/me
-// Checking task.service.ts... it uses /tasks?teamId=...
-// I might need to update task service or backend to support "get my tasks".
-// Backend task.controller usually supports filtering. 
-// Let's try /tasks/me if it exists, or /tasks (if backend filters by user by default).
-// Actually, I'll fallback to mock data for specific deadlines if API isn't ready for "global tasks", 
-// BUT the prompt is to Connect. So I should implement that.
-// Let's look at backend task.controller.ts... checking...
-// Assuming I can't check it right now without tool call, I'll assume /tasks/me is a good best practice.
-// For now, I'll fetch tasks from ALL projects user is in? That's expensive.
-// I'll fetch /tasks?assignedTo=ME.
-
-// Since I haven't verified task.controller supports this, I'll add a safe fetch.
+import api from '../services/api';
+import { Skeleton } from '../components/Skeleton';
 
 const AGENDA_EVENTS = [
   { id: 1, title: 'Reunião Geral de Alinhamento', type: 'meeting', date: '14 Out', time: '14:00 - 15:30', location: 'Google Meet', description: 'Atualização semanal de status de todos os projetos.' },
@@ -34,15 +20,10 @@ const ActivitiesScreen = () => {
   useEffect(() => {
     const fetchDeadlines = async () => {
         try {
-            // Trying to fetch tasks assigned to user. 
-            // If backend doesn't support this yet, it might return 404 or empty.
-            // I'll update backend task.controller later to ensure this works (Task T).
-            // For now, let's try to call the endpoint.
             const response = await api.get('/tasks/my-tasks'); 
             setDeadlines(response.data);
         } catch (err) {
             console.warn("Could not fetch my-tasks, using fallback or empty", err);
-            // Fallback to empty to avoid breaking UI
             setDeadlines([]); 
         } finally {
             setLoading(false);
@@ -75,7 +56,22 @@ const ActivitiesScreen = () => {
           </div>
 
           <div className="space-y-4">
-            {loading ? <p>Carregando tarefas...</p> : deadlines.length === 0 ? (
+            {loading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="bg-white dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row gap-4 relative overflow-hidden">
+                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-gray-200 dark:bg-gray-700"></div>
+                         <div className="flex-1 space-y-2">
+                             <Skeleton className="h-6 w-3/4" />
+                             <Skeleton className="h-4 w-1/2" />
+                             <div className="flex gap-2 mt-2">
+                                <Skeleton className="h-4 w-20" />
+                                <Skeleton className="h-4 w-20" />
+                             </div>
+                         </div>
+                         <Skeleton className="h-10 w-28 rounded-xl" />
+                    </div>
+                ))
+            ) : deadlines.length === 0 ? (
                  <div className="text-center py-10 text-gray-400 bg-white dark:bg-surface-dark rounded-2xl border border-gray-100 dark:border-gray-800">
                     <p>Nenhuma tarefa pendente encontrada.</p>
                     <p className="text-xs mt-2">Isso pode ocorrer se você não tiver tarefas ou se o endpoint /tasks/my-tasks ainda não estiver ativo.</p>
@@ -118,42 +114,56 @@ const ActivitiesScreen = () => {
           </div>
 
           <div className="space-y-4">
-             {AGENDA_EVENTS.map((event) => (
-                 <div key={event.id} className="bg-white dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 group hover:border-primary/30 transition-colors">
-                    <div className="flex gap-4">
-                        {/* Date Box */}
-                        <div className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 text-center flex-shrink-0">
-                            <span className="text-xs font-bold text-gray-400 uppercase">{event.date.split(' ')[1]}</span>
-                            <span className="text-xl font-black text-secondary dark:text-white">{event.date.split(' ')[0]}</span>
-                        </div>
-
-                        <div className="flex-1">
-                            <div className="flex justify-between items-start">
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide mb-2 inline-block ${
-                                    event.type === 'meeting' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
-                                    event.type === 'workshop' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
-                                    'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                                }`}>
-                                    {event.type === 'meeting' ? 'Reunião' : event.type === 'workshop' ? 'Workshop' : 'Evento'}
-                                </span>
-                            </div>
-                            
-                            <h4 className="font-bold text-secondary dark:text-white mb-1 group-hover:text-primary transition-colors">{event.title}</h4>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{event.description}</p>
-                            
-                            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                                <div className="flex items-center gap-1">
-                                    <Clock size={12} /> {event.time}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    {event.location === 'Google Meet' ? <Video size={12} /> : <MapPin size={12} />}
-                                    {event.location}
-                                </div>
-                            </div>
-                        </div>
+             {/* Mock loading for agenda if it came from API, but keeping it consistent with skeletons if we were waiting */}
+             {loading && AGENDA_EVENTS.length === 0 ? ( // Logic to show skeleton if agenda was dynamic
+                 Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="bg-white dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex gap-4">
+                         <Skeleton className="w-14 h-14 rounded-xl flex-shrink-0" />
+                         <div className="flex-1 space-y-2">
+                             <Skeleton className="h-4 w-20 rounded-full" />
+                             <Skeleton className="h-6 w-3/4" />
+                             <Skeleton className="h-4 w-full" />
+                         </div>
                     </div>
-                 </div>
-             ))}
+                 ))
+             ) : (
+                AGENDA_EVENTS.map((event) => (
+                  <div key={event.id} className="bg-white dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 group hover:border-primary/30 transition-colors">
+                     <div className="flex gap-4">
+                         {/* Date Box */}
+                         <div className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 text-center flex-shrink-0">
+                             <span className="text-xs font-bold text-gray-400 uppercase">{event.date.split(' ')[1]}</span>
+                             <span className="text-xl font-black text-secondary dark:text-white">{event.date.split(' ')[0]}</span>
+                         </div>
+ 
+                         <div className="flex-1">
+                             <div className="flex justify-between items-start">
+                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide mb-2 inline-block ${
+                                     event.type === 'meeting' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
+                                     event.type === 'workshop' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
+                                     'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                 }`}>
+                                     {event.type === 'meeting' ? 'Reunião' : event.type === 'workshop' ? 'Workshop' : 'Evento'}
+                                 </span>
+                             </div>
+                             
+                             <h4 className="font-bold text-secondary dark:text-white mb-1 group-hover:text-primary transition-colors">{event.title}</h4>
+                             <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{event.description}</p>
+                             
+                             <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                                 <div className="flex items-center gap-1">
+                                     <Clock size={12} /> {event.time}
+                                 </div>
+                                 <div className="flex items-center gap-1">
+                                     {event.location === 'Google Meet' ? <Video size={12} /> : <MapPin size={12} />}
+                                     {event.location}
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                  </div>
+              ))
+             )}
           </div>
         </div>
 

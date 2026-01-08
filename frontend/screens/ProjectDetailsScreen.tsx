@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { deleteTask, getProjectKanban, updateTaskStatus } from '../services/task.service';
 import { useProjectDetails } from '../hooks/useProjects';
+import { Skeleton } from '../components/Skeleton';
+import NewTaskModal from '../components/NewTaskModal';
 
 const ProjectDetailsScreen = () => {
   const { id } = useParams<{ id: string }>(); 
@@ -10,6 +12,7 @@ const ProjectDetailsScreen = () => {
   const { project, loading: loadingProject } = useProjectDetails(id!);
   const [columns, setColumns] = useState<any>(null);
   const [loadingKanban, setLoadingKanban] = useState(true);
+  const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
 
   useEffect(() => {
     if (id) fetchKanban();
@@ -112,7 +115,61 @@ const ProjectDetailsScreen = () => {
       );
   };
 
-  if (loadingProject || loadingKanban) return <div className="p-8 text-center">Carregando...</div>;
+  if (loadingProject || loadingKanban) return (
+    <div className="flex-1 flex flex-col h-full bg-surface-light dark:bg-background-dark relative overflow-hidden">
+        {/* Header Skeleton */}
+        <div className="bg-surface-light/80 dark:bg-secondary/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 z-10 p-6 flex-shrink-0">
+            <div className="max-w-full mx-auto space-y-4">
+                 <Skeleton width={200} height={20} className="mb-4" />
+                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                    <div className="space-y-4 w-full max-w-2xl">
+                        <div className="flex items-center gap-4">
+                            <Skeleton width={300} height={40} />
+                            <Skeleton width={100} height={24} variant="circular" />
+                        </div>
+                        <Skeleton width="100%" height={20} />
+                        <Skeleton width="80%" height={20} />
+                    </div>
+                    {/* Actions */}
+                    <div className="flex gap-4 items-center">
+                         <div className="flex -space-x-2">
+                             {[1,2,3].map(i => <Skeleton key={i} width={40} height={40} variant="circular" className="border-2 border-white dark:border-secondary" />)}
+                         </div>
+                         <Skeleton width={140} height={44} className="rounded-lg" />
+                    </div>
+                 </div>
+                 {/* Toolbar */}
+                 <div className="mt-8 flex flex-wrap justify-between gap-4">
+                      <div className="flex gap-2">
+                           <Skeleton width={100} height={40} className="rounded-lg" />
+                           <Skeleton width={100} height={40} className="rounded-lg" />
+                           <Skeleton width={100} height={40} className="rounded-lg" />
+                      </div>
+                      <Skeleton width={250} height={40} className="rounded-lg" />
+                 </div>
+            </div>
+        </div>
+    
+        {/* Kanban Skeleton */}
+        <div className="flex-1 overflow-x-auto p-6 flex gap-6">
+             {[1, 2, 3, 4].map(col => (
+                 <div key={col} className="flex-1 min-w-[320px] rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-surface-dark/30 h-full flex flex-col">
+                      {/* Column Header */}
+                      <div className="p-4 flex justify-between items-center border-b border-gray-100 dark:border-gray-800">
+                          <Skeleton width={120} height={24} />
+                          <Skeleton width={24} height={24} variant="circular" />
+                      </div>
+                      {/* Cards */}
+                      <div className="p-3 space-y-3">
+                          {[1, 2].map(card => (
+                              <Skeleton key={card} height={120} className="w-full rounded-xl" />
+                          ))}
+                      </div>
+                 </div>
+             ))}
+        </div>
+    </div>
+  );
   if (!project) return <div className="p-8 text-center">Projeto não encontrado</div>;
 
   return (
@@ -163,7 +220,7 @@ const ProjectDetailsScreen = () => {
                             </div>
                         </div>
                         <button 
-                            onClick={() => navigate('/new-task', { state: { projectId: id } })}
+                            onClick={() => setIsNewTaskModalOpen(true)}
                             className="bg-primary hover:bg-sky-400 text-white px-5 py-2.5 rounded-lg font-bold shadow-lg shadow-primary/30 transition-all flex items-center gap-2"
                         >
                             <span className="material-icons text-sm">add</span>
@@ -281,7 +338,7 @@ const ProjectDetailsScreen = () => {
                                             ))}
                                             {provided.placeholder}
                                             <button 
-                                                onClick={() => navigate('/new-task', { state: { projectId: id, status: columnId } })}
+                                                onClick={() => setIsNewTaskModalOpen(true)}
                                                 className="w-full py-2 text-sm text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center gap-1 font-medium border border-dashed border-gray-300 dark:border-gray-700"
                                             >
                                                 <span className="material-icons text-sm">add</span> Adicionar cartão
@@ -295,6 +352,12 @@ const ProjectDetailsScreen = () => {
                 </div>
             </DragDropContext>
         </div>
+      <NewTaskModal 
+        isOpen={isNewTaskModalOpen} 
+        onClose={() => setIsNewTaskModalOpen(false)} 
+        projectId={id}
+        onSuccess={fetchKanban}
+      />
     </div>
   );
 };

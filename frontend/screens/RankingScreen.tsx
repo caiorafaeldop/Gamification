@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Calendar, Filter, Loader } from 'lucide-react';
 import { getLeaderboard } from '../services/leaderboard.service';
+import { Skeleton } from '../components/Skeleton';
 
 const FILTERS = [
   { id: 'daily', label: 'Diário' },
@@ -88,8 +89,51 @@ const RankingScreen = () => {
       
       <div className="flex-1 overflow-y-auto px-4 lg:px-10 pb-10 z-10 relative custom-scrollbar">
         {loading ? (
-             <div className="flex justify-center items-center h-full">
-                <Loader className="animate-spin text-primary" size={48} />
+             <div className="animate-pulse flex flex-col items-center w-full max-w-5xl mx-auto mt-8">
+                {/* Podium Skeleton */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 items-end w-full">
+                    {/* #2 */}
+                    <div className="order-2 md:order-1 flex flex-col items-center">
+                        <Skeleton variant="circular" width={80} height={80} className="mb-4" />
+                        <Skeleton variant="text" width={100} height={20} className="mb-2" />
+                        <Skeleton variant="rectangular" width={60} height={24} className="rounded-full" />
+                    </div>
+                    {/* #1 */}
+                    <div className="order-1 md:order-2 flex flex-col items-center">
+                        <Skeleton variant="circular" width={112} height={112} className="mb-5" />
+                        <Skeleton variant="text" width={120} height={24} className="mb-2" />
+                        <Skeleton variant="rectangular" width={80} height={32} className="rounded-full" />
+                    </div>
+                    {/* #3 */}
+                    <div className="order-3 md:order-3 flex flex-col items-center">
+                        <Skeleton variant="circular" width={80} height={80} className="mb-4" />
+                        <Skeleton variant="text" width={100} height={20} className="mb-2" />
+                        <Skeleton variant="rectangular" width={60} height={24} className="rounded-full" />
+                    </div>
+                </div>
+
+                {/* List Skeleton */}
+                <div className="bg-white dark:bg-surface-dark rounded-3xl shadow-xl w-full border border-gray-100 dark:border-gray-700 overflow-hidden">
+                    <div className="p-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-surface-darker/50 flex justify-between">
+                         <Skeleton variant="text" width={50} height={16} />
+                         <Skeleton variant="text" width={100} height={16} />
+                         <Skeleton variant="text" width={60} height={16} />
+                         <Skeleton variant="text" width={80} height={16} />
+                    </div>
+                    <div className="p-4 space-y-4">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                            <div key={i} className="flex items-center justify-between">
+                                <Skeleton variant="rectangular" width={32} height={32} className="rounded-lg" />
+                                <div className="flex-1 flex items-center gap-3 px-6">
+                                    <Skeleton variant="circular" width={32} height={32} />
+                                    <Skeleton variant="text" width={150} height={16} />
+                                </div>
+                                <Skeleton variant="text" width={80} height={16} />
+                                <Skeleton variant="text" width={40} height={16} className="ml-4" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
              </div>
         ) : (
             <>

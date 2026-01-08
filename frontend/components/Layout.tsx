@@ -16,6 +16,8 @@ import {
   LogOut,
   User
 } from 'lucide-react';
+import { getProfile } from '../services/user.service';
+import { Skeleton } from './Skeleton';
 
 const ThemeToggle = () => {
   const [isDark, setIsDark] = useState(false);
@@ -61,12 +63,28 @@ const SidebarItem = ({ to, icon: Icon, label }: { to: string; icon: any; label: 
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     setSidebarOpen(false);
   }, [location]);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await getProfile();
+        setUser(userData);
+      } catch (error) {
+        console.error("Failed to fetch user profile", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
 
   return (
     <div className="flex h-screen bg-background-light dark:bg-background-dark text-slate-800 dark:text-gray-100 font-sans transition-colors duration-300 overflow-hidden">
@@ -112,14 +130,31 @@ const Layout = () => {
           <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group">
             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-sky-400 p-0.5">
               <div className="w-full h-full rounded-full bg-white dark:bg-surface-dark flex items-center justify-center overflow-hidden">
-                <User size={16} className="text-gray-400" />
+                {loading ? (
+                    <Skeleton variant="circular" width="100%" height="100%" />
+                ) : user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                    <User size={16} className="text-gray-400" />
+                )}
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-secondary dark:text-white truncate">Lucas Silva</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Nível 5 • Explorador</p>
+               {loading ? (
+                   <>
+                       <Skeleton variant="text" width={100} height={16} className="mb-1" />
+                       <Skeleton variant="text" width={80} height={12} />
+                   </>
+               ) : (
+                   <>
+                       <p className="text-sm font-bold text-secondary dark:text-white truncate">{user?.name || 'Visitante'}</p>
+                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                           {user?.tier ? `${user.tier}` : 'Iniciante'} • {user?.points || 0} XP
+                       </p>
+                   </>
+               )}
             </div>
-            <button onClick={() => navigate('/')} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500">
+            <button onClick={() => navigate('/')} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity">
               <LogOut size={16} />
             </button>
           </div>

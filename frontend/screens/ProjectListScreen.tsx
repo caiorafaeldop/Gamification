@@ -4,6 +4,8 @@ import { Plus, Search, Star, LogIn, Loader } from 'lucide-react';
 import { useProjects } from '../hooks/useProjects';
 import { joinProject } from '../services/project.service';
 import api from '../services/api';
+import { Skeleton } from '../components/Skeleton';
+import toast from 'react-hot-toast';
 
 const ProjectListScreen = () => {
   const navigate = useNavigate();
@@ -13,10 +15,10 @@ const ProjectListScreen = () => {
   const handleJoin = async (projectId: string) => {
       try {
           await joinProject(projectId);
-          alert('Você entrou no projeto com sucesso!');
+          toast.success('Você entrou no projeto com sucesso!');
           refetch();
       } catch (err: any) {
-          alert('Erro ao entrar no projeto: ' + (err.response?.data?.message || err.message));
+          toast.error('Erro ao entrar no projeto: ' + (err.response?.data?.message || err.message));
       }
   };
 
@@ -25,7 +27,43 @@ const ProjectListScreen = () => {
     p.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) return <div className="flex justify-center items-center h-screen"><Loader className="animate-spin text-primary" size={48} /></div>;
+  if (loading) return (
+    <div className="min-h-full">
+      {/* Header Skeleton */}
+      <div className="relative pt-12 pb-12 px-4 sm:px-6 lg:px-8 bg-surface-light dark:bg-surface-dark overflow-hidden rounded-3xl mx-4 sm:mx-8 mt-4 shadow-sm border border-gray-100 dark:border-gray-800">
+        <div className="flex flex-col md:flex-row justify-between items-end gap-6 relative z-10">
+          <div className="w-full">
+             <Skeleton width={120} height={24} className="mb-4 rounded-full" />
+             <Skeleton width={300} height={48} className="mb-2" />
+             <Skeleton width="60%" height={24} />
+          </div>
+          <div className="flex gap-3 w-full md:w-auto">
+             <Skeleton width={256} height={44} className="rounded-lg" />
+             <Skeleton width={100} height={44} className="rounded-lg" />
+          </div>
+        </div>
+      </div>
+
+      <section className="py-10 px-4 sm:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden h-full flex flex-col">
+                    <Skeleton height={128} className="w-full rounded-none" />
+                    <div className="p-5 flex-1 flex flex-col space-y-3">
+                        <Skeleton width="70%" height={28} />
+                        <Skeleton width="100%" height={16} />
+                        <Skeleton width="90%" height={16} />
+                        <Skeleton width="60%" height={16} />
+                        <div className="mt-auto pt-4">
+                            <Skeleton width="100%" height={40} className="rounded-lg" />
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+      </section>
+    </div>
+  );
 
   return (
     <div className="min-h-full">

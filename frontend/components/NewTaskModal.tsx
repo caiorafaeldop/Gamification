@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Calendar, User, AlignLeft, Folder, ArrowLeft, Check, Clock, Zap, BarChart3, AlertCircle } from 'lucide-react';
+import { Calendar, User, AlignLeft, Folder, X, Check, Clock, Zap, BarChart3, AlertCircle } from 'lucide-react';
 import { createTask } from '../services/task.service';
 import { useProjects } from '../hooks/useProjects';
 import { getAllUsers } from '../services/user.service';
-import { useAuth } from '../hooks/useAuth';
+import toast from 'react-hot-toast';
 
-const NewTaskScreen = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
+interface NewTaskModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  projectId?: string;
+  onSuccess: () => void;
+}
+
+const NewTaskModal = ({ isOpen, onClose, projectId: defaultProjectId, onSuccess }: NewTaskModalProps) => {
   const { projects, loading: loadingProjects } = useProjects();
   const [users, setUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -20,32 +23,39 @@ const NewTaskScreen = () => {
   // Form State
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  // Initialize projectId from location state if available
-  const [projectId, setProjectId] = useState(location.state?.projectId || '');
+  const [projectId, setProjectId] = useState(defaultProjectId || '');
   const [assignedToId, setAssignedToId] = useState('');
   const [estimatedTime, setEstimatedTime] = useState('');
   const [deadline, setDeadline] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoadingUsers(true);
-        const data = await getAllUsers();
-        setUsers(data || []);
-      } catch (err) {
-        console.error("Failed to fetch users", err);
-      } finally {
-        setLoadingUsers(false);
-      }
-    };
-    fetchUsers();
-  }, []);
+    if (isOpen) {
+      fetchUsers();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (defaultProjectId) {
+        setProjectId(defaultProjectId);
+    }
+  }, [defaultProjectId]);
+
+  const fetchUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      const data = await getAllUsers();
+      setUsers(data || []);
+    } catch (err) {
+      console.error("Failed to fetch users", err);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
 
   useEffect(() => {
     switch (taskLevel) {
-      case 'basic': setPoints(50); break; // Visual cue
+      case 'basic': setPoints(50); break;
       case 'medium': setPoints(150); break;
       case 'large': setPoints(300); break;
     }
@@ -53,20 +63,19 @@ const NewTaskScreen = () => {
 
   const mapLevelToDifficulty = (level: string) => {
       switch(level) {
-          case 'basic': return 3;
-          case 'medium': return 6;
-          case 'large': return 9;
-          default: return 5;
+          case 'basic': return 1;
+          case 'medium': return 2;
+          case 'large': return 3;
+          default: return 2;
       }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setSubmitting(true);
 
     if (!title || !projectId) {
-        setError("Título e Projeto são obrigatórios.");
+        toast.error("Título e Projeto são obrigatórios.");
         setSubmitting(false);
         return;
     }
@@ -76,69 +85,80 @@ const NewTaskScreen = () => {
             title,
             description,
             projectId,
-            assignedToId: assignedToId || undefined, // Send undefined if empty to avoid invalid UUID
+            assignedToId: assignedToId || undefined,
             difficulty: mapLevelToDifficulty(taskLevel),
-            estimatedTimeMinutes: estimatedTime ? parseInt(estimatedTime) * 60 : undefined, // hours to minutes
+            estimatedTimeMinutes: estimatedTime ? parseFloat(estimatedTime) * 60 : undefined,
             dueDate: deadline ? new Date(deadline).toISOString() : undefined,
-            isExternalDemand: false // Default
+            isExternalDemand: false 
         };
 
         await createTask(payload);
-        navigate('/project-details', { state: { projectId } }); // Navigate back to project details
+        toast.success("Tarefa criada com sucesso!");
+        onSuccess();
+        resetForm();
+        onClose();
     } catch (err: any) {
         console.error(err);
-        setError(err.response?.data?.message || "Erro ao criar tarefa. Verifique os dados.");
+        toast.error(err.response?.data?.message || "Erro ao criar tarefa.");
     } finally {
         setSubmitting(false);
     }
   };
 
+  const resetForm = () => {
+      setTitle('');
+      setDescription('');
+      setAssignedToId('');
+      setEstimatedTime('');
+      setDeadline('');
+      setTaskLevel('medium');
+  };
+
+  if (!isOpen) return null;
+
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
-      <button 
-        onClick={() => navigate(-1)} 
-        className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-primary mb-6 transition-colors text-sm font-bold"
-      >
-        <ArrowLeft size={16} /> Voltar
-      </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+        onClick={onClose}
+      ></div>
 
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="flex-1">
-          <header className="mb-8">
-            <h1 className="text-3xl font-display font-extrabold text-secondary dark:text-white mb-2">
-              Nova Tarefa
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              Defina as atividades e metas para sua equipe. Tarefas bem definidas geram mais engajamento.
-            </p>
-          </header>
-
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 space-y-6">
-              
-              {error && (
-                  <div className="p-4 bg-red-100 text-red-700 rounded-lg text-sm">
-                      {error}
-                  </div>
-              )}
-
-              {/* Title Input */}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <span className="w-1 h-4 bg-primary rounded-full"></span> Título da Tarefa
+      {/* Modal Content */}
+      <div className="relative bg-white dark:bg-surface-dark rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200 custom-scrollbar">
+        <header className="sticky top-0 z-10 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 p-6 flex items-center justify-between">
+            <div>
+                <h2 className="text-2xl font-display font-extrabold text-secondary dark:text-white">Nova Tarefa</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Defina as atividades e metas para sua equipe.</p>
+            </div>
+            <button 
+                onClick={onClose}
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            >
+                <X size={24} />
+            </button>
+        </header>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            
+            {/* Title */}
+            <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    Título da Tarefa
                 </label>
                 <input 
                   type="text" 
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
+                  autoFocus
                   className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
                   placeholder="Ex: Implementar autenticação via Google"
                 />
-              </div>
+            </div>
 
-              {/* Description Input */}
-              <div>
+            {/* Description */}
+            <div>
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                    <AlignLeft size={16} className="text-primary" /> Descrição e Requisitos
                 </label>
@@ -149,9 +169,10 @@ const NewTaskScreen = () => {
                   className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400 resize-none"
                   placeholder="Descreva o que precisa ser feito, critérios de aceitação e recursos necessários..."
                 />
-              </div>
+            </div>
 
-                {/* Project Select */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Project Select (Read-onlyish if passed, but modifiable if needed) */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                     <Folder size={16} className="text-primary" /> Projeto
@@ -193,9 +214,10 @@ const NewTaskScreen = () => {
                     </select>
                   )}
                 </div>
+            </div>
 
-              {/* Task Level & Points */}
-              <div className="bg-sky-50 dark:bg-sky-900/10 rounded-xl p-4 border border-sky-100 dark:border-sky-900/30">
+            {/* Task Level & Points */}
+            <div className="bg-sky-50 dark:bg-sky-900/10 rounded-xl p-4 border border-sky-100 dark:border-sky-900/30">
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                   <BarChart3 size={16} className="text-primary" /> Nível da Tarefa
                 </label>
@@ -232,9 +254,9 @@ const NewTaskScreen = () => {
                    <Zap size={18} className="text-yellow-500 fill-yellow-500" />
                    <span>Esta tarefa gerará aproximadamente <strong>{points} Connecta Points</strong> para o responsável.</span>
                 </div>
-              </div>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Estimated Time */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
@@ -263,49 +285,30 @@ const NewTaskScreen = () => {
                     className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
                   />
                 </div>
-              </div>
-
             </div>
+        </form>
 
-            <div className="flex items-center justify-end gap-4 pt-4">
-              <button 
+        <div className="sticky bottom-0 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 p-6 flex items-center justify-end gap-4 rounded-b-3xl">
+            <button 
                 type="button" 
-                onClick={() => navigate(-1)}
+                onClick={onClose}
                 className="px-6 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 disabled={submitting}
-              >
+            >
                 Cancelar
-              </button>
-              <button 
-                type="submit"
+            </button>
+            <button 
+                onClick={handleSubmit}
                 disabled={submitting}
                 className="px-8 py-3 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:bg-blue-600 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+            >
                 {submitting ? <Clock size={20} className="animate-spin"/> : <Check size={20} />} 
                 {submitting ? 'Criando...' : 'Criar Tarefa'}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Sidebar Info */}
-        <div className="hidden lg:block w-80 space-y-6">
-           <div className="bg-sky-50 dark:bg-sky-900/10 rounded-2xl p-6 border border-sky-100 dark:border-sky-900/30">
-              <h3 className="font-bold text-sky-800 dark:text-sky-300 flex items-center gap-2 mb-3">
-                <AlertCircle size={18} /> Permissões
-              </h3>
-              <p className="text-sm text-sky-700 dark:text-sky-400 leading-relaxed mb-4">
-                Como líder do projeto, você pode criar e atribuir tarefas. Membros só podem visualizar e solicitar atribuição.
-              </p>
-              <div className="h-px bg-sky-200 dark:bg-sky-800 my-4"></div>
-              <p className="text-xs text-sky-600 dark:text-sky-500 font-semibold">
-                Dica: Divida tarefas grandes (Nível 3) em tarefas menores para facilitar o acompanhamento no Kanban.
-              </p>
-           </div>
+            </button>
         </div>
       </div>
     </div>
   );
 };
 
-export default NewTaskScreen;
+export default NewTaskModal;

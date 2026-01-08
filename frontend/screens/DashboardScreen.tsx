@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Sun, CheckSquare, Trophy, Code, Megaphone, ArrowRight, Store, Folder } from 'lucide-react';
 import { getDashboardData } from '../services/dashboard.service';
+import { Skeleton } from '../components/Skeleton';
 
 const DashboardScreen = () => {
   const navigate = useNavigate();
@@ -25,9 +26,32 @@ const DashboardScreen = () => {
   }, []);
 
   if (loading) return (
-      <div className="flex h-screen items-center justify-center bg-surface-light dark:bg-background-dark">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8 max-w-7xl mx-auto animate-pulse">
+      {/* Header Card Skeleton */}
+      <Skeleton height="300px" className="w-full rounded-3xl" />
+      
+      {/* Main Grid Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-10">
+          <section>
+             <div className="flex justify-between items-end mb-6">
+                <Skeleton width="40%" height="32px" />
+                <Skeleton width="100px" height="20px" />
+             </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Skeleton height="200px" className="rounded-2xl" />
+                <Skeleton height="200px" className="rounded-2xl" />
+             </div>
+          </section>
+        </div>
+
+        {/* Sidebar Widgets Skeleton */}
+        <div className="space-y-8">
+           <Skeleton height="200px" className="rounded-2xl" />
+           <Skeleton height="200px" className="rounded-2xl" />
+        </div>
       </div>
+    </div>
   );
   
   if (error) return (
