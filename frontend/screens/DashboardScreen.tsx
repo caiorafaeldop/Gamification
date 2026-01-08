@@ -138,7 +138,7 @@ const DashboardScreen = () => {
                     </div>
                     <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-bold rounded-lg uppercase">Ativo</span>
                   </div>
-                  <h3 className="text-lg font-bold text-secondary dark:text-white mb-2">{project.name}</h3>
+                  <h3 className="text-lg font-bold text-secondary dark:text-white mb-2">{project.title}</h3>
                   <div className="mb-4">
                     <div className="flex justify-between text-xs font-semibold mb-1 text-gray-500 dark:text-gray-400">
                       <span>Progresso</span>

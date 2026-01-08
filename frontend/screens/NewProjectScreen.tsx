@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Type, Hash, Users, Award, ArrowLeft, Rocket, LayoutGrid, Crown, Target, Loader } from 'lucide-react';
 import { createProject, uploadProjectCover } from '../services/project.service';
+import toast from 'react-hot-toast';
 
 const NewProjectScreen = () => {
   const navigate = useNavigate();
@@ -22,10 +23,10 @@ const NewProjectScreen = () => {
       setLoading(true);
       try {
           await createProject(formData);
-          alert('Projeto criado com sucesso!');
+          toast.success('Projeto criado com sucesso! 🚀');
           navigate('/projects');
       } catch (err: any) {
-          alert('Erro ao criar projeto: ' + (err.response?.data?.message || err.message));
+          toast.error('Erro ao criar projeto: ' + (err.response?.data?.message || err.message));
       } finally {
           setLoading(false);
       }
@@ -44,7 +45,7 @@ const NewProjectScreen = () => {
         setFormData({ ...formData, coverUrl: response.url });
       } catch (error) {
         console.error('Error upload:', error);
-        alert('Erro ao fazer upload da imagem.');
+        toast.error('Erro ao fazer upload da imagem.');
       } finally {
         setUploading(false);
       }

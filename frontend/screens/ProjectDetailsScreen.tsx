@@ -216,7 +216,7 @@ const ProjectDetailsScreen = () => {
                             <div className="border-l border-gray-300 dark:border-gray-700 h-8"></div>
                             <div className="text-right hidden sm:block">
                                 <p className="text-xs text-gray-500 uppercase font-bold">Líder do Projeto</p>
-                                <p className="text-sm font-bold text-secondary dark:text-white">Lucas Almeida</p>
+                                <p className="text-sm font-bold text-secondary dark:text-white">{project.leader?.name || "Desconhecido"}</p>
                             </div>
                         </div>
                         <button 

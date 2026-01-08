@@ -125,8 +125,8 @@ const NewTaskModal = ({ isOpen, onClose, projectId: defaultProjectId, onSuccess 
       ></div>
 
       {/* Modal Content */}
-      <div className="relative bg-white dark:bg-surface-dark rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200 custom-scrollbar">
-        <header className="sticky top-0 z-10 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 p-6 flex items-center justify-between">
+      <div className="relative bg-white dark:bg-surface-dark rounded-3xl w-full max-w-4xl h-[90vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-300 ease-out">
+        <header className="flex-none bg-white dark:bg-surface-dark border-b border-gray-100 dark:border-gray-800 p-6 flex items-center justify-between z-10">
             <div>
                 <h2 className="text-2xl font-display font-extrabold text-secondary dark:text-white">Nova Tarefa</h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Defina as atividades e metas para sua equipe.</p>
@@ -139,156 +139,158 @@ const NewTaskModal = ({ isOpen, onClose, projectId: defaultProjectId, onSuccess 
             </button>
         </header>
         
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            
-            {/* Title */}
-            <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                    Título da Tarefa
-                </label>
-                <input 
-                  type="text" 
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                  autoFocus
-                  className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
-                  placeholder="Ex: Implementar autenticação via Google"
-                />
-            </div>
-
-            {/* Description */}
-            <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                   <AlignLeft size={16} className="text-primary" /> Descrição e Requisitos
-                </label>
-                <textarea 
-                  rows={4}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400 resize-none"
-                  placeholder="Descreva o que precisa ser feito, critérios de aceitação e recursos necessários..."
-                />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Project Select (Read-onlyish if passed, but modifiable if needed) */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <Folder size={16} className="text-primary" /> Projeto
-                  </label>
-                  {loadingProjects ? (
-                    <div className="h-12 w-full bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"></div>
-                  ) : (
-                    <select 
-                        value={projectId}
-                        onChange={(e) => setProjectId(e.target.value)}
-                        required
-                        className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none"
-                    >
-                        <option value="" disabled>Selecione um projeto</option>
-                        {projects.map((project: any) => (
-                        <option key={project.id} value={project.id}>{project.title}</option>
-                        ))}
-                    </select>
-                  )}
-                </div>
-
-                {/* Assignee Select */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <User size={16} className="text-primary" /> Responsável
-                  </label>
-                  {loadingUsers ? (
-                    <div className="h-12 w-full bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"></div>
-                  ) : (
-                    <select 
-                        value={assignedToId}
-                        onChange={(e) => setAssignedToId(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none"
-                    >
-                        <option value="">Atribuir a...</option>
-                        {users.map((u: any) => (
-                        <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
-                        ))}
-                    </select>
-                  )}
-                </div>
-            </div>
-
-            {/* Task Level & Points */}
-            <div className="bg-sky-50 dark:bg-sky-900/10 rounded-xl p-4 border border-sky-100 dark:border-sky-900/30">
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                  <BarChart3 size={16} className="text-primary" /> Nível da Tarefa
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                  {[
-                    { id: 'basic', label: 'Básica (lvl 1)', pts: 50 },
-                    { id: 'medium', label: 'Média (lvl 2)', pts: 150 },
-                    { id: 'large', label: 'Grande (lvl 3)', pts: 300 }
-                  ].map((level) => (
-                    <button
-                      key={level.id}
-                      type="button"
-                      onClick={() => setTaskLevel(level.id as any)}
-                      className={`relative overflow-hidden py-3 px-2 rounded-lg border-2 transition-all text-center ${
-                        taskLevel === level.id 
-                          ? 'border-primary bg-white dark:bg-surface-dark shadow-md' 
-                          : 'border-transparent bg-white/50 dark:bg-white/5 text-gray-500 hover:bg-white hover:shadow-sm'
-                      }`}
-                    >
-                      <div className="text-xs font-bold uppercase tracking-wider mb-1 text-gray-500 dark:text-gray-400">{level.label}</div>
-                      <div className={`text-lg font-black ${taskLevel === level.id ? 'text-primary' : 'text-gray-400'}`}>
-                        {level.pts} XP
-                      </div>
-                      {taskLevel === level.id && (
-                        <div className="absolute top-0 right-0 p-1">
-                          <div className="w-2 h-2 rounded-full bg-primary"></div>
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+            <form id="new-task-form" onSubmit={handleSubmit} className="space-y-6">
                 
-                <div className="flex items-center gap-2 text-sm text-sky-700 dark:text-sky-300 bg-white dark:bg-surface-dark p-3 rounded-lg border border-sky-100 dark:border-sky-800/50">
-                   <Zap size={18} className="text-yellow-500 fill-yellow-500" />
-                   <span>Esta tarefa gerará aproximadamente <strong>{points} Connecta Points</strong> para o responsável.</span>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Estimated Time */}
+                {/* Title */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <Clock size={16} className="text-primary" /> Tempo Estimado (horas)
-                  </label>
-                  <input 
-                    type="number" 
-                    min="0.5"
-                    step="0.5"
-                    value={estimatedTime}
-                    onChange={(e) => setEstimatedTime(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
-                    placeholder="Ex: 4"
-                  />
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                        Título da Tarefa
+                    </label>
+                    <input 
+                      type="text" 
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      required
+                      autoFocus
+                      className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
+                      placeholder="Ex: Implementar autenticação via Google"
+                    />
                 </div>
 
-                {/* Deadline */}
+                {/* Description */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <Calendar size={16} className="text-primary" /> Prazo de Entrega
-                  </label>
-                  <input 
-                    type="date"
-                    value={deadline}
-                    onChange={(e) => setDeadline(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
-                  />
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                       <AlignLeft size={16} className="text-primary" /> Descrição e Requisitos
+                    </label>
+                    <textarea 
+                      rows={4}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400 resize-none"
+                      placeholder="Descreva o que precisa ser feito, critérios de aceitação e recursos necessários..."
+                    />
                 </div>
-            </div>
-        </form>
 
-        <div className="sticky bottom-0 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 p-6 flex items-center justify-end gap-4 rounded-b-3xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Project Select (Read-onlyish if passed, but modifiable if needed) */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                        <Folder size={16} className="text-primary" /> Projeto
+                      </label>
+                      {loadingProjects ? (
+                        <div className="h-12 w-full bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"></div>
+                      ) : (
+                        <select 
+                            value={projectId}
+                            onChange={(e) => setProjectId(e.target.value)}
+                            required
+                            className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none"
+                        >
+                            <option value="" disabled>Selecione um projeto</option>
+                            {projects.map((project: any) => (
+                            <option key={project.id} value={project.id}>{project.title}</option>
+                            ))}
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Assignee Select */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                        <User size={16} className="text-primary" /> Responsável
+                      </label>
+                      {loadingUsers ? (
+                        <div className="h-12 w-full bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"></div>
+                      ) : (
+                        <select 
+                            value={assignedToId}
+                            onChange={(e) => setAssignedToId(e.target.value)}
+                            className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none"
+                        >
+                            <option value="">Atribuir a...</option>
+                            {users.map((u: any) => (
+                            <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
+                            ))}
+                        </select>
+                      )}
+                    </div>
+                </div>
+
+                {/* Task Level & Points */}
+                <div className="bg-sky-50 dark:bg-sky-900/10 rounded-xl p-4 border border-sky-100 dark:border-sky-900/30">
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                      <BarChart3 size={16} className="text-primary" /> Nível da Tarefa
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                      {[
+                        { id: 'basic', label: 'Básica (lvl 1)', pts: 50 },
+                        { id: 'medium', label: 'Média (lvl 2)', pts: 150 },
+                        { id: 'large', label: 'Grande (lvl 3)', pts: 300 }
+                      ].map((level) => (
+                        <button
+                          key={level.id}
+                          type="button"
+                          onClick={() => setTaskLevel(level.id as any)}
+                          className={`relative overflow-hidden py-3 px-2 rounded-lg border-2 transition-all text-center ${
+                            taskLevel === level.id 
+                              ? 'border-primary bg-white dark:bg-surface-dark shadow-md' 
+                              : 'border-transparent bg-white/50 dark:bg-white/5 text-gray-500 hover:bg-white hover:shadow-sm'
+                          }`}
+                        >
+                          <div className="text-xs font-bold uppercase tracking-wider mb-1 text-gray-500 dark:text-gray-400">{level.label}</div>
+                          <div className={`text-lg font-black ${taskLevel === level.id ? 'text-primary' : 'text-gray-400'}`}>
+                            {level.pts} XP
+                          </div>
+                          {taskLevel === level.id && (
+                            <div className="absolute top-0 right-0 p-1">
+                              <div className="w-2 h-2 rounded-full bg-primary"></div>
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-sm text-sky-700 dark:text-sky-300 bg-white dark:bg-surface-dark p-3 rounded-lg border border-sky-100 dark:border-sky-800/50">
+                       <Zap size={18} className="text-yellow-500 fill-yellow-500" />
+                       <span>Esta tarefa gerará aproximadamente <strong>{points} Connecta Points</strong> para o responsável.</span>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Estimated Time */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                        <Clock size={16} className="text-primary" /> Tempo Estimado (horas)
+                      </label>
+                      <input 
+                        type="number" 
+                        min="0.5"
+                        step="0.5"
+                        value={estimatedTime}
+                        onChange={(e) => setEstimatedTime(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
+                        placeholder="Ex: 4"
+                      />
+                    </div>
+
+                    {/* Deadline */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                        <Calendar size={16} className="text-primary" /> Prazo de Entrega
+                      </label>
+                      <input 
+                        type="date"
+                        value={deadline}
+                        onChange={(e) => setDeadline(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
+                      />
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div className="flex-none bg-white dark:bg-surface-dark border-t border-gray-100 dark:border-gray-800 p-6 flex items-center justify-end gap-4">
             <button 
                 type="button" 
                 onClick={onClose}

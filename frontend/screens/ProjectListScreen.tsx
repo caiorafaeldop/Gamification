@@ -107,9 +107,21 @@ const ProjectListScreen = () => {
                 <p className="col-span-3 text-center text-gray-500">Nenhum projeto encontrado.</p>
             ) : filteredProjects.map((project: any) => (
                 <article key={project.id} onClick={() => navigate(`/project-details/${project.id}`)} className="cursor-pointer bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full group">
-                <div className="h-32 bg-gray-200 relative">
+                <div className="h-48 bg-gray-200 relative overflow-hidden">
+                    {project.coverUrl ? (
+                        <img 
+                            src={project.coverUrl} 
+                            alt={project.title} 
+                            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-transparent flex items-center justify-center">
+                            <Star size={48} className="text-primary/20" />
+                        </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                     <div className="absolute bottom-3 left-4 z-20">
-                    <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">{project.category || 'Geral'}</span>
+                    <span className="bg-primary text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">{project.category || 'Geral'}</span>
                     </div>
                 </div>
                 <div className="p-5 flex-1 flex flex-col">

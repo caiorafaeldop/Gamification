@@ -24,23 +24,8 @@ const RankingScreen = () => {
   const fetchLeaderboard = async () => {
     try {
       setLoading(true);
-      // Backend likely supports /leaderboard?period=... or similar
-      // Or /leaderboard for global, /leaderboard/weekly for weekly.
-      // Based on controller: getGlobalLeaderboard, getWeeklyLeaderboard.
-      // I'll assume standard getLeaderboard covers global for now.
-      // If I want others I need to update service/backend routes mapping.
-      // For MVP A-Z, I'll stick to Global endpoint which I know is exposed as '/' in leaderboard.routes probably.
-      // Wait, let's just fetch the default one for now to ensure connectivity.
-      const data = await getLeaderboard();
-      // Data might be { items: [], meta: ... } or just []?
-      // Controller sends `res.json(result)`. Service usually returns list or paginated.
-      // Assuming array or has property 'data'. 
-      // Safe check:
-      const list = Array.isArray(data) ? data : (data.data || []);
-      
-      // Map to UI format if needed. Backend likely returns User objects with points.
-      // Frontend expects: { id, name, course, points, ... }
-      // I'll assume backend returns compatible structure.
+      const data = await getLeaderboard(activeFilter);
+      const list = Array.isArray(data) ? data : [];
       setRankingData(list.map((u: any, i: number) => ({ ...u, rank: i + 1 })));
     } catch (err: any) {
       console.error(err);

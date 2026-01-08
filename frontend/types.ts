@@ -3,6 +3,7 @@ export interface Project {
   title: string;
   description: string;
   category: string;
+  coverUrl?: string;
   progress: number;
   xpReward: number;
   status: 'active' | 'planning' | 'completed';
