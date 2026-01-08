@@ -10,6 +10,7 @@ export interface Project {
   updatedAt: string;
   status: string;
   color?: string;
+  coverUrl?: string;
   progress: number;
 }
 
@@ -26,6 +27,17 @@ export const getProjectDetails = async (id: string) => {
 export const createProject = async (data: Partial<Project>) => {
   const response = await api.post('/projects', data);
   return response.data;
+};
+
+export const uploadProjectCover = async (file: File) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const response = await api.post('/projects/upload-cover', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data; // Expected { url: string }
 };
 
 export const joinProject = async (projectId: string) => {

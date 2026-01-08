@@ -29,7 +29,7 @@ export const getProjects = async (req: Request, res: Response, next: NextFunctio
 
 export const createProject = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { name, description, category } = req.body;
+        const { name, description, category, coverUrl } = req.body;
         const userId = (req as any).user?.userId;
 
         const project = await prisma.project.create({
@@ -37,6 +37,7 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
                 title: name,
                 description,
                 category,
+                coverUrl,
                 leaderId: userId,
                 members: {
                     create: { userId: userId } // Add creator as member
@@ -44,6 +45,17 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
             }
         });
         res.status(201).json(project);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const uploadProjectCover = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+        res.json({ url: req.file.path });
     } catch (error) {
         next(error);
     }

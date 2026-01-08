@@ -88,6 +88,7 @@ model Project {
   progress    Int            @default(0)
   xpReward    Int            @default(100)
   color       String?
+  coverUrl    String?
 }
 
 model ProjectMember {

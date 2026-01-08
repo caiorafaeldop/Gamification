@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Type, Hash, Users, Award, ArrowLeft, Rocket, LayoutGrid, Crown, Target, Loader } from 'lucide-react';
-import { createProject } from '../services/project.service';
+import { createProject, uploadProjectCover } from '../services/project.service';
 
 const NewProjectScreen = () => {
   const navigate = useNavigate();
@@ -11,9 +11,11 @@ const NewProjectScreen = () => {
       category: 'Desenvolvimento',
       tags: '',
       maxMembers: 4,
-      rewardPoints: 1500
+      rewardPoints: 1500,
+      coverUrl: ''
   });
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -31,6 +33,22 @@ const NewProjectScreen = () => {
 
   const handleChange = (e: any) => {
       setFormData({ ...formData, [e.target.name]: e.target.value }); // Note: name attribute needed on inputs
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setUploading(true);
+      try {
+        const response = await uploadProjectCover(file);
+        setFormData({ ...formData, coverUrl: response.url });
+      } catch (error) {
+        console.error('Error upload:', error);
+        alert('Erro ao fazer upload da imagem.');
+      } finally {
+        setUploading(false);
+      }
+    }
   };
 
   return (
@@ -197,16 +215,30 @@ const NewProjectScreen = () => {
               </div>
            </div>
 
-           {/* Cover Image Upload - Visual for now */}
+           {/* Cover Image Upload */}
            <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
               <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 mb-4">Capa do Projeto</h3>
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group">
-                  <div className="w-12 h-12 rounded-full bg-sky-50 dark:bg-sky-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <Upload size={20} className="text-primary" />
-                  </div>
-                  <p className="text-sm font-bold text-gray-700 dark:text-gray-300">Clique para upload</p>
-                  <p className="text-xs text-gray-400 mt-1">PNG, JPG até 5MB</p>
-              </div>
+              
+              <label className={`border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group relative overflow-hidden ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <input type="file" className="hidden" accept="image/*" onChange={handleUpload} />
+                  
+                  {formData.coverUrl ? (
+                    <div className="absolute inset-0 w-full h-full">
+                      <img src={formData.coverUrl} alt="Project Cover" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                         <p className="text-white font-bold">Alterar Imagem</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-12 h-12 rounded-full bg-sky-50 dark:bg-sky-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        {uploading ? <Loader size={20} className="animate-spin text-primary" /> : <Upload size={20} className="text-primary" />}
+                      </div>
+                      <p className="text-sm font-bold text-gray-700 dark:text-gray-300">{uploading ? 'Enviando...' : 'Clique para upload'}</p>
+                      <p className="text-xs text-gray-400 mt-1">PNG, JPG até 5MB</p>
+                    </>
+                  )}
+              </label>
            </div>
         </div>
 

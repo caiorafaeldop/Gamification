@@ -68,7 +68,7 @@ const ProjectListScreen = () => {
             {filteredProjects.length === 0 ? (
                 <p className="col-span-3 text-center text-gray-500">Nenhum projeto encontrado.</p>
             ) : filteredProjects.map((project: any) => (
-                <article key={project.id} onClick={() => navigate(`/projects/${project.id}`)} className="cursor-pointer bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full group">
+                <article key={project.id} onClick={() => navigate(`/project-details/${project.id}`)} className="cursor-pointer bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full group">
                 <div className="h-32 bg-gray-200 relative">
                     <div className="absolute bottom-3 left-4 z-20">
                     <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">{project.category || 'Geral'}</span>

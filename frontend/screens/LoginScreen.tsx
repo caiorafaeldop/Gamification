@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Network, Rocket, Mail, Lock, EyeOff } from 'lucide-react';
+import { Network, Rocket, Mail, Lock, EyeOff, Loader2 } from 'lucide-react';
 import { login } from '../services/auth.service';
 
 const LoginScreen = () => {
@@ -13,7 +13,7 @@ const LoginScreen = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
+      setError(null);
     
     try {
       const data = await login(email, password);
@@ -22,7 +22,19 @@ const LoginScreen = () => {
       navigate('/dashboard');
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || 'Falha ao realizar login. Verifique suas credenciais.');
+      let msg = 'Ocorreu um erro inesperado. Tente novamente mais tarde.';
+      
+      if (err.response) {
+        // Se for erro de validação (geralmente 400 ou msg específica)
+        if (err.response.data?.message === 'Validation Error' || err.response.status === 400) {
+           msg = 'Usuário e senha incorretos.';
+        } else if (err.response.status === 401) {
+           msg = 'Usuário e senha incorretos.';
+        } else if (err.response.data?.message) {
+           msg = err.response.data.message;
+        }
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -65,7 +77,7 @@ const LoginScreen = () => {
           </div>
           
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative animate-fade-in" role="alert">
               <span className="block sm:inline">{error}</span>
             </div>
           )}
@@ -117,11 +129,18 @@ const LoginScreen = () => {
             </div>
             <div>
               <button
-                className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-lg shadow-lg shadow-primary/20 text-sm font-bold text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-lg shadow-lg shadow-primary/20 text-sm font-bold text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all transform hover:-translate-y-0.5 disabled:opacity-80 disabled:cursor-not-allowed disabled:transform-none"
                 type="submit"
                 disabled={loading}
               >
-                {loading ? 'Entrando...' : 'Entrar na Plataforma'}
+                {loading ? (
+                   <>
+                      <Loader2 className="animate-spin mr-2" size={20} />
+                      <span>Entrando...</span>
+                   </>
+                ) : (
+                  'Entrar na Plataforma'
+                )}
               </button>
             </div>
           </form>

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { createNewTask, getTaskDetails as getTaskDetailsService, updateTaskDetails as updateTaskDetailsService, moveTaskStatus, deleteTaskById, getKanbanBoardForProject as getKanbanBoardForProjectService } from '../services/task.service';
+import { createNewTask, getTaskDetails as getTaskDetailsService, updateTaskDetails as updateTaskDetailsService, moveTaskStatus, deleteTaskById, getKanbanBoardForProject as getKanbanBoardForProjectService, getMyNextTasks as getMyNextTasksService } from '../services/task.service';
 import { CreateTaskInput, UpdateTaskInput, MoveTaskInput } from '../schemas/task.schema';
 
 export const createTask = async (req: Request<{}, {}, CreateTaskInput>, res: Response, next: NextFunction) => {
@@ -63,6 +63,16 @@ export const getProjectKanban = async (req: Request<{ projectId: string }>, res:
     const { projectId } = req.params;
     const kanban = await getKanbanBoardForProjectService(projectId);
     res.status(200).json(kanban);
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+export const getMyTasks = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.userId;
+    const tasks = await getMyNextTasksService(userId);
+    res.status(200).json(tasks);
   } catch (error: any) {
     next(error);
   }
