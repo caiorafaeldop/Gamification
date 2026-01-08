@@ -1,40 +1,100 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Network, Rocket, Mail, Lock, EyeOff, Loader2 } from 'lucide-react';
-import { login } from '../services/auth.service';
+import { login, register, resetPassword } from '../services/auth.service';
 
 const LoginScreen = () => {
   const navigate = useNavigate();
+  const [view, setView] = useState<'login' | 'register' | 'forgot-password'>('login');
+  
+  // Form States
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
+  // Register specific
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  
+  // Forgot Password specific
+  const [newPassword, setNewPassword] = useState('');
+  const [secretWord, setSecretWord] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const resetForm = () => {
+    setError(null);
+    setSuccess(null);
+    setEmail('');
+    setPassword('');
+    setFirstName('');
+    setLastName('');
+    setConfirmPassword('');
+    setNewPassword('');
+    setSecretWord('');
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-      setError(null);
-    
+    setError(null);
     try {
       const data = await login(email, password);
       localStorage.setItem('token', data.accessToken);
-      localStorage.setItem('user', JSON.stringify(data.user)); // Store user info
+      localStorage.setItem('user', JSON.stringify(data.user));
       navigate('/dashboard');
     } catch (err: any) {
       console.error(err);
-      let msg = 'Ocorreu um erro inesperado. Tente novamente mais tarde.';
-      
-      if (err.response) {
-        // Se for erro de validação (geralmente 400 ou msg específica)
-        if (err.response.data?.message === 'Validation Error' || err.response.status === 400) {
-           msg = 'Usuário e senha incorretos.';
-        } else if (err.response.status === 401) {
-           msg = 'Usuário e senha incorretos.';
-        } else if (err.response.data?.message) {
-           msg = err.response.data.message;
-        }
+      setError(err.response?.data?.message || 'Erro ao entrar.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem.');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const fullName = `${firstName} ${lastName}`.trim();
+      await register(fullName, email, password);
+      setSuccess('Conta criada com sucesso! Faça login.');
+      setTimeout(() => {
+        resetForm();
+        setView('login');
+      }, 2000);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Erro ao registrar.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      if (secretWord !== 'ciconectado') { 
+         // Client-side check helpful but backend is source of truth. 
+         // We can submit anyway or check here. Backend checks `ciconectado` securely.
       }
-      setError(msg);
+      await resetPassword(email, newPassword, secretWord);
+      setSuccess('Senha redefinida com sucesso! Faça login.');
+      setTimeout(() => {
+        resetForm();
+        setView('login');
+      }, 2000);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Erro ao redefinir senha.');
     } finally {
       setLoading(false);
     }
@@ -64,7 +124,7 @@ const LoginScreen = () => {
       <div className="w-full md:w-1/2 lg:w-7/12 flex items-center justify-center p-4 sm:p-8 lg:p-12 relative">
         <div className="w-full max-w-md space-y-8">
           <div className="flex flex-col items-center md:items-start text-center md:text-left">
-            <div className="flex items-center gap-2 mb-8 group cursor-pointer">
+            <div className="flex items-center gap-2 mb-8 group cursor-pointer" onClick={() => { resetForm(); setView('login'); }}>
               <div className="relative w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/30 group-hover:scale-105 transition-transform">
                 <Network size={20} />
               </div>
@@ -72,8 +132,17 @@ const LoginScreen = () => {
                 connecta<span className="text-primary">CI</span>
               </span>
             </div>
-            <h1 className="text-3xl font-display font-extrabold text-secondary dark:text-white mb-2">Bem-vindo de volta!</h1>
-            <p className="text-gray-500 dark:text-gray-400">Insira suas credenciais para acessar sua conta.</p>
+            
+            <h1 className="text-3xl font-display font-extrabold text-secondary dark:text-white mb-2">
+              {view === 'login' && 'Bem-vindo de volta!'}
+              {view === 'register' && 'Crie sua conta'}
+              {view === 'forgot-password' && 'Recuperar senha'}
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400">
+              {view === 'login' && 'Insira suas credenciais para acessar sua conta.'}
+              {view === 'register' && 'Preencha os dados abaixo para se registrar.'}
+              {view === 'forgot-password' && 'Redefina sua senha usando a palavra secreta.'}
+            </p>
           </div>
           
           {error && (
@@ -81,69 +150,186 @@ const LoginScreen = () => {
               <span className="block sm:inline">{error}</span>
             </div>
           )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" htmlFor="email">E-mail Institucional</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail size={20} className="text-gray-400" />
-                  </div>
-                  <input
-                    className="pl-10 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 transition-colors placeholder-gray-400 dark:placeholder-gray-500"
-                    id="email"
-                    name="email"
-                    placeholder="exemplo@academico.ufpb.br"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="password">Senha</label>
-                  <a className="text-sm font-semibold text-primary hover:text-sky-400 transition-colors" href="#">Esqueceu a senha?</a>
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock size={20} className="text-gray-400" />
-                  </div>
-                  <input
-                    className="pl-10 pr-10 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 transition-colors placeholder-gray-400 dark:placeholder-gray-500"
-                    id="password"
-                    name="password"
-                    placeholder="••••••••"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                    <EyeOff size={20} />
-                  </div>
-                </div>
-              </div>
+           {success && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative animate-fade-in" role="alert">
+              <span className="block sm:inline">{success}</span>
             </div>
-            <div>
+          )}
+
+          {view === 'login' && (
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" htmlFor="email">Email ou Nome de Usuário</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail size={20} className="text-gray-400" />
+                    </div>
+                    <input
+                      className="pl-10 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 transition-colors placeholder-gray-400 dark:placeholder-gray-500"
+                      id="email"
+                      placeholder="Email ou usuário"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="password">Senha</label>
+                    <button type="button" onClick={() => { resetForm(); setView('forgot-password'); }} className="text-sm font-semibold text-primary hover:text-sky-400 transition-colors">Esqueceu a senha?</button>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock size={20} className="text-gray-400" />
+                    </div>
+                    <input
+                      className="pl-10 pr-10 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 transition-colors placeholder-gray-400 dark:placeholder-gray-500"
+                      id="password"
+                      placeholder="••••••••"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
               <button
                 className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-lg shadow-lg shadow-primary/20 text-sm font-bold text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all transform hover:-translate-y-0.5 disabled:opacity-80 disabled:cursor-not-allowed disabled:transform-none"
                 type="submit"
                 disabled={loading}
               >
-                {loading ? (
-                   <>
-                      <Loader2 className="animate-spin mr-2" size={20} />
-                      <span>Entrando...</span>
-                   </>
-                ) : (
-                  'Entrar na Plataforma'
-                )}
+                {loading ? <Loader2 className="animate-spin" size={20} /> : 'Entrar na Plataforma'}
               </button>
-            </div>
-          </form>
+              <div className="text-center mt-4">
+                  <span className="text-gray-600 dark:text-gray-400 text-sm">Não tem uma conta? </span>
+                  <button type="button" onClick={() => { resetForm(); setView('register'); }} className="text-primary font-bold hover:underline text-sm">Cadastre-se</button>
+              </div>
+            </form>
+          )}
+
+          {view === 'register' && (
+            <form onSubmit={handleRegister} className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex gap-4">
+                    <div className="w-1/2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome</label>
+                        <input
+                        className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 px-4"
+                        placeholder="Nome"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                        />
+                    </div>
+                    <div className="w-1/2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sobrenome</label>
+                        <input
+                        className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 px-4"
+                        placeholder="Sobrenome"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                        />
+                    </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome de usuário ou Email</label>
+                  <input
+                    className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 px-4"
+                    placeholder="usuário ou email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Senha</label>
+                  <input
+                    className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 px-4"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                 <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Digite a senha novamente</label>
+                  <input
+                    className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 px-4"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+              <button
+                className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-lg shadow-lg shadow-primary/20 text-sm font-bold text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all transform hover:-translate-y-0.5 disabled:opacity-80 disabled:cursor-not-allowed disabled:transform-none"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? <Loader2 className="animate-spin" size={20} /> : 'Registrar'}
+              </button>
+               <div className="text-center mt-4">
+                  <span className="text-gray-600 dark:text-gray-400 text-sm">Já tem uma conta? </span>
+                  <button type="button" onClick={() => { resetForm(); setView('login'); }} className="text-primary font-bold hover:underline text-sm">Entrar</button>
+              </div>
+            </form>
+          )}
+
+          {view === 'forgot-password' && (
+             <form onSubmit={handleResetPassword} className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email ou Nome de Usuário</label>
+                  <input
+                    className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 px-4"
+                    placeholder="Email ou usuário"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                 <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nova Senha</label>
+                  <input
+                    className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 px-4"
+                    type="password"
+                    placeholder="Novas senha"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Qual a palavra secreta? (Pergunte a um diretor)</label>
+                  <input
+                    className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 px-4"
+                    placeholder="Palavra secreta"
+                    value={secretWord}
+                    onChange={(e) => setSecretWord(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+              <button
+                className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-lg shadow-lg shadow-primary/20 text-sm font-bold text-white bg-primary hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all transform hover:-translate-y-0.5 disabled:opacity-80 disabled:cursor-not-allowed disabled:transform-none"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? <Loader2 className="animate-spin" size={20} /> : 'Redefinir Senha'}
+              </button>
+               <div className="text-center mt-4">
+                  <button type="button" onClick={() => { resetForm(); setView('login'); }} className="text-primary font-bold hover:underline text-sm">Voltar para o Login</button>
+              </div>
+            </form>
+          )}
+
         </div>
       </div>
     </div>

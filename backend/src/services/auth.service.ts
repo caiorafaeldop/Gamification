@@ -1,5 +1,5 @@
 import { Prisma, Role } from '@prisma/client';
-import { findUserByEmail, createUser, updateUserTier } from '../repositories/user.repository';
+import { findUserByEmail, findUserByName, createUser, updateUserTier } from '../repositories/user.repository';
 import { hashPassword, comparePasswords } from '../utils/bcrypt';
 import { generateAccessToken, generateRefreshToken, verifyToken } from '../utils/jwt';
 import { LoginInput, RegisterInput } from '../schemas/auth.schema';
@@ -36,14 +36,19 @@ export const registerUser = async (data: RegisterInput) => {
 };
 
 export const loginUser = async (data: LoginInput) => {
-  const user = await findUserByEmail(data.email);
+  let user = await findUserByEmail(data.email);
+  
+  if (!user) {
+    user = await findUserByName(data.email);
+  }
+
   if (!user || !user.isActive) {
-    throw { statusCode: 401, message: 'Invalid credentials or user is inactive.' };
+    throw { statusCode: 401, message: 'Credenciais inválidas ou usuário inativo.' };
   }
 
   const passwordMatch = await comparePasswords(data.password, user.passwordHash);
   if (!passwordMatch) {
-    throw { statusCode: 401, message: 'Invalid credentials.' };
+    throw { statusCode: 401, message: 'Credenciais inválidas.' };
   }
 
   const accessToken = generateAccessToken(user.id, user.role);

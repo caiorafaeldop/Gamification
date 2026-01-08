@@ -195,9 +195,9 @@ const NewTaskScreen = () => {
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                   {[
-                    { id: 'basic', label: 'Básica (Nível 1)', pts: 50 },
-                    { id: 'medium', label: 'Média (Nível 2)', pts: 150 },
-                    { id: 'large', label: 'Grande (Nível 3)', pts: 300 }
+                    { id: 'basic', label: 'Básica (lvl 1)', pts: 50 },
+                    { id: 'medium', label: 'Média (lvl 2)', pts: 150 },
+                    { id: 'large', label: 'Grande (lvl 3)', pts: 300 }
                   ].map((level) => (
                     <button
                       key={level.id}
@@ -211,7 +211,7 @@ const NewTaskScreen = () => {
                     >
                       <div className="text-xs font-bold uppercase tracking-wider mb-1 text-gray-500 dark:text-gray-400">{level.label}</div>
                       <div className={`text-lg font-black ${taskLevel === level.id ? 'text-primary' : 'text-gray-400'}`}>
-                        ~{level.pts} CP
+                        {level.pts} XP
                       </div>
                       {taskLevel === level.id && (
                         <div className="absolute top-0 right-0 p-1">

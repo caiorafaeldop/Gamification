@@ -55,12 +55,17 @@ export const getDashboardStats = async (userId: string) => {
       take: 5
   });
 
+  const tierRange = nextTier ? nextTier.minPoints - user.tier.minPoints : 1;
+  const progressIntoTier = totalXP - user.tier.minPoints;
+  const tierProgress = nextTier ? Math.min(Math.round((progressIntoTier / tierRange) * 100), 100) : 100;
+
   return {
     user: {
         name: user.name,
         points: totalXP,
         tier: currentLevel,
-        nextTierPoints: pointsToNextLevel
+        nextTierPoints: pointsToNextLevel,
+        tierProgress: tierProgress
     },
     activeTaskCount: user.assignedTasks.length,
     projects: activeProjects.map(p => ({

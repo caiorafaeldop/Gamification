@@ -153,7 +153,7 @@ const JoinProjectScreen = () => {
                </div>
                <div className="flex items-baseline gap-1">
                  <span className="text-4xl font-black">{project.reward}</span>
-                 <span className="text-sm font-bold opacity-80">CP</span>
+                 <span className="text-sm font-bold opacity-80">XP</span>
                </div>
                <p className="text-xs mt-2 opacity-90 font-medium">Pontos distribuídos ao concluir o projeto.</p>
              </div>
