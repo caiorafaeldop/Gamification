@@ -8,12 +8,13 @@ export const getAchievements = async (): Promise<Achievement[]> => {
 
 export const getMyAchievements = async (): Promise<UserAchievement[]> => {
   const response = await api.get('/achievements/me');
-  return response.data;
+  // Backend returns paginated response { achievements: [], ... }
+  return response.data.achievements || [];
 };
 
 export const getUserAchievements = async (userId: string): Promise<UserAchievement[]> => {
   const response = await api.get(`/achievements/user/${userId}`);
-  return response.data;
+  return response.data.achievements || [];
 };
 
 export const getAchievement = async (id: string): Promise<Achievement> => {
