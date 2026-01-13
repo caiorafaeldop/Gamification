@@ -90,7 +90,8 @@ export const updateTaskDetails = async (id: string, data: UpdateTaskInput, reque
     throw { statusCode: 404, message: 'Task\'s project not found.' };
   }
 
-  const isAuthorized = requestingUserRole === Role.ADMIN || project.leaderId === requestingUserId || task.assignedToId === requestingUserId;
+  const isMember = await isUserProjectMember(task.projectId, requestingUserId);
+  const isAuthorized = requestingUserRole === Role.ADMIN || project.leaderId === requestingUserId || task.assignedToId === requestingUserId || isMember;
   if (!isAuthorized) {
     throw { statusCode: 403, message: 'You are not authorized to update this task.' };
   }
@@ -145,12 +146,14 @@ export const moveTaskStatus = async (id: string, data: MoveTaskInput, requesting
   const isAdmin = requestingUserRole === Role.ADMIN;
   const isAssignedUser = task.assignedToId === requestingUserId;
 
-  if (!isAdmin && !isProjectLeader && !isAssignedUser) {
+  const isMember = await isUserProjectMember(task.projectId, requestingUserId);
+
+  if (!isAdmin && !isProjectLeader && !isAssignedUser && !isMember) {
     throw { statusCode: 403, message: 'You are not authorized to move this task.' };
   }
 
-  if (data.newStatus === TaskStatus.done && !isAdmin && !isProjectLeader) {
-    throw { statusCode: 403, message: 'Only project leaders or administrators can mark tasks as DONE.' };
+  if (data.newStatus === TaskStatus.done && !isAdmin && !isProjectLeader && !isMember) {
+    throw { statusCode: 403, message: 'Only project members, leaders or administrators can mark tasks as DONE.' };
   }
 
   if (task.status === data.newStatus) {
@@ -193,7 +196,10 @@ export const deleteTaskById = async (id: string, requestingUserId: string, reque
     throw { statusCode: 404, message: 'Task\'s project not found.' };
   }
 
-  const isAuthorized = requestingUserRole === Role.ADMIN || project.leaderId === requestingUserId;
+  const isMember = await isUserProjectMember(task.projectId, requestingUserId);
+  console.log(`[DELETE TASK CHECK] Leader: ${project.leaderId}, Requester: ${requestingUserId}, IsMember: ${isMember}`);
+
+  const isAuthorized = requestingUserRole === Role.ADMIN || project.leaderId === requestingUserId || isMember;
   if (!isAuthorized) {
     throw { statusCode: 403, message: 'You are not authorized to delete this task.' };
   }

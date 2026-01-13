@@ -6,6 +6,8 @@ import {
   Trophy,
   Medal,
   Calendar,
+  CheckSquare,
+  Rocket,
   Menu,
   Bell,
   Sun,
@@ -97,7 +99,7 @@ const Layout = () => {
 
       {/* Sidebar */}
       <aside className={`
-          fixed md:static inset-y-0 left-0 z-50 w-64 bg-surface-light dark:bg-surface-dark border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 transform 
+          fixed md:static inset-y-0 left-0 z-50 w-64 bg-surface-light dark:bg-surface-dark border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 transform
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
       `}>
         <div className="h-16 flex items-center px-6 border-b border-gray-100 dark:border-gray-800/50">
@@ -141,7 +143,7 @@ const Layout = () => {
                 <>
                   <p className="text-sm font-bold text-secondary dark:text-white truncate">{user?.name || 'Visitante'}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {user?.tier ? `${user.tier}` : 'Iniciante'} • {user?.points || 0} XP
+                    {typeof user?.tier === 'object' ? user.tier.name : (user?.tier || 'Iniciante')} • {user?.connectaPoints || 0} XP
                   </p>
                 </>
               )}

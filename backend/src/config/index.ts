@@ -12,7 +12,7 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRATION: z.string().default("7d"),
   PORT: z.coerce.number().default(3333),
   // Modificado CORS_ORIGIN para permitir uma URL ou um curinga '*'
-  CORS_ORIGIN: z.union([z.string().url(), z.literal('*')]).default("http://localhost:5173"),
+  CORS_ORIGIN: z.union([z.string().url(), z.literal('*')]).default("http://localhost:3000"),
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),

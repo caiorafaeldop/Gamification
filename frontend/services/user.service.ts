@@ -1,15 +1,15 @@
 import api from './api';
 
 export const getProfile = async () => {
-  const response = await api.get('/users/profile');
+  const response = await api.get('/users/me');
   return response.data;
 };
 
 
 
 export const updateUser = async (data: any) => {
-    const response = await api.patch('/users/profile', data);
-    return response.data;
+  const response = await api.patch('/users/profile', data);
+  return response.data;
 };
 
 export const getAllUsers = async () => {

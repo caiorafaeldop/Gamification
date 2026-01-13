@@ -17,20 +17,20 @@ import { Toaster } from 'react-hot-toast';
 const App = () => {
   return (
     <HashRouter>
-      <Toaster 
-          position="top-center"
-          reverseOrder={false}
-          toastOptions={{
-            style: {
-              borderRadius: '10px',
-              background: '#333',
-              color: '#fff',
-            },
-          }}
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        toastOptions={{
+          style: {
+            borderRadius: '10px',
+            background: '#333',
+            color: '#fff',
+          },
+        }}
       />
       <Routes>
         <Route path="/" element={<LoginScreen />} />
-        
+
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<DashboardScreen />} />
           <Route path="/projects" element={<ProjectListScreen />} />
@@ -39,8 +39,9 @@ const App = () => {
           <Route path="/ranking" element={<RankingScreen />} />
           <Route path="/achievements" element={<AchievementsScreen />} />
           <Route path="/activities" element={<ActivitiesScreen />} />
-          
+
           <Route path="/new-task" element={<NewTaskScreen />} />
+          <Route path="/edit-task/:id" element={<NewTaskScreen />} />
           <Route path="/new-project" element={<NewProjectScreen />} />
           <Route path="/join-project" element={<JoinProjectScreen />} />
         </Route>

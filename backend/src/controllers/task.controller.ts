@@ -51,6 +51,7 @@ export const deleteTask = async (req: Request<{ id: string }>, res: Response, ne
     const { id } = req.params;
     const requestingUserId = req.user!.userId;
     const requestingUserRole = req.user!.role;
+    console.log(`[DELETE TASK] User: ${requestingUserId}, Role: ${requestingUserRole}, TaskId: ${id}`);
     const deletedTask = await deleteTaskById(id, requestingUserId, requestingUserRole);
     res.status(200).json({ message: 'Task deleted successfully', task: deletedTask });
   } catch (error: any) {
