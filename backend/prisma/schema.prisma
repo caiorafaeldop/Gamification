@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
@@ -11,118 +8,87 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  ADMIN
-  LEADER
-  MEMBER
-}
-
-enum TaskStatus {
-  todo
-  in_progress @map("in-progress")
-  done
-}
-
-// Removido o enum TaskDifficulty, pois a dificuldade agora é um Int.
-
-enum ActivityType {
-  TASK_COMPLETED
-  TASK_CREATED
-  TASK_ASSIGNED
-  TASK_STATUS_CHANGED
-  TASK_DELETED
-  POINTS_ADJUSTED
-  TIER_ACHIEVED
-  STREAK_UPDATED
-
-  PROJECT_CREATED
-  PROJECT_DELETED
-  USER_JOINED_PROJECT
-  USER_LEFT_PROJECT
-  ROLE_CHANGED
-  USER_STATUS_CHANGED
-  ACHIEVEMENT_EARNED
-  ADMIN_ACTION // Adicionado o novo tipo de atividade
-}
-
 model User {
-  id             String        @id @default(uuid())
-  name           String
-  course         String?       // Adicionado conforme frontend
-  avatarColor    String?       // Adicionado conforme frontend
-  email          String        @unique
-  passwordHash   String
-  role           Role          @default(MEMBER)
-  isActive       Boolean       @default(true)
-  connectaPoints Int           @default(0)
-  tierId         String
-  tier           Tier          @relation(fields: [tierId], references: [id])
-  streakCurrent  Int           @default(0)
-  streakBest     Int           @default(0)
-  lastActivityAt DateTime?     @updatedAt
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  createdTasks    Task[]         @relation("CreatedTasks")
-  assignedTasks   Task[]         @relation("AssignedTasks")
-  activityLogs    ActivityLog[]
+  id               String            @id @default(uuid())
+  name             String
+  email            String            @unique
+  passwordHash     String
+  role             Role              @default(MEMBER)
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  connectaPoints   Int               @default(0)
+  streakCurrent    Int               @default(0)
+  streakBest       Int               @default(0)
+  lastActivityAt   DateTime?         @updatedAt
+  tierId           String
+  avatarColor      String?
+  course           String?
+  activityLogs     ActivityLog[]
+  notifications    Notification[]
+  orders           Order[]
+  leaderOfProjects Project[]         @relation("ProjectLeader")
   memberOfProjects ProjectMember[]
-  leaderOfProjects Project[]      @relation("ProjectLeader")
+  assignedTasks    Task[]            @relation("AssignedTasks")
+  createdTasks     Task[]            @relation("CreatedTasks")
+  tier             Tier              @relation(fields: [tierId], references: [id])
   userAchievements UserAchievement[]
-  notifications  Notification[]
-  orders         Order[]
+  createdEvents    Event[]           @relation("CreatedEvents")
 }
 
 model Project {
-  id          String         @id @default(uuid())
-  title       String         @unique
-  description String?
-  category    String?        // Renamed from focusArea
-  leaderId    String
-  leader      User           @relation("ProjectLeader", fields: [leaderId], references: [id])
-  members     ProjectMember[]
-  tasks       Task[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  status      String?        @default("active")
-  progress    Int            @default(0)
-  xpReward    Int            @default(100)
-  color       String?
-  coverUrl    String?
+  id           String          @id @default(uuid())
+  title        String          @unique
+  description  String?
+  category     String?
+  leaderId     String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  status       String?         @default("active")
+  progress     Int             @default(0)
+  xpReward     Int             @default(100)
+  color        String?
+  coverUrl     String?
+  KanbanColumn KanbanColumn[]
+  leader       User            @relation("ProjectLeader", fields: [leaderId], references: [id])
+  members      ProjectMember[]
+  tasks        Task[]
 }
 
 model ProjectMember {
-  userId    String
-  projectId String
-  user      User    @relation(fields: [userId], references: [id])
-  project   Project @relation(fields: [projectId], references: [id])
+  userId     String
+  projectId  String
   assignedAt DateTime @default(now())
+  project    Project  @relation(fields: [projectId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 
   @@id([userId, projectId])
 }
 
 model Task {
-  id                  String        @id @default(uuid())
-  title               String
-  description         String?
-  status              TaskStatus    @default(todo)
-  difficulty          Int           // Alterado de TaskDifficulty para Int
-  pointsReward        Int
+  id                   String        @id @default(uuid())
+  title                String
+  description          String?
+  status               TaskStatus    @default(todo)
+  pointsReward         Int
   estimatedTimeMinutes Int?
-  projectId           String
-  project             Project       @relation(fields: [projectId], references: [id])
-  createdById         String
-  createdBy           User          @relation("CreatedTasks", fields: [createdById], references: [id])
-  assignedToId        String?
-  assignedTo          User?         @relation("AssignedTasks", fields: [assignedToId], references: [id])
-  dueDate             DateTime?
-  completedAt         DateTime?
-  tags                String[]      @default([])
-  requiredTierId      String?
-  requiredTier        Tier?         @relation("RequiredTier", fields: [requiredTierId], references: [id])
-  isExternalDemand    Boolean       @default(false)
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  dueDate              DateTime?
+  completedAt          DateTime?
+  tags                 String[]      @default([])
+  isExternalDemand     Boolean       @default(false)
+  createdById          String
+  assignedToId         String?
+  requiredTierId       String?
+  projectId            String
+  difficulty           Int
+  columnId             String?
+  assignedTo           User?         @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  KanbanColumn         KanbanColumn? @relation(fields: [columnId], references: [id])
+  createdBy            User          @relation("CreatedTasks", fields: [createdById], references: [id])
+  project              Project       @relation(fields: [projectId], references: [id])
+  requiredTier         Tier?         @relation("RequiredTier", fields: [requiredTierId], references: [id])
 }
 
 model Tier {
@@ -131,43 +97,42 @@ model Tier {
   minPoints Int
   order     Int      @unique
   icon      String?
-  users     User[]
-  tasks     Task[]   @relation("RequiredTier")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  tasks     Task[]   @relation("RequiredTier")
+  users     User[]
 }
 
 model ActivityLog {
-  id          String      @id @default(uuid())
-  userId      String
-  user        User        @relation(fields: [userId], references: [id])
-  type        ActivityType
-  description String
+  id           String       @id @default(uuid())
+  userId       String
+  type         ActivityType
+  description  String
   pointsChange Int?
-  createdAt   DateTime    @default(now())
+  createdAt    DateTime     @default(now())
+  user         User         @relation(fields: [userId], references: [id])
 }
 
 model Achievement {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String
-  points      Int      @default(10)
-  color       String?  // Adicionado
-  icon        String?
-  criteria    String   // e.g., "tasks completed 10", "points 100", "streak 5"
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id               String            @id @default(uuid())
+  name             String            @unique
+  description      String
+  icon             String?
+  criteria         String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  color            String?
+  points           Int               @default(10)
   userAchievements UserAchievement[]
 }
 
 model UserAchievement {
   id            String      @id @default(uuid())
   userId        String
-  user          User        @relation(fields: [userId], references: [id])
   achievementId String
-  achievement   Achievement @relation(fields: [achievementId], references: [id])
   earnedAt      DateTime    @default(now())
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
 
   @@unique([userId, achievementId])
 }
@@ -175,12 +140,12 @@ model UserAchievement {
 model Notification {
   id        String   @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   title     String
   message   String
   read      Boolean  @default(false)
-  type      String   // info, success, warning, error
+  type      String
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model StoreItem {
@@ -197,9 +162,72 @@ model StoreItem {
 model Order {
   id        String    @id @default(uuid())
   userId    String
-  user      User      @relation(fields: [userId], references: [id])
   itemId    String
-  item      StoreItem @relation(fields: [itemId], references: [id])
   cost      Int
   createdAt DateTime  @default(now())
+  item      StoreItem @relation(fields: [itemId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model KanbanColumn {
+  id        String     @id
+  title     String
+  order     Int        @default(0)
+  projectId String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime
+  status    TaskStatus @default(todo)
+  Project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  Task      Task[]
+}
+
+enum Role {
+  ADMIN
+  LEADER
+  MEMBER
+}
+
+enum TaskStatus {
+  todo
+  in_progress @map("in-progress")
+  done
+}
+
+enum ActivityType {
+  TASK_COMPLETED
+  TASK_CREATED
+  TASK_ASSIGNED
+  TASK_STATUS_CHANGED
+  TASK_DELETED
+  POINTS_ADJUSTED
+  TIER_ACHIEVED
+  STREAK_UPDATED
+  PROJECT_CREATED
+  PROJECT_DELETED
+  USER_JOINED_PROJECT
+  USER_LEFT_PROJECT
+  ROLE_CHANGED
+  USER_STATUS_CHANGED
+  ACHIEVEMENT_EARNED
+  ADMIN_ACTION
+}
+
+enum EventType {
+  MEETING
+  WORKSHOP
+  EVENT
+}
+
+model Event {
+  id          String    @id @default(uuid())
+  title       String
+  type        EventType
+  date        DateTime
+  time        String
+  location    String?
+  description String?
+  createdById String
+  createdBy   User      @relation("CreatedEvents", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

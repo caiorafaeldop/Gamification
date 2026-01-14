@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Type, AlignLeft, ArrowLeft, Rocket, Tag } from 'lucide-react';
+import { createEvent } from '../services/event.service';
 import toast from 'react-hot-toast';
 
 const EVENT_TYPES = [
-    { id: 'meeting', label: 'Reunião', color: 'blue' },
-    { id: 'workshop', label: 'Workshop', color: 'purple' },
-    { id: 'event', label: 'Evento', color: 'yellow' },
+    { id: 'MEETING', label: 'Reunião', color: 'blue' },
+    { id: 'WORKSHOP', label: 'Workshop', color: 'purple' },
+    { id: 'EVENT', label: 'Evento', color: 'yellow' },
 ];
 
 const NewEventScreen = () => {
@@ -14,7 +15,7 @@ const NewEventScreen = () => {
 
     const [formData, setFormData] = useState({
         title: '',
-        type: 'meeting',
+        type: 'MEETING',
         date: '',
         time: '',
         endTime: '',
@@ -38,15 +39,20 @@ const NewEventScreen = () => {
 
         setSubmitting(true);
 
-        // Por enquanto, apenas simula o salvamento
         try {
-            // Simula delay de API
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await createEvent({
+                title: formData.title,
+                type: formData.type as 'MEETING' | 'WORKSHOP' | 'EVENT',
+                date: formData.date,
+                time: formData.time,
+                location: formData.location || undefined,
+                description: formData.description || undefined,
+            });
 
             toast.success('Evento criado com sucesso! 🎉');
             navigate('/activities');
         } catch (err: any) {
-            toast.error('Erro ao criar evento.');
+            toast.error(err.response?.data?.message || 'Erro ao criar evento.');
         } finally {
             setSubmitting(false);
         }

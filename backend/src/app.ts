@@ -14,6 +14,7 @@ import activityRoutes from './routes/activity.routes';
 import kanbanRoutes from './routes/kanban.routes';
 import storeRoutes from './routes/store.routes';
 import notificationRoutes from './routes/notification.routes';
+import eventRoutes from './routes/event.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 const app = express();
@@ -35,6 +36,7 @@ app.use('/api/v1/activities', activityRoutes);
 app.use('/api/v1/kanban', kanbanRoutes);
 app.use('/api/v1/store', storeRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/events', eventRoutes);
 app.use('/api/v1/admin', adminRoutes);
 
 // Basic health check route

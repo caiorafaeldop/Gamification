@@ -3,22 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, AlertCircle, MapPin, Video, Kanban, Plus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
+import { getEvents, Event } from '../services/event.service';
 import { Skeleton } from '../components/Skeleton';
-
-const AGENDA_EVENTS = [
-  { id: 1, title: 'Reunião Geral de Alinhamento', type: 'meeting', date: '14 Out', time: '14:00 - 15:30', location: 'Google Meet', description: 'Atualização semanal de status de todos os projetos.' },
-  { id: 2, title: 'Workshop: Flutter Avançado', type: 'workshop', date: '16 Out', time: '19:00 - 21:00', location: 'Auditório C', description: 'Aprenda técnicas avançadas de animação e gerenciamento de estado.' },
-  { id: 3, title: 'Início do Hackathon 2024', type: 'event', date: '20 Out', time: '09:00', location: 'Centro de Tecnologia', description: 'Abertura oficial e formação de equipes.' },
-];
 
 const ActivitiesScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [deadlines, setDeadlines] = useState<any[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingEvents, setLoadingEvents] = useState(true);
 
   useEffect(() => {
-    const fetchDeadlines = async () => {
+    const fetchData = async () => {
       try {
         const response = await api.get('/tasks/my-tasks');
         setDeadlines(response.data);
@@ -29,7 +26,21 @@ const ActivitiesScreen = () => {
         setLoading(false);
       }
     };
-    fetchDeadlines();
+
+    const fetchEvents = async () => {
+      try {
+        const data = await getEvents();
+        setEvents(data);
+      } catch (err) {
+        console.warn("Could not fetch events", err);
+        setEvents([]);
+      } finally {
+        setLoadingEvents(false);
+      }
+    };
+
+    fetchData();
+    fetchEvents();
   }, []);
 
 
@@ -113,8 +124,7 @@ const ActivitiesScreen = () => {
           </div>
 
           <div className="space-y-4">
-            {/* Mock loading for agenda if it came from API, but keeping it consistent with skeletons if we were waiting */}
-            {loading && AGENDA_EVENTS.length === 0 ? ( // Logic to show skeleton if agenda was dynamic
+            {loadingEvents ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="bg-white dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex gap-4">
                   <Skeleton className="w-14 h-14 rounded-xl flex-shrink-0" />
@@ -125,42 +135,55 @@ const ActivitiesScreen = () => {
                   </div>
                 </div>
               ))
+            ) : events.length === 0 ? (
+              <div className="text-center py-10 text-gray-400 bg-white dark:bg-surface-dark rounded-2xl border border-gray-100 dark:border-gray-800">
+                <p>Nenhum evento agendado.</p>
+                <p className="text-xs mt-2">Clique no botão abaixo para criar o primeiro evento!</p>
+              </div>
             ) : (
-              AGENDA_EVENTS.map((event) => (
-                <div key={event.id} className="bg-white dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 group hover:border-primary/30 transition-colors">
-                  <div className="flex gap-4">
-                    {/* Date Box */}
-                    <div className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 text-center flex-shrink-0">
-                      <span className="text-xs font-bold text-gray-400 uppercase">{event.date.split(' ')[1]}</span>
-                      <span className="text-xl font-black text-secondary dark:text-white">{event.date.split(' ')[0]}</span>
-                    </div>
+              events.map((event) => {
+                const eventDate = new Date(event.date);
+                const day = eventDate.getDate();
+                const month = eventDate.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
 
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide mb-2 inline-block ${event.type === 'meeting' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
-                          event.type === 'workshop' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
-                            'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                          }`}>
-                          {event.type === 'meeting' ? 'Reunião' : event.type === 'workshop' ? 'Workshop' : 'Evento'}
-                        </span>
+                return (
+                  <div key={event.id} className="bg-white dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 group hover:border-primary/30 transition-colors">
+                    <div className="flex gap-4">
+                      {/* Date Box */}
+                      <div className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 text-center flex-shrink-0">
+                        <span className="text-xs font-bold text-gray-400 uppercase">{month}</span>
+                        <span className="text-xl font-black text-secondary dark:text-white">{day}</span>
                       </div>
 
-                      <h4 className="font-bold text-secondary dark:text-white mb-1 group-hover:text-primary transition-colors">{event.title}</h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{event.description}</p>
-
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                        <div className="flex items-center gap-1">
-                          <Clock size={12} /> {event.time}
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide mb-2 inline-block ${event.type === 'MEETING' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
+                            event.type === 'WORKSHOP' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
+                              'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                            }`}>
+                            {event.type === 'MEETING' ? 'Reunião' : event.type === 'WORKSHOP' ? 'Workshop' : 'Evento'}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          {event.location === 'Google Meet' ? <Video size={12} /> : <MapPin size={12} />}
-                          {event.location}
+
+                        <h4 className="font-bold text-secondary dark:text-white mb-1 group-hover:text-primary transition-colors">{event.title}</h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{event.description}</p>
+
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center gap-1">
+                            <Clock size={12} /> {event.time}
+                          </div>
+                          {event.location && (
+                            <div className="flex items-center gap-1">
+                              {event.location.toLowerCase().includes('meet') || event.location.toLowerCase().includes('zoom') ? <Video size={12} /> : <MapPin size={12} />}
+                              {event.location}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
