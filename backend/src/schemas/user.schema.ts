@@ -20,6 +20,9 @@ export const updateUserSchema = z.object({
     isActive: z.boolean().optional(),
     course: z.string().optional(),
     avatarColor: z.string().optional(),
+    bio: z.string().optional(),
+    avatarUrl: z.string().url().optional(),
+    skills: z.array(z.string()).optional(),
   }).partial(),
 });
 

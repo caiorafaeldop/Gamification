@@ -6,12 +6,12 @@ export const findProjectById = async (id: string) => {
     where: { id },
     include: {
       leader: {
-        select: { id: true, name: true, email: true, role: true, avatarColor: true }
+        select: { id: true, name: true, email: true, role: true, avatarColor: true, avatarUrl: true }
       },
       members: {
         include: {
           user: {
-            select: { id: true, name: true, email: true, role: true, avatarColor: true }
+            select: { id: true, name: true, email: true, role: true, avatarColor: true, avatarUrl: true }
           }
         }
       }

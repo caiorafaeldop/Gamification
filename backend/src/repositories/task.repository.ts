@@ -9,7 +9,7 @@ export const findTaskById = async (id: string): Promise<Task | null> => {
   return prisma.task.findUnique({
     where: { id },
     include: {
-      assignedTo: { select: { id: true, name: true, email: true } },
+      assignedTo: { select: { id: true, name: true, email: true, avatarUrl: true } },
       createdBy: { select: { id: true, name: true, email: true } },
       project: { select: { id: true, title: true } },
       requiredTier: true,
@@ -23,7 +23,7 @@ export const updateTask = async (id: string, data: Prisma.TaskUpdateInput, trans
     where: { id },
     data,
     include: {
-      assignedTo: { select: { id: true, name: true, email: true } },
+      assignedTo: { select: { id: true, name: true, email: true, avatarUrl: true } },
       createdBy: { select: { id: true, name: true, email: true } },
       project: { select: { id: true, title: true } },
       requiredTier: true,
@@ -39,7 +39,7 @@ export const findTasksByProjectId = async (projectId: string): Promise<Task[]> =
   return prisma.task.findMany({
     where: { projectId },
     include: {
-      assignedTo: { select: { id: true, name: true } },
+      assignedTo: { select: { id: true, name: true, avatarUrl: true } },
       createdBy: { select: { id: true, name: true } },
       requiredTier: true,
     },

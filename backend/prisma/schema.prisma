@@ -9,32 +9,35 @@ datasource db {
 }
 
 model User {
-  id               String            @id @default(uuid())
-  name             String
-  email            String            @unique
-  passwordHash     String
-  role             Role              @default(MEMBER)
-  isActive         Boolean           @default(true)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  connectaPoints   Int               @default(0)
-  streakCurrent    Int               @default(0)
-  streakBest       Int               @default(0)
-  lastActivityAt   DateTime?         @updatedAt
-  tierId           String
-  avatarColor      String?
-  course           String?
-  activityLogs     ActivityLog[]
-  notifications    Notification[]
-  orders           Order[]
-  leaderOfProjects Project[]         @relation("ProjectLeader")
-  memberOfProjects ProjectMember[]
-  assignedTasks    Task[]            @relation("AssignedTasks")
-  createdTasks     Task[]            @relation("CreatedTasks")
-  tier             Tier              @relation(fields: [tierId], references: [id])
-  userAchievements UserAchievement[]
-  createdEvents    Event[]           @relation("CreatedEvents")
+  id                  String             @id @default(uuid())
+  name                String
+  email               String             @unique
+  passwordHash        String
+  role                Role               @default(MEMBER)
+  isActive            Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  connectaPoints      Int                @default(0)
+  streakCurrent       Int                @default(0)
+  streakBest          Int                @default(0)
+  lastActivityAt      DateTime?          @updatedAt
+  tierId              String
+  avatarColor         String?
+  course              String?
+  bio                 String?
+  avatarUrl           String?
+  skills              String[]           @default([])
+  activityLogs        ActivityLog[]
+  createdEvents       Event[]            @relation("CreatedEvents")
   eventParticipations EventParticipant[]
+  notifications       Notification[]
+  orders              Order[]
+  leaderOfProjects    Project[]          @relation("ProjectLeader")
+  memberOfProjects    ProjectMember[]
+  assignedTasks       Task[]             @relation("AssignedTasks")
+  createdTasks        Task[]             @relation("CreatedTasks")
+  tier                Tier               @relation(fields: [tierId], references: [id])
+  userAchievements    UserAchievement[]
 }
 
 model Project {
@@ -182,6 +185,32 @@ model KanbanColumn {
   Task      Task[]
 }
 
+model Event {
+  id           String             @id @default(uuid())
+  title        String
+  type         EventType
+  date         DateTime
+  time         String
+  location     String?
+  description  String?
+  createdById  String
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  createdBy    User               @relation("CreatedEvents", fields: [createdById], references: [id])
+  participants EventParticipant[]
+}
+
+model EventParticipant {
+  id       String   @id @default(uuid())
+  userId   String
+  eventId  String
+  joinedAt DateTime @default(now())
+  event    Event    @relation(fields: [eventId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, eventId])
+}
+
 enum Role {
   ADMIN
   LEADER
@@ -217,30 +246,4 @@ enum EventType {
   MEETING
   WORKSHOP
   EVENT
-}
-
-model Event {
-  id           String             @id @default(uuid())
-  title        String
-  type         EventType
-  date         DateTime
-  time         String
-  location     String?
-  description  String?
-  createdById  String
-  createdBy    User               @relation("CreatedEvents", fields: [createdById], references: [id])
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  participants EventParticipant[]
-}
-
-model EventParticipant {
-  id        String   @id @default(uuid())
-  userId    String
-  eventId   String
-  user      User     @relation(fields: [userId], references: [id])
-  event     Event    @relation(fields: [eventId], references: [id])
-  joinedAt  DateTime @default(now())
-
-  @@unique([userId, eventId])
 }

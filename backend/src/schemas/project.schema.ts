@@ -32,6 +32,7 @@ export const updateProjectSchema = z.object({
     color: z.string().optional(),
     status: z.string().optional(),
     xpReward: z.number().int().positive().optional(),
+    coverUrl: z.string().url().optional(),
   }).partial(),
 });
 

@@ -12,6 +12,7 @@ import NewProjectScreen from './screens/NewProjectScreen';
 import JoinProjectScreen from './screens/JoinProjectScreen';
 import ActivitiesScreen from './screens/ActivitiesScreen';
 import NewEventScreen from './screens/NewEventScreen';
+import ProfileScreen from './screens/ProfileScreen';
 
 import { Toaster } from 'react-hot-toast';
 
@@ -47,6 +48,7 @@ const App = () => {
           <Route path="/join-project" element={<JoinProjectScreen />} />
           <Route path="/eventos/novo" element={<NewEventScreen />} />
           <Route path="/eventos/editar/:id" element={<NewEventScreen />} />
+          <Route path="/profile" element={<ProfileScreen />} />
         </Route>
       </Routes>
     </HashRouter>

@@ -7,6 +7,7 @@ export const getMyProfile = async (req: Request, res: Response, next: NextFuncti
   try {
     const userId = req.user!.userId;
     const profile = await getMyProfileService(userId);
+    console.log('DEBUG: Profile fetched for user:', profile.id, profile.name);
     res.status(200).json(profile);
   } catch (error: any) {
     next(error);
@@ -85,12 +86,26 @@ export const toggleUserActiveStatus = async (req: Request<{ id: string }, {}, { 
     const { id } = req.params;
     const { isActive } = req.body;
     const adminId = req.user!.userId;
-    
-    const updatedUser = isActive 
+
+    const updatedUser = isActive
       ? await activateUser(id, adminId)
       : await deactivateUser(id, adminId);
-    
+
     res.status(200).json(updatedUser);
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+export const uploadAvatar = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded.' });
+    }
+
+    res.status(200).json({
+      url: (req.file as any).path, // Cloudinary URL
+    });
   } catch (error: any) {
     next(error);
   }

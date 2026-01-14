@@ -2,9 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { deleteTask, getProjectKanban, updateTaskStatus } from '../services/task.service';
+import { getProfile } from '../services/user.service';
+import { uploadProjectCover, updateProject } from '../services/project.service';
 import { useProjectDetails } from '../hooks/useProjects';
 import { Skeleton } from '../components/Skeleton';
 import NewTaskModal from '../components/NewTaskModal';
+import { Camera, Loader } from 'lucide-react';
+import toast from 'react-hot-toast';
 import TaskDetailsModal from '../components/TaskDetailsModal'; // Imported Modal
 
 const ProjectDetailsScreen = () => {
@@ -14,6 +18,26 @@ const ProjectDetailsScreen = () => {
     const [columns, setColumns] = useState<any>(null);
     const [loadingKanban, setLoadingKanban] = useState(true);
     const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
+    const [uploadingCover, setUploadingCover] = useState(false);
+    const [user, setUser] = useState<any>(null);
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const userData = await getProfile();
+                setUser(userData);
+            } catch (error) {
+                console.error("Failed to fetch user profile", error);
+            }
+        };
+        fetchUser();
+    }, []);
+
+    const isLeaderOrAdmin = user && (
+        project?.leaderId === user.id ||
+        project?.leader?.id === user.id ||
+        user.role === 'ADMIN'
+    );
 
     // Task Details Modal State
     const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -31,6 +55,31 @@ const ProjectDetailsScreen = () => {
             console.error("Failed to fetch kanban", err);
         } finally {
             setLoadingKanban(false);
+        }
+    };
+
+    const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('A imagem deve ter no máximo 5MB');
+                return;
+            }
+
+            setUploadingCover(true);
+            try {
+                const response = await uploadProjectCover(file);
+                await updateProject(id!, { coverUrl: response.url });
+                // We should refresh project details or just local state
+                window.location.reload(); // Quickest way to refresh everything including hook state
+                toast.success('Capa do projeto atualizada!');
+            } catch (error) {
+                console.error('Error upload:', error);
+                toast.error('Erro ao fazer upload da imagem.');
+            } finally {
+                setUploadingCover(false);
+            }
         }
     };
 
@@ -182,8 +231,31 @@ const ProjectDetailsScreen = () => {
             <div className="absolute inset-0 z-0 bg-network-pattern opacity-30 pointer-events-none"></div>
 
             {/* Header Section */}
-            <div className="bg-surface-light/80 dark:bg-secondary/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 z-10 p-6 flex-shrink-0">
-                <div className="max-w-full mx-auto">
+            <div className="bg-surface-light/80 dark:bg-secondary/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 z-10 p-6 flex-shrink-0 relative overflow-hidden group">
+                {/* Project Cover Background */}
+                {project.coverUrl && (
+                    <div className="absolute inset-0 z-0 opacity-20 group-hover:opacity-30 transition-opacity">
+                        <img src={project.coverUrl} alt="" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-surface-light dark:to-background-dark"></div>
+                    </div>
+                )}
+
+                {/* Cover Upload Overlay */}
+                {isLeaderOrAdmin && (
+                    <label className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer bg-black/50 hover:bg-black/70 text-white px-3 py-1.5 rounded-full flex items-center gap-2 backdrop-blur-sm">
+                        <input type="file" className="hidden" accept="image/*" onChange={handleCoverUpload} disabled={uploadingCover} />
+                        {uploadingCover ? (
+                            <Loader className="animate-spin" size={16} />
+                        ) : (
+                            <>
+                                <Camera size={16} />
+                                <span className="text-xs font-bold uppercase tracking-wider">Alterar Capa</span>
+                            </>
+                        )}
+                    </label>
+                )}
+
+                <div className="max-w-full mx-auto relative z-10">
                     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                         <div className="space-y-2 max-w-2xl">
                             <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-1">
@@ -218,10 +290,20 @@ const ProjectDetailsScreen = () => {
                                         <span className="material-icons text-sm">add</span>
                                     </button>
                                 </div>
-                                <div className="border-l border-gray-300 dark:border-gray-700 h-8"></div>
-                                <div className="text-right hidden sm:block">
-                                    <p className="text-xs text-gray-500 uppercase font-bold">Líder do Projeto</p>
-                                    <p className="text-sm font-bold text-secondary dark:text-white">{project.leader?.name || "Desconhecido"}</p>
+                                <div className="flex items-center gap-3 border-l border-gray-300 dark:border-gray-700 pl-4 h-10">
+                                    <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-primary shrink-0 overflow-hidden">
+                                        {project.leader?.avatarUrl ? (
+                                            <img src={project.leader.avatarUrl} alt={project.leader.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full bg-gradient-to-tr from-gray-200 to-gray-300 flex items-center justify-center">
+                                                <span className="text-gray-500 font-bold text-xs">{project.leader?.name?.substring(0, 2).toUpperCase()}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="text-left hidden sm:block">
+                                        <p className="text-xs text-gray-500 uppercase font-bold">Líder do Projeto</p>
+                                        <p className="text-sm font-bold text-secondary dark:text-white">{project.leader?.name || "Desconhecido"}</p>
+                                    </div>
                                 </div>
                             </div>
                             <button

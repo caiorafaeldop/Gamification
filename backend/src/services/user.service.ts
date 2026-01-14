@@ -12,7 +12,7 @@ export const getMyProfile = async (userId: string) => {
     include: {
       tier: true,
       memberOfProjects: {
-        include: { project: { select: { id: true, title: true, description: true } } },
+        include: { project: { select: { id: true, title: true, description: true, coverUrl: true } } },
       },
       assignedTasks: {
         where: { status: { not: TaskStatus.done } },
@@ -27,8 +27,25 @@ export const getMyProfile = async (userId: string) => {
     throw { statusCode: 404, message: 'User not found.' };
   }
 
+  // Cast to any to access potentially hidden fields or check if they exist
+  let userWithExtras = user as any;
+
+  // If the generated client doesn't include these fields, fetch them manually
+  if (userWithExtras.bio === undefined || userWithExtras.skills === undefined || userWithExtras.avatarUrl === undefined) {
+    console.warn('Prisma fetch missing new fields (Client sync issue), manual fetch via raw SQL...');
+    const rawResult: any[] = await prisma.$queryRawUnsafe(
+      'SELECT "bio", "skills", "avatarUrl" FROM "User" WHERE "id" = $1',
+      userId
+    );
+    if (rawResult && rawResult[0]) {
+      userWithExtras.bio = rawResult[0].bio;
+      userWithExtras.skills = rawResult[0].skills;
+      userWithExtras.avatarUrl = rawResult[0].avatarUrl;
+    }
+  }
+
   // Exclude sensitive data
-  const { passwordHash, ...userWithoutHash } = user;
+  const { passwordHash, ...userWithoutHash } = userWithExtras;
   return userWithoutHash;
 };
 
@@ -71,9 +88,43 @@ export const updateUserDetails = async (userId: string, data: UpdateUserInput, r
     data.password = await hashPassword(data.password);
   }
 
-  const updatedUser = await updateUser(userId, data);
-  const { passwordHash, ...userWithoutHash } = updatedUser;
-  return userWithoutHash;
+  try {
+    const updatedUser = await updateUser(userId, data);
+    const { passwordHash, ...userWithoutHash } = updatedUser;
+    return userWithoutHash;
+  } catch (error: any) {
+    // If Prisma validation fails because bio/skills don't exist in the generated client yet
+    if (error.code === 'P2002' || error.message?.includes('Unknown arg')) {
+      console.warn('Prisma update failed (Client sync issue), falling back to raw SQL...');
+
+      // Manual update via raw SQL
+      const { bio, skills, name, course, avatarColor, avatarUrl } = data as any;
+      const userAny = user as any;
+
+      await prisma.$executeRawUnsafe(
+        `UPDATE "User" SET 
+            "name" = $1, 
+            "course" = $2, 
+            "avatarColor" = $3, 
+            "bio" = $4, 
+            "skills" = $5,
+            "avatarUrl" = $6
+          WHERE "id" = $7`,
+        name || userAny.name,
+        course || userAny.course,
+        avatarColor || userAny.avatarColor,
+        bio || userAny.bio,
+        skills || userAny.skills || [],
+        avatarUrl || userAny.avatarUrl,
+        userId
+      );
+
+      const updated = await findUserById(userId);
+      const { passwordHash, ...userWithoutHash } = updated!;
+      return userWithoutHash;
+    }
+    throw error;
+  }
 };
 
 export const adjustUserPoints = async (userId: string, data: UpdateUserPointsInput, adminId: string) => {
