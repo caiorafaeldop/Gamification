@@ -3,28 +3,29 @@ import prisma from '../utils/prisma';
 import { Role, TaskStatus } from '@prisma/client';
 
 export const getProjects = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const projects = await prisma.project.findMany({
-      include: {
-        members: true,
-        tasks: { select: { status: true } }, // To calculate progress
-      },
-    });
+    try {
+        const projects = await prisma.project.findMany({
+            include: {
+                members: true,
+                leader: { select: { name: true } },
+                tasks: { select: { status: true } }, // To calculate progress
+            },
+        });
 
-    const formattedProjects = projects.map(p => {
-        const totalTasks = p.tasks.length;
-        const completedTasks = p.tasks.filter(t => t.status === TaskStatus.done).length;
-        const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-        return {
-            ...p,
-            progress
-        };
-    });
+        const formattedProjects = projects.map(p => {
+            const totalTasks = p.tasks.length;
+            const completedTasks = p.tasks.filter(t => t.status === TaskStatus.done).length;
+            const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+            return {
+                ...p,
+                progress
+            };
+        });
 
-    res.json(formattedProjects);
-  } catch (error) {
-    next(error);
-  }
+        res.json(formattedProjects);
+    } catch (error) {
+        next(error);
+    }
 };
 
 export const createProject = async (req: Request, res: Response, next: NextFunction) => {
@@ -72,7 +73,7 @@ export const joinProject = async (req: Request, res: Response, next: NextFunctio
         });
 
         if (existing) {
-             return res.status(400).json({ message: 'Already a member' });
+            return res.status(400).json({ message: 'Already a member' });
         }
 
         await prisma.projectMember.create({
@@ -92,8 +93,11 @@ export const getProjectDetails = async (req: Request, res: Response, next: NextF
     try {
         const { id } = req.params;
         const project = await prisma.project.findUnique({
-             where: { id },
-             include: { members: { include: { user: { select: { id: true, name: true, avatarColor: true }} } } }
+            where: { id },
+            include: {
+                members: { include: { user: { select: { id: true, name: true, avatarColor: true } } } },
+                leader: { select: { id: true, name: true, avatarColor: true } }
+            }
         });
         if (!project) return res.status(404).json({ message: 'Project not found' });
         res.json(project);

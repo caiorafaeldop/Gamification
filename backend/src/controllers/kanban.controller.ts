@@ -1,98 +1,65 @@
-import { Request, Response } from 'express';
-import prisma from '../utils/prisma';
-import { TaskStatus } from '@prisma/client';
+import { Request, Response, NextFunction } from 'express';
+import { getProjectBoard, createColumnService, updateColumnService, deleteColumnService, moveTaskService, reorderColumnsService } from '../services/kanban.service';
 
-export const getProjectKanban = async (req: Request, res: Response) => {
-  const { projectId } = req.params;
-  const userId = req.user?.userId;
-
-  if (!userId) {
-    return res.status(401).json({ message: 'User not authenticated' });
-  }
-
+export const getProjectKanban = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      include: { members: true },
-    });
-
-    if (!project) {
-      return res.status(404).json({ message: 'Project not found' });
-    }
-
-    const isMember = project.members.some((m) => m.userId === userId);
-    if (!isMember && req.user?.role !== 'ADMIN') { // Basic check
-      return res.status(403).json({ message: 'You are not a member of this project' });
-    }
-
-    const tasks = await prisma.task.findMany({
-      where: { projectId },
-      include: {
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            avatarColor: true,
-          },
-        },
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    });
-
-    const columns = {
-      [TaskStatus.todo]: tasks.filter((t) => t.status === TaskStatus.todo),
-      [TaskStatus.in_progress]: tasks.filter((t) => t.status === TaskStatus.in_progress),
-      [TaskStatus.done]: tasks.filter((t) => t.status === TaskStatus.done),
-    };
-
-    return res.json(columns);
+    const { projectId } = req.params;
+    const result = await getProjectBoard(projectId);
+    res.json(result);
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Error fetching kanban board' });
+    next(error);
   }
 };
 
-export const moveTask = async (req: Request, res: Response) => {
-  const { taskId } = req.params;
-  const { status } = req.body;
-
-  if (!Object.values(TaskStatus).includes(status)) {
-    return res.status(400).json({ message: 'Invalid task status' });
-  }
-
+export const createColumn = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const task = await prisma.task.findUnique({
-        where: { id: taskId },
-        include: { project: { include: { members: true } } }
-    }) as any; // Cast to any to avoid complex Prisma type deduction issues for now
-
-    if (!task) {
-        return res.status(404).json({ message: 'Task not found' });
-    }
-
-    // Verify permission: User must be member of the project or admin
-    // Or maybe just assignee?
-    // For now, any project member can move tasks (collaborative).
-    const userId = req.user?.userId;
-    const isMember = task.project.members.some((m: any) => m.userId === userId);
-    
-    if (!isMember && req.user?.role !== 'ADMIN') {
-        return res.status(403).json({ message: 'Not authorized to move this task' });
-    }
-
-    const updatedTask = await prisma.task.update({
-      where: { id: taskId },
-      data: { status },
-    });
-
-    return res.json(updatedTask);
+    const { projectId, title, order } = req.body;
+    const result = await createColumnService(projectId, title, order);
+    res.status(201).json(result);
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Error moving task' });
+    next(error);
+  }
+};
+
+export const updateColumn = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { columnId } = req.params;
+    const result = await updateColumnService(columnId, req.body);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteColumn = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { columnId } = req.params;
+    await deleteColumnService(columnId);
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const moveTask = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { taskId } = req.params;
+    const { columnId } = req.body;
+    const userId = req.user!.userId;
+    const isAdmin = req.user!.role === 'ADMIN';
+    const result = await moveTaskService(taskId, columnId, userId, isAdmin);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const reorderColumns = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { projectId, columnIds } = req.body;
+    const result = await reorderColumnsService(projectId, columnIds);
+    res.json(result);
+  } catch (error) {
+    next(error);
   }
 };
