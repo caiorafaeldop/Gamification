@@ -48,6 +48,11 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
                 location,
                 description,
                 createdById: userId,
+                participants: {
+                    create: {
+                        userId: userId
+                    }
+                }
             },
             include: {
                 createdBy: {
@@ -159,6 +164,12 @@ export const deleteEvent = async (req: Request, res: Response, next: NextFunctio
             return res.status(403).json({ message: 'Você não tem permissão para excluir este evento.' });
         }
 
+        // First delete all participants to avoid foreign key constraint
+        await prisma.eventParticipant.deleteMany({
+            where: { eventId: id }
+        });
+
+        // Then delete the event
         await prisma.event.delete({
             where: { id }
         });
