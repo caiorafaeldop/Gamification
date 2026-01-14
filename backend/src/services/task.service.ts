@@ -45,10 +45,19 @@ export const createNewTask = async (data: CreateTaskInput, createdById: string) 
 
   const pointsReward = calculateTaskPoints(data.difficulty, data.estimatedTimeMinutes);
 
+  let initialStatus = TaskStatus.todo;
+  if (data.columnId) {
+    const column = await prisma.kanbanColumn.findUnique({ where: { id: data.columnId } }) as any;
+    if (column) {
+      initialStatus = column.status;
+    }
+  }
+
   return prisma.$transaction(async (tx) => {
     const task = await createTask({
       title: data.title,
       description: data.description,
+      status: initialStatus,
       difficulty: data.difficulty,
       estimatedTimeMinutes: data.estimatedTimeMinutes,
       pointsReward,
@@ -57,6 +66,7 @@ export const createNewTask = async (data: CreateTaskInput, createdById: string) 
       isExternalDemand,
       createdBy: { connect: { id: createdById } },
       project: { connect: { id: data.projectId } },
+      column: data.columnId ? { connect: { id: data.columnId } } : undefined,
       assignedTo: data.assignedToId ? { connect: { id: data.assignedToId } } : undefined,
       requiredTier: data.requiredTierId ? { connect: { id: data.requiredTierId } } : undefined,
     });

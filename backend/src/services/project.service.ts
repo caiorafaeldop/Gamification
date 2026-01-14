@@ -3,6 +3,7 @@ import { createProject, findProjectById, findProjects, updateProject, deleteProj
 import { findUserById, updateUser } from '../repositories/user.repository';
 import { createActivityLog } from '../repositories/activityLog.repository';
 import { CreateProjectInput, UpdateProjectInput, AddProjectMemberInput } from '../schemas/project.schema';
+import { initializeProjectColumns } from './column.service';
 import prisma from '../utils/prisma';
 
 export const createNewProject = async (data: CreateProjectInput, creatorId: string) => {
@@ -30,6 +31,9 @@ export const createNewProject = async (data: CreateProjectInput, creatorId: stri
         create: Array.from(uniqueMemberIds).map(userId => ({ userId })),
       },
     });
+
+    // Initialize default kanban columns
+    await initializeProjectColumns(project.id);
 
     await createActivityLog({
       user: { connect: { id: creatorId } },
@@ -166,10 +170,10 @@ export const removeMemberFromProject = async (projectId: string, userId: string,
 
   // Prevent leader from removing themselves if they are the only leader (simplified logic)
   if (project.leaderId === userId) {
-     // TODO: Check if another leader exists logic if we support multiple leaders, but currently 1 leader per project.
-     // If the leader leaves, they must assign someone else first? Or deletion?
-     // For now, blocking leader leave.
-     throw { statusCode: 400, message: 'Leader cannot leave the project without assigning a new leader.' };
+    // TODO: Check if another leader exists logic if we support multiple leaders, but currently 1 leader per project.
+    // If the leader leaves, they must assign someone else first? Or deletion?
+    // For now, blocking leader leave.
+    throw { statusCode: 400, message: 'Leader cannot leave the project without assigning a new leader.' };
   }
 
   return prisma.$transaction(async (tx) => {

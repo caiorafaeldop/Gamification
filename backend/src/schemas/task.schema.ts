@@ -9,6 +9,7 @@ export const createTaskSchema = z.object({
     difficulty: z.number().int('Difficulty must be an integer').min(1, 'Difficulty must be between 1 and 10').max(10, 'Difficulty must be between 1 and 10'),
     estimatedTimeMinutes: z.coerce.number().int('Estimated time must be an integer').min(1, 'Estimated time must be at least 1 minute').optional().nullable(),
     projectId: uuidSchema,
+    columnId: optionalUuidSchema,
     assignedToId: optionalUuidSchema,
     dueDate: z.string().datetime().optional().nullable(),
     tags: z.array(z.string()).optional(),
