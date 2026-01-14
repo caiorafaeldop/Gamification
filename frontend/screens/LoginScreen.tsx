@@ -2,31 +2,28 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Network, Rocket, Mail, Lock, EyeOff, Loader2 } from 'lucide-react';
 import { login, register, resetPassword } from '../services/auth.service';
+import toast from 'react-hot-toast';
 
 const LoginScreen = () => {
   const navigate = useNavigate();
   const [view, setView] = useState<'login' | 'register' | 'forgot-password'>('login');
-  
+
   // Form States
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
+
   // Register specific
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+
   // Forgot Password specific
   const [newPassword, setNewPassword] = useState('');
   const [secretWord, setSecretWord] = useState('');
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const resetForm = () => {
-    setError(null);
-    setSuccess(null);
     setEmail('');
     setPassword('');
     setFirstName('');
@@ -39,7 +36,6 @@ const LoginScreen = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
     try {
       const data = await login(email, password);
       localStorage.setItem('token', data.accessToken);
@@ -47,7 +43,7 @@ const LoginScreen = () => {
       navigate('/dashboard');
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || 'Erro ao entrar.');
+      toast.error(err.response?.data?.message || 'Erro ao entrar.');
     } finally {
       setLoading(false);
     }
@@ -55,23 +51,26 @@ const LoginScreen = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password.length < 8) {
+      toast.error('A senha deve ter pelo menos 8 caracteres.');
+      return;
+    }
     if (password !== confirmPassword) {
-      setError('As senhas não coincidem.');
+      toast.error('As senhas não coincidem.');
       return;
     }
     setLoading(true);
-    setError(null);
     try {
       const fullName = `${firstName} ${lastName}`.trim();
       await register(fullName, email, password);
-      setSuccess('Conta criada com sucesso! Faça login.');
+      toast.success('Conta criada com sucesso! Faça login.');
       setTimeout(() => {
         resetForm();
         setView('login');
       }, 2000);
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || 'Erro ao registrar.');
+      toast.error(err.response?.data?.message || 'Erro ao registrar.');
     } finally {
       setLoading(false);
     }
@@ -79,22 +78,25 @@ const LoginScreen = () => {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (newPassword.length < 8) {
+      toast.error('A nova senha deve ter pelo menos 8 caracteres.');
+      return;
+    }
     setLoading(true);
-    setError(null);
     try {
-      if (secretWord !== 'ciconectado') { 
-         // Client-side check helpful but backend is source of truth. 
-         // We can submit anyway or check here. Backend checks `ciconectado` securely.
+      if (secretWord !== 'ciconectado') {
+        // Client-side check helpful but backend is source of truth. 
+        // We can submit anyway or check here. Backend checks `ciconectado` securely.
       }
       await resetPassword(email, newPassword, secretWord);
-      setSuccess('Senha redefinida com sucesso! Faça login.');
+      toast.success('Senha redefinida com sucesso! Faça login.');
       setTimeout(() => {
         resetForm();
         setView('login');
       }, 2000);
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || 'Erro ao redefinir senha.');
+      toast.error(err.response?.data?.message || 'Erro ao redefinir senha.');
     } finally {
       setLoading(false);
     }
@@ -132,7 +134,7 @@ const LoginScreen = () => {
                 connecta<span className="text-primary">CI</span>
               </span>
             </div>
-            
+
             <h1 className="text-3xl font-display font-extrabold text-secondary dark:text-white mb-2">
               {view === 'login' && 'Bem-vindo de volta!'}
               {view === 'register' && 'Crie sua conta'}
@@ -144,17 +146,8 @@ const LoginScreen = () => {
               {view === 'forgot-password' && 'Redefina sua senha usando a palavra secreta.'}
             </p>
           </div>
-          
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative animate-fade-in" role="alert">
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
-           {success && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative animate-fade-in" role="alert">
-              <span className="block sm:inline">{success}</span>
-            </div>
-          )}
+
+
 
           {view === 'login' && (
             <form onSubmit={handleLogin} className="space-y-6">
@@ -204,8 +197,8 @@ const LoginScreen = () => {
                 {loading ? <Loader2 className="animate-spin" size={20} /> : 'Entrar na Plataforma'}
               </button>
               <div className="text-center mt-4">
-                  <span className="text-gray-600 dark:text-gray-400 text-sm">Não tem uma conta? </span>
-                  <button type="button" onClick={() => { resetForm(); setView('register'); }} className="text-primary font-bold hover:underline text-sm">Cadastre-se</button>
+                <span className="text-gray-600 dark:text-gray-400 text-sm">Não tem uma conta? </span>
+                <button type="button" onClick={() => { resetForm(); setView('register'); }} className="text-primary font-bold hover:underline text-sm">Cadastre-se</button>
               </div>
             </form>
           )}
@@ -214,26 +207,26 @@ const LoginScreen = () => {
             <form onSubmit={handleRegister} className="space-y-6">
               <div className="space-y-4">
                 <div className="flex gap-4">
-                    <div className="w-1/2">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome</label>
-                        <input
-                        className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 px-4"
-                        placeholder="Nome"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        required
-                        />
-                    </div>
-                    <div className="w-1/2">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sobrenome</label>
-                        <input
-                        className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 px-4"
-                        placeholder="Sobrenome"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        required
-                        />
-                    </div>
+                  <div className="w-1/2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome</label>
+                    <input
+                      className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 px-4"
+                      placeholder="Nome"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="w-1/2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sobrenome</label>
+                    <input
+                      className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 px-4"
+                      placeholder="Sobrenome"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome de usuário ou Email</label>
@@ -256,7 +249,7 @@ const LoginScreen = () => {
                     required
                   />
                 </div>
-                 <div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Digite a senha novamente</label>
                   <input
                     className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 px-4"
@@ -275,15 +268,15 @@ const LoginScreen = () => {
               >
                 {loading ? <Loader2 className="animate-spin" size={20} /> : 'Registrar'}
               </button>
-               <div className="text-center mt-4">
-                  <span className="text-gray-600 dark:text-gray-400 text-sm">Já tem uma conta? </span>
-                  <button type="button" onClick={() => { resetForm(); setView('login'); }} className="text-primary font-bold hover:underline text-sm">Entrar</button>
+              <div className="text-center mt-4">
+                <span className="text-gray-600 dark:text-gray-400 text-sm">Já tem uma conta? </span>
+                <button type="button" onClick={() => { resetForm(); setView('login'); }} className="text-primary font-bold hover:underline text-sm">Entrar</button>
               </div>
             </form>
           )}
 
           {view === 'forgot-password' && (
-             <form onSubmit={handleResetPassword} className="space-y-6">
+            <form onSubmit={handleResetPassword} className="space-y-6">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email ou Nome de Usuário</label>
@@ -295,7 +288,7 @@ const LoginScreen = () => {
                     required
                   />
                 </div>
-                 <div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nova Senha</label>
                   <input
                     className="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-surface-dark dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-3 px-4"
@@ -324,8 +317,8 @@ const LoginScreen = () => {
               >
                 {loading ? <Loader2 className="animate-spin" size={20} /> : 'Redefinir Senha'}
               </button>
-               <div className="text-center mt-4">
-                  <button type="button" onClick={() => { resetForm(); setView('login'); }} className="text-primary font-bold hover:underline text-sm">Voltar para o Login</button>
+              <div className="text-center mt-4">
+                <button type="button" onClick={() => { resetForm(); setView('login'); }} className="text-primary font-bold hover:underline text-sm">Voltar para o Login</button>
               </div>
             </form>
           )}

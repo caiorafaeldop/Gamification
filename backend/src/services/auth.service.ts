@@ -1,5 +1,5 @@
 import { Prisma, Role } from '@prisma/client';
-import { findUserByEmail, findUserByName, createUser, updateUserTier } from '../repositories/user.repository';
+import { findUserByEmail, findUserByName, findUserById, createUser, updateUserTier } from '../repositories/user.repository';
 import { hashPassword, comparePasswords } from '../utils/bcrypt';
 import { generateAccessToken, generateRefreshToken, verifyToken } from '../utils/jwt';
 import { LoginInput, RegisterInput } from '../schemas/auth.schema';
@@ -37,7 +37,7 @@ export const registerUser = async (data: RegisterInput) => {
 
 export const loginUser = async (data: LoginInput) => {
   let user = await findUserByEmail(data.email);
-  
+
   if (!user) {
     user = await findUserByName(data.email);
   }
@@ -69,7 +69,7 @@ export const refreshAuthToken = async (refreshToken: string) => {
     throw { statusCode: 403, message: 'Invalid or expired refresh token.' };
   }
 
-  const user = await findUserByEmail(decoded.userId); // Assuming userId is stored in refresh token
+  const user = await findUserById(decoded.userId); // Corrigido: buscar por ID, não por email
   if (!user || !user.isActive) {
     throw { statusCode: 403, message: 'User not found or inactive.' };
   }
