@@ -149,7 +149,7 @@ const DashboardScreen = () => {
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
-                    <Link to="/project-details" className="text-sm font-bold text-secondary dark:text-white hover:text-primary dark:hover:text-primary transition-colors flex items-center gap-1">
+                    <Link to={`/project-details/${project.id}`} className="text-sm font-bold text-secondary dark:text-white hover:text-primary dark:hover:text-primary transition-colors flex items-center gap-1">
                       Acessar <ArrowRight size={16} />
                     </Link>
                   </div>
