@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Network, Rocket, Mail, Lock, EyeOff, Loader2 } from 'lucide-react';
 import { login, register, resetPassword } from '../services/auth.service';
 import toast from 'react-hot-toast';
+import logo from '../assets/logo.jpeg';
 
 const LoginScreen = () => {
   const navigate = useNavigate();
@@ -125,13 +126,11 @@ const LoginScreen = () => {
       {/* Form Side */}
       <div className="w-full md:w-1/2 lg:w-7/12 flex items-center justify-center p-4 sm:p-8 lg:p-12 relative">
         <div className="w-full max-w-md space-y-8">
-          <div className="flex flex-col items-center md:items-start text-center md:text-left">
-            <div className="flex items-center gap-2 mb-8 group cursor-pointer" onClick={() => { resetForm(); setView('login'); }}>
-              <div className="relative w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/30 group-hover:scale-105 transition-transform">
-                <Network size={20} />
-              </div>
+          <div className="flex flex-col items-center text-center">
+            <div className="mb-10 group cursor-pointer inline-flex items-center gap-3 px-5 py-3.5 rounded-md bg-white/50 dark:bg-white/5 backdrop-blur-md border border-white dark:border-white/10 shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all duration-300" onClick={() => { resetForm(); setView('login'); }}>
+              <img src={logo} alt="ConnectaCI Logo" className="h-10 w-auto rounded-sm shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform" />
               <span className="font-display font-bold text-2xl text-secondary dark:text-white tracking-tight">
-                connecta<span className="text-primary">CI</span>
+                Connecta<span className="text-primary">CI</span>
               </span>
             </div>
 
