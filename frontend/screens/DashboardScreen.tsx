@@ -29,35 +29,35 @@ const DashboardScreen = () => {
     <div className="p-4 sm:p-6 lg:p-8 space-y-8 max-w-7xl mx-auto animate-pulse">
       {/* Header Card Skeleton */}
       <Skeleton height="300px" className="w-full rounded-3xl" />
-      
+
       {/* Main Grid Skeleton */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-10">
           <section>
-             <div className="flex justify-between items-end mb-6">
-                <Skeleton width="40%" height="32px" />
-                <Skeleton width="100px" height="20px" />
-             </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Skeleton height="200px" className="rounded-2xl" />
-                <Skeleton height="200px" className="rounded-2xl" />
-             </div>
+            <div className="flex justify-between items-end mb-6">
+              <Skeleton width="40%" height="32px" />
+              <Skeleton width="100px" height="20px" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Skeleton height="200px" className="rounded-2xl" />
+              <Skeleton height="200px" className="rounded-2xl" />
+            </div>
           </section>
         </div>
 
         {/* Sidebar Widgets Skeleton */}
         <div className="space-y-8">
-           <Skeleton height="200px" className="rounded-2xl" />
-           <Skeleton height="200px" className="rounded-2xl" />
+          <Skeleton height="200px" className="rounded-2xl" />
+          <Skeleton height="200px" className="rounded-2xl" />
         </div>
       </div>
     </div>
   );
-  
+
   if (error) return (
-      <div className="flex h-screen items-center justify-center bg-surface-light dark:bg-background-dark text-red-500">
-          {error}
-      </div>
+    <div className="flex h-screen items-center justify-center bg-surface-light dark:bg-background-dark text-red-500">
+      {error}
+    </div>
   );
 
   const { user, activeTaskCount, projects, recentActivity } = data;
@@ -81,7 +81,7 @@ const DashboardScreen = () => {
               Você tem {activeTaskCount} tarefas em andamento. Continue colaborando para subir no ranking!
             </p>
             <div className="mt-6 flex flex-wrap gap-3 justify-center lg:justify-start">
-              <button onClick={() => navigate('/kanban')} className="px-5 py-2.5 bg-secondary dark:bg-white text-white dark:text-secondary rounded-lg font-bold text-sm hover:opacity-90 transition-opacity flex items-center gap-2 shadow-lg">
+              <button onClick={() => navigate('/activities')} className="px-5 py-2.5 bg-secondary dark:bg-white text-white dark:text-secondary rounded-lg font-bold text-sm hover:opacity-90 transition-opacity flex items-center gap-2 shadow-lg">
                 <CheckSquare size={16} /> Ver Tarefas
               </button>
               <button onClick={() => navigate('/ranking')} className="px-5 py-2.5 bg-primary/10 text-primary border border-primary/20 rounded-lg font-bold text-sm hover:bg-primary/20 transition-colors flex items-center gap-2">
@@ -126,8 +126,8 @@ const DashboardScreen = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {projects.length === 0 ? (
                 <div className="col-span-2 text-center py-10 bg-white dark:bg-surface-dark rounded-2xl border border-gray-100 dark:border-gray-800">
-                    <p className="text-gray-500">Você ainda não participa de nenhum projeto.</p>
-                    <Link to="/projects" className="text-primary font-bold mt-2 inline-block">Procurar Projetos</Link>
+                  <p className="text-gray-500">Você ainda não participa de nenhum projeto.</p>
+                  <Link to="/projects" className="text-primary font-bold mt-2 inline-block">Procurar Projetos</Link>
                 </div>
               ) : projects.map((project: any) => (
                 <div key={project.id} className="bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-md hover:shadow-lg transition-all border border-gray-100 dark:border-gray-800 group relative overflow-hidden">
@@ -149,7 +149,7 @@ const DashboardScreen = () => {
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
-                     <Link to="/project-details" className="text-sm font-bold text-secondary dark:text-white hover:text-primary dark:hover:text-primary transition-colors flex items-center gap-1">
+                    <Link to="/project-details" className="text-sm font-bold text-secondary dark:text-white hover:text-primary dark:hover:text-primary transition-colors flex items-center gap-1">
                       Acessar <ArrowRight size={16} />
                     </Link>
                   </div>
@@ -161,17 +161,17 @@ const DashboardScreen = () => {
 
         {/* Sidebar Widgets */}
         <div className="space-y-8">
-           {/* Recentes */}
+          {/* Recentes */}
           <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-md border border-gray-100 dark:border-gray-800">
             <h3 className="font-display font-bold text-lg text-secondary dark:text-white mb-4">Atividade Recente</h3>
             <div className="space-y-3">
               {recentActivity.length === 0 ? <p className="text-sm text-gray-500">Nenhuma atividade recente.</p> : recentActivity.map((activity: any) => (
-                   <div key={activity.id} className="bg-gray-50 dark:bg-surface-darker p-3 rounded-xl shadow-sm flex items-center gap-3">
-                    <div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">{activity.description}</p>
-                        <p className="text-xs text-gray-400">{new Date(activity.createdAt).toLocaleDateString()}</p>
-                    </div>
+                <div key={activity.id} className="bg-gray-50 dark:bg-surface-darker p-3 rounded-xl shadow-sm flex items-center gap-3">
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">{activity.description}</p>
+                    <p className="text-xs text-gray-400">{new Date(activity.createdAt).toLocaleDateString()}</p>
                   </div>
+                </div>
               ))}
             </div>
           </div>
