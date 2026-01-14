@@ -16,6 +16,7 @@ import {
   LogOut,
   User
 } from 'lucide-react';
+import logo from '../assets/logo.jpeg';
 import { getProfile } from '../services/user.service';
 import { Skeleton } from './Skeleton';
 
@@ -103,11 +104,9 @@ const Layout = () => {
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
       `}>
         <div className="h-16 flex items-center px-6 border-b border-gray-100 dark:border-gray-800/50">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/dashboard')}>
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/30">
-              <Network size={18} />
-            </div>
-            <span className="font-display font-bold text-xl text-secondary dark:text-white tracking-tight">connecta</span>
+          <div className="flex items-center gap-2 cursor-pointer p-2 rounded-md bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 shadow-sm shadow-primary/5 hover:shadow-md hover:shadow-primary/10 transition-all duration-300" onClick={() => navigate('/dashboard')}>
+            <img src={logo} alt="ConnectaCI Logo" className="h-7 w-auto rounded-sm shadow-sm" />
+            <span className="font-display font-bold text-lg text-secondary dark:text-white tracking-tight">Connecta<span className="text-primary">CI</span></span>
           </div>
         </div>
 
