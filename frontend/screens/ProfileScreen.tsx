@@ -173,6 +173,21 @@ const ProfileScreen = () => {
                                 {user?.role === 'ADMIN' ? 'Administrador' : user?.role === 'LEADER' ? 'Líder' : 'Estudante'}
                             </span>
                         </div>
+
+                        {/* Level Progress Bar (Gamification) */}
+                        <div className="mt-1 mb-4 max-w-sm mx-auto md:mx-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[12px] font-bold uppercase tracking-wider text-slate-400 mb-1 gap-1 sm:gap-0">
+                                <span>Progresso para Nível{' '}{(user?.level || 1) + 1}:</span>
+                                <span className="text-primary text-xs">{user?.connectaPoints || 0} / {((user?.level || 1) * 1000)} XP</span>
+                            </div>
+                            <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50 shadow-inner">
+                                <div
+                                    className="bg-gradient-to-r from-primary to-sky-400 h-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(59,130,246,0.3)]"
+                                    style={{ width: `${Math.min(((user?.connectaPoints || 0) / ((user?.level || 1) * 1000)) * 100, 100)}%` }}
+                                ></div>
+                            </div>
+                        </div>
+
                         <p className="text-slate-500 dark:text-slate-400 max-w-2xl mb-4 font-medium italic">
                             {user?.bio || 'Nenhuma biografia definida. Clique em editar para adicionar uma!'}
                         </p>
@@ -290,7 +305,7 @@ const ProfileScreen = () => {
                                 disabled={saving}
                                 className="px-8 py-2.5 rounded-lg bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:bg-blue-600 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-50"
                             >
-                                {saving ? <Loader className="animate-spin" size={20} /> : <Save size={20} />}
+                                {saving ? <Loader className="animate-spin" size={28} /> : <Save size={28} />}
                                 Salvar Alterações
                             </button>
                         </div>
@@ -299,37 +314,37 @@ const ProfileScreen = () => {
             ) : (
                 /* View Mode (Design Stats and Projects) */
                 <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-300">
-                    {/* Stats Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white dark:bg-surface-dark rounded-xl p-5 border border-slate-200 dark:border-slate-700 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+                    {/* Stats Row - Horizontal Scroll on Mobile */}
+                    <div className="flex overflow-x-auto gap-4 pb-4 md:pb-0 md:grid md:grid-cols-3 md:gap-6 scrollbar-hide snap-x">
+                        <div className="bg-white dark:bg-surface-dark rounded-xl p-5 border border-slate-200 dark:border-slate-700 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow min-w-[280px] md:min-w-0 snap-center">
                             <div className="w-12 h-12 rounded-lg bg-yellow-500/10 flex items-center justify-center text-yellow-600 dark:text-yellow-400">
                                 <Trophy size={24} />
                             </div>
                             <div>
                                 <p className="text-sm text-slate-500 dark:text-slate-400">Nível Atual</p>
-                                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                <p className="text-xl font-bold text-slate-900 dark:text-white">
                                     {typeof user?.tier === 'object' ? user.tier.name : (user?.tier || 'Iniciante')}
                                 </p>
                             </div>
                         </div>
 
-                        <div className="bg-white dark:bg-surface-dark rounded-xl p-5 border border-slate-200 dark:border-slate-700 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="bg-white dark:bg-surface-dark rounded-xl p-5 border border-slate-200 dark:border-slate-700 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow min-w-[280px] md:min-w-0 snap-center">
                             <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                                 <Zap size={24} />
                             </div>
                             <div>
-                                <p className="text-sm text-slate-500 dark:text-slate-400">Total XP</p>
-                                <p className="text-2xl font-bold text-slate-900 dark:text-white">{user?.connectaPoints || 0} XP</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">XP Atual</p>
+                                <p className="text-xl font-bold text-slate-900 dark:text-white">{user?.connectaPoints || 0} XP</p>
                             </div>
                         </div>
 
-                        <div className="bg-white dark:bg-surface-dark rounded-xl p-5 border border-slate-200 dark:border-slate-700 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="bg-white dark:bg-surface-dark rounded-xl p-5 border border-slate-200 dark:border-slate-700 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow min-w-[280px] md:min-w-0 snap-center">
                             <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center text-green-600 dark:text-green-400">
                                 <BarChart3 size={24} />
                             </div>
                             <div>
                                 <p className="text-sm text-slate-500 dark:text-slate-400">Ranking Global</p>
-                                <p className="text-2xl font-bold text-slate-900 dark:text-white"># --</p>
+                                <p className="text-xl font-bold text-slate-900 dark:text-white"># --</p>
                             </div>
                         </div>
                     </div>
@@ -345,7 +360,7 @@ const ProfileScreen = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {user.memberOfProjects.map((membership: any) => (
                                     <div key={membership.project.id} className="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group cursor-pointer" onClick={() => navigate(`/project-details/${membership.project.id}`)}>
-                                        <div className="h-40 bg-slate-100 dark:bg-slate-800 relative flex items-center justify-center overflow-hidden">
+                                        <div className="h-32 md:h-40 bg-slate-100 dark:bg-slate-800 relative flex items-center justify-center overflow-hidden">
                                             {membership.project.coverUrl ? (
                                                 <img src={membership.project.coverUrl} alt={membership.project.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                                             ) : (
