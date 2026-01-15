@@ -406,7 +406,7 @@ const ActivitiesScreen = () => {
             <button
               onClick={openNewEventModal}
               className="w-full mt-4 px-4 py-3 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:bg-sky-500 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
-              style={{ marginBottom: 'calc(env(safe-area-inset-bottom, 20px) + 30px)' }}
+              style={{ marginBottom: 'calc(env(safe-area-inset-bottom, 20px) + 32px)' }}
             >
               <Plus size={18} />
               Criar Novo Evento

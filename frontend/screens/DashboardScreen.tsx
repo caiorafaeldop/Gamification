@@ -63,7 +63,7 @@ const DashboardScreen = () => {
   const { user, activeTaskCount, projects, recentActivity } = data;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8 max-w-7xl mx-auto" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 20px) + 32px)' }}>
       {/* Header Card */}
       <header className="relative rounded-3xl overflow-hidden bg-surface-light dark:bg-surface-dark shadow-xl border border-gray-100 dark:border-gray-700">
         <div className="absolute inset-0 bg-network-pattern opacity-50 dark:opacity-20 pointer-events-none"></div>
