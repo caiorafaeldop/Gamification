@@ -13,8 +13,9 @@ export const findTierByName = async (name: string): Promise<Tier | null> => {
   return prisma.tier.findUnique({ where: { name } });
 };
 
-export const findAllTiers = async (): Promise<Tier[]> => {
-  return prisma.tier.findMany({ orderBy: { order: 'asc' } });
+export const findAllTiers = async (transaction?: Prisma.TransactionClient): Promise<Tier[]> => {
+  const client = transaction || prisma;
+  return client.tier.findMany({ orderBy: { order: 'asc' } });
 };
 
 export const updateTier = async (id: string, data: Prisma.TierUpdateInput): Promise<Tier> => {
@@ -25,8 +26,9 @@ export const deleteTier = async (id: string): Promise<Tier> => {
   return prisma.tier.delete({ where: { id } });
 };
 
-export const findTierByPoints = async (points: number): Promise<Tier> => {
-  const tier = await prisma.tier.findMany({
+export const findTierByPoints = async (points: number, transaction?: Prisma.TransactionClient): Promise<Tier> => {
+  const client = transaction || prisma;
+  const tier = await client.tier.findMany({
     where: { minPoints: { lte: points } },
     orderBy: { minPoints: 'desc' },
     take: 1,

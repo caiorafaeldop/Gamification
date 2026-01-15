@@ -6,15 +6,17 @@ export const findUserByEmail = async (email: string): Promise<User | null> => {
 };
 
 export const findUserByName = async (name: string): Promise<User | null> => {
-  return prisma.user.findFirst({ where: { name } }); 
+  return prisma.user.findFirst({ where: { name } });
 };
 
-export const findUserById = async (id: string): Promise<User | null> => {
-  return prisma.user.findUnique({ where: { id } });
+export const findUserById = async (id: string, transaction?: Prisma.TransactionClient): Promise<User | null> => {
+  const client = transaction || prisma;
+  return client.user.findUnique({ where: { id } });
 };
 
-export const createUser = async (data: Prisma.UserCreateInput): Promise<User> => {
-  return prisma.user.create({ data });
+export const createUser = async (data: Prisma.UserCreateInput, transaction?: Prisma.TransactionClient): Promise<User> => {
+  const client = transaction || prisma;
+  return client.user.create({ data });
 };
 
 // Atualizado para aceitar um cliente de transação
@@ -29,9 +31,10 @@ export const findUsers = async (params: {
   cursor?: Prisma.UserWhereUniqueInput;
   where?: Prisma.UserWhereInput;
   orderBy?: Prisma.UserOrderByWithRelationInput;
-}): Promise<User[]> => {
+}, transaction?: Prisma.TransactionClient): Promise<User[]> => {
+  const client = transaction || prisma;
   const { skip, take, cursor, where, orderBy } = params;
-  return prisma.user.findMany({
+  return client.user.findMany({
     skip,
     take,
     cursor,

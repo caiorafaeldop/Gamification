@@ -1,8 +1,9 @@
 import prisma from '../utils/prisma';
 import { Prisma, Task, TaskStatus } from '@prisma/client';
 
-export const createTask = async (data: Prisma.TaskCreateInput): Promise<Task> => {
-  return prisma.task.create({ data });
+export const createTask = async (data: Prisma.TaskCreateInput, transaction?: Prisma.TransactionClient): Promise<Task> => {
+  const client = transaction || prisma;
+  return client.task.create({ data });
 };
 
 export const findTaskById = async (id: string): Promise<Task | null> => {
@@ -31,8 +32,9 @@ export const updateTask = async (id: string, data: Prisma.TaskUpdateInput, trans
   });
 };
 
-export const deleteTask = async (id: string): Promise<Task> => {
-  return prisma.task.delete({ where: { id } });
+export const deleteTask = async (id: string, transaction?: Prisma.TransactionClient): Promise<Task> => {
+  const client = transaction || prisma;
+  return client.task.delete({ where: { id } });
 };
 
 export const findTasksByProjectId = async (projectId: string): Promise<Task[]> => {

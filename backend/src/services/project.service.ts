@@ -3,6 +3,7 @@ import { createProject, findProjectById, findProjects, updateProject, deleteProj
 import { findUserById, updateUser } from '../repositories/user.repository';
 import { createActivityLog } from '../repositories/activityLog.repository';
 import { CreateProjectInput, UpdateProjectInput, AddProjectMemberInput } from '../schemas/project.schema';
+import { checkAndAwardAchievements } from './achievement.service';
 import prisma from '../utils/prisma';
 
 export const createNewProject = async (data: CreateProjectInput, creatorId: string) => {
@@ -25,11 +26,13 @@ export const createNewProject = async (data: CreateProjectInput, creatorId: stri
       color: data.color,
       status: data.status,
       xpReward: data.xpReward,
+      progress: data.progress || 0,
+      coverUrl: data.coverUrl,
       leader: { connect: { id: data.leaderId } },
       members: {
         create: Array.from(uniqueMemberIds).map(userId => ({ userId })),
       },
-    });
+    }, tx);
 
     await createActivityLog({
       user: { connect: { id: creatorId } },
@@ -43,6 +46,8 @@ export const createNewProject = async (data: CreateProjectInput, creatorId: stri
         type: ActivityType.USER_JOINED_PROJECT,
         description: `Joined project "${project.title}".`,
       }, tx);
+      console.log(`[TRIGGER] Project member added, checking achievements for ${memberId}`);
+      await checkAndAwardAchievements(memberId, tx);
     }
 
     return project;
@@ -97,8 +102,24 @@ export const updateProjectDetails = async (id: string, data: UpdateProjectInput,
     }
   }
 
-  const updatedProject = await updateProject(id, data);
-  return updatedProject;
+  return prisma.$transaction(async (tx) => {
+    const updatedProject = await updateProject(id, data, tx);
+
+    // If project is completed (progress = 100), check achievements for all members
+    if (data.progress === 100) {
+      console.log(`[TRIGGER] Project completed, checking achievements for all members of ${id}`);
+      const members = await tx.projectMember.findMany({ where: { projectId: id } });
+      for (const member of members) {
+        await checkAndAwardAchievements(member.userId, tx);
+      }
+    } else if (requestingUserId) {
+      // Check achievements for the requester
+      console.log(`[TRIGGER] Project updated, checking achievements for requester ${requestingUserId}`);
+      await checkAndAwardAchievements(requestingUserId, tx);
+    }
+
+    return updatedProject;
+  });
 };
 
 export const deleteProjectById = async (id: string, adminId: string) => {
@@ -124,7 +145,7 @@ export const addMemberToProject = async (projectId: string, data: AddProjectMemb
     throw { statusCode: 404, message: 'Project not found.' };
   }
 
-  if (requestingUserRole !== Role.ADMIN && project.leaderId !== requestingUserId) {
+  if (requestingUserRole !== Role.ADMIN && project.leaderId !== requestingUserId && requestingUserId !== data.userId) {
     throw { statusCode: 403, message: 'Only the project leader or an admin can add members to this project.' };
   }
 
@@ -139,12 +160,13 @@ export const addMemberToProject = async (projectId: string, data: AddProjectMemb
   }
 
   return prisma.$transaction(async (tx) => {
-    const projectMember = await addProjectMember(projectId, data.userId);
+    const projectMember = await addProjectMember(projectId, data.userId, tx);
     await createActivityLog({
       user: { connect: { id: data.userId } },
       type: ActivityType.USER_JOINED_PROJECT,
       description: `Joined project "${project.title}".`,
     }, tx);
+    await checkAndAwardAchievements(data.userId, tx);
     return projectMember;
   });
 };
@@ -159,21 +181,12 @@ export const removeMemberFromProject = async (projectId: string, userId: string,
     throw { statusCode: 403, message: 'Only the project leader or an admin can remove members from this project.' };
   }
 
-  const isMember = await isUserProjectMember(projectId, userId);
-  if (!isMember) {
-    throw { statusCode: 404, message: 'User is not a member of this project.' };
-  }
-
-  // Prevent leader from removing themselves if they are the only leader (simplified logic)
-  if (project.leaderId === userId) {
-     // TODO: Check if another leader exists logic if we support multiple leaders, but currently 1 leader per project.
-     // If the leader leaves, they must assign someone else first? Or deletion?
-     // For now, blocking leader leave.
-     throw { statusCode: 400, message: 'Leader cannot leave the project without assigning a new leader.' };
-  }
-
   return prisma.$transaction(async (tx) => {
-    const projectMember = await removeProjectMember(projectId, userId);
+    const isMember = await isUserProjectMember(projectId, userId, tx);
+    if (!isMember) {
+      throw { statusCode: 404, message: 'User is not a member of this project.' };
+    }
+    const projectMember = await removeProjectMember(projectId, userId, tx);
     await createActivityLog({
       user: { connect: { id: userId } },
       type: ActivityType.USER_LEFT_PROJECT,

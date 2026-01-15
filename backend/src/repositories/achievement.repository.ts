@@ -13,8 +13,9 @@ export const findAchievementByName = async (name: string): Promise<Achievement |
   return prisma.achievement.findUnique({ where: { name } });
 };
 
-export const findAllAchievements = async (): Promise<Achievement[]> => {
-  return prisma.achievement.findMany({ orderBy: { name: 'asc' } });
+export const findAllAchievements = async (transaction?: Prisma.TransactionClient): Promise<Achievement[]> => {
+  const client = transaction || prisma;
+  return client.achievement.findMany({ orderBy: { name: 'asc' } });
 };
 
 export const updateAchievement = async (id: string, data: Prisma.AchievementUpdateInput): Promise<Achievement> => {
@@ -44,9 +45,10 @@ export const findUserAchievements = async (userId: string, params?: {
   skip?: number;
   take?: number;
   orderBy?: Prisma.UserAchievementOrderByWithRelationInput;
-}): Promise<UserAchievement[]> => {
+}, transaction?: Prisma.TransactionClient): Promise<UserAchievement[]> => {
+  const client = transaction || prisma;
   const { skip, take, orderBy } = params || {};
-  return prisma.userAchievement.findMany({
+  return client.userAchievement.findMany({
     where: { userId },
     include: { achievement: true },
     skip,

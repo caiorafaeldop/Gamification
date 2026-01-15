@@ -23,6 +23,12 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: config.corsOrigin }));
 
+// Global Request Logger
+app.use((req, res, next) => {
+  console.log(`[GLOBAL_LOGGER] ${req.method} ${req.url}`);
+  next();
+});
+
 // Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);

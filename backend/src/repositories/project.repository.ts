@@ -1,8 +1,9 @@
 import prisma from '../utils/prisma';
 import { Prisma, Project, Role, ProjectMember } from '@prisma/client';
 
-export const findProjectById = async (id: string) => {
-  return prisma.project.findUnique({
+export const findProjectById = async (id: string, transaction?: Prisma.TransactionClient) => {
+  const client = transaction || prisma;
+  return client.project.findUnique({
     where: { id },
     include: {
       leader: {
@@ -24,9 +25,10 @@ export const findProjects = async (params: {
   take?: number;
   where?: Prisma.ProjectWhereInput;
   orderBy?: Prisma.ProjectOrderByWithRelationInput;
-}) => {
+}, transaction?: Prisma.TransactionClient) => {
+  const client = transaction || prisma;
   const { skip, take, where, orderBy } = params;
-  return prisma.project.findMany({
+  return client.project.findMany({
     skip,
     take,
     where,
@@ -39,20 +41,24 @@ export const findProjects = async (params: {
   });
 };
 
-export const createProject = async (data: Prisma.ProjectCreateInput): Promise<Project> => {
-  return prisma.project.create({ data });
+export const createProject = async (data: Prisma.ProjectCreateInput, transaction?: Prisma.TransactionClient): Promise<Project> => {
+  const client = transaction || prisma;
+  return client.project.create({ data });
 };
 
-export const updateProject = async (id: string, data: Prisma.ProjectUpdateInput): Promise<Project> => {
-  return prisma.project.update({ where: { id }, data });
+export const updateProject = async (id: string, data: Prisma.ProjectUpdateInput, transaction?: Prisma.TransactionClient): Promise<Project> => {
+  const client = transaction || prisma;
+  return client.project.update({ where: { id }, data });
 };
 
-export const deleteProject = async (id: string): Promise<Project> => {
-  return prisma.project.delete({ where: { id } });
+export const deleteProject = async (id: string, transaction?: Prisma.TransactionClient): Promise<Project> => {
+  const client = transaction || prisma;
+  return client.project.delete({ where: { id } });
 };
 
-export const addProjectMember = async (projectId: string, userId: string): Promise<ProjectMember> => {
-  return prisma.projectMember.create({
+export const addProjectMember = async (projectId: string, userId: string, transaction?: Prisma.TransactionClient): Promise<ProjectMember> => {
+  const client = transaction || prisma;
+  return client.projectMember.create({
     data: {
       projectId,
       userId,
@@ -60,8 +66,9 @@ export const addProjectMember = async (projectId: string, userId: string): Promi
   });
 };
 
-export const removeProjectMember = async (projectId: string, userId: string): Promise<ProjectMember> => {
-  return prisma.projectMember.delete({
+export const removeProjectMember = async (projectId: string, userId: string, transaction?: Prisma.TransactionClient): Promise<ProjectMember> => {
+  const client = transaction || prisma;
+  return client.projectMember.delete({
     where: {
       userId_projectId: {
         projectId,
@@ -71,8 +78,9 @@ export const removeProjectMember = async (projectId: string, userId: string): Pr
   });
 };
 
-export const isUserProjectMember = async (projectId: string, userId: string): Promise<boolean> => {
-  const count = await prisma.projectMember.count({
+export const isUserProjectMember = async (projectId: string, userId: string, transaction?: Prisma.TransactionClient): Promise<boolean> => {
+  const client = transaction || prisma;
+  const count = await client.projectMember.count({
     where: { projectId, userId }
   });
   return count > 0;

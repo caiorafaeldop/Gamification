@@ -11,6 +11,8 @@ export const createProjectSchema = z.object({
     color: z.string().optional(),
     status: z.string().optional(),
     xpReward: z.number().int().positive().optional(),
+    progress: z.number().int().min(0).max(100).optional(),
+    coverUrl: z.string().optional(),
   }),
 });
 
@@ -32,6 +34,8 @@ export const updateProjectSchema = z.object({
     color: z.string().optional(),
     status: z.string().optional(),
     xpReward: z.number().int().positive().optional(),
+    progress: z.number().int().min(0).max(100).optional(),
+    coverUrl: z.string().optional(),
   }).partial(),
 });
 

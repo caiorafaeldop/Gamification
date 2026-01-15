@@ -73,14 +73,32 @@ export const getUserAchievements = async (userId: string, page: number, limit: n
 // This function will be called by other services (e.g., gamification.service)
 // to check if a user has earned any new achievements based on their current state.
 export const checkAndAwardAchievements = async (userId: string, transaction: Prisma.TransactionClient) => {
+  console.log(`[DEBUG_LIVE] checkAndAwardAchievements START for ${userId}`);
   const user = await transaction.user.findUnique({
     where: { id: userId },
     include: {
       _count: {
         select: {
           assignedTasks: { where: { status: TaskStatus.done } },
+          memberOfProjects: true,
+          createdTasks: true,
+          leaderOfProjects: { where: { progress: 100 } },
         },
       },
+      memberOfProjects: {
+        include: {
+          project: {
+            select: { progress: true }
+          }
+        }
+      },
+      assignedTasks: {
+        where: {
+          status: TaskStatus.done,
+          tags: { has: 'bug' }
+        },
+        take: 1
+      }
     },
   });
 
@@ -89,8 +107,25 @@ export const checkAndAwardAchievements = async (userId: string, transaction: Pri
     return;
   }
 
-  const allAchievements = await findAllAchievements();
-  const earnedAchievements = await findUserAchievements(userId);
+  // Get weekly points
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const weeklyPointsResult = await transaction.activityLog.aggregate({
+    where: {
+      userId,
+      createdAt: { gte: sevenDaysAgo },
+      pointsChange: { not: null }
+    },
+    _sum: {
+      pointsChange: true
+    }
+  });
+  const weeklyPoints = weeklyPointsResult._sum.pointsChange || 0;
+
+  const completedProjectsCount = user.memberOfProjects.filter(m => m.project.progress === 100).length;
+
+  const allAchievements = await findAllAchievements(transaction);
+  const earnedAchievements = await findUserAchievements(userId, undefined, transaction);
   const earnedAchievementIds = new Set(earnedAchievements.map(ua => ua.achievementId));
 
   for (const achievement of allAchievements) {
@@ -99,11 +134,18 @@ export const checkAndAwardAchievements = async (userId: string, transaction: Pri
     }
 
     let isEarned = false;
+    console.log(`[DEBUG_LIVE] Checking: ${achievement.name} (${achievement.criteria})`);
+
     // Implement specific criteria checks here
-    // This is a simplified example. In a real app, `criteria` could be a JSON object
-    // or a more structured field that allows for dynamic evaluation.
-    if (achievement.criteria.includes('points')) {
-      const pointsThreshold = parseInt(achievement.criteria.split(' ')[1]); // e.g., "Reach 100 points" -> 100
+    if (achievement.criteria.startsWith('weekly_points >=')) {
+      const threshold = parseInt(achievement.criteria.split('>=')[1].trim());
+      if (!isNaN(threshold) && weeklyPoints >= threshold) {
+        isEarned = true;
+      }
+    } else if (achievement.criteria.includes('points')) {
+      // Handle total points criteria like "points >= 100" or similar
+      const match = achievement.criteria.match(/points\s*>=\s*(\d+)/);
+      const pointsThreshold = match ? parseInt(match[1]) : parseInt(achievement.criteria.split(' ')[1]);
       if (!isNaN(pointsThreshold) && user.connectaPoints >= pointsThreshold) {
         isEarned = true;
       }
@@ -117,6 +159,34 @@ export const checkAndAwardAchievements = async (userId: string, transaction: Pri
       if (!isNaN(streakThreshold) && user.streakCurrent >= streakThreshold) {
         isEarned = true;
       }
+    } else if (achievement.criteria === 'first_project') {
+      if (user._count.memberOfProjects > 0) {
+        isEarned = true;
+      }
+    } else if (achievement.criteria === 'first_task') {
+      if (user._count.createdTasks > 0) {
+        isEarned = true;
+      }
+    } else if (achievement.criteria === 'profile_completed') {
+      if (user.avatarColor && user.course) {
+        isEarned = true;
+      }
+    } else if (achievement.criteria === 'max_score_project') {
+      if (completedProjectsCount >= 1) {
+        isEarned = true;
+      }
+    } else if (achievement.criteria === 'lead_team >= 1') {
+      if (user._count.leaderOfProjects > 0) {
+        isEarned = true;
+      }
+    } else if (achievement.criteria === 'bug_report_validated') {
+      if (user.assignedTasks.length > 0) {
+        isEarned = true;
+      }
+    } else if (achievement.criteria === 'legendary_status') {
+      if (completedProjectsCount >= 10) {
+        isEarned = true;
+      }
     }
     // Add more criteria as needed (e.g., "Create 3 teams", "Be a leader")
 
@@ -127,7 +197,7 @@ export const checkAndAwardAchievements = async (userId: string, transaction: Pri
         type: ActivityType.ACHIEVEMENT_EARNED,
         description: `Earned achievement: "${achievement.name}"!`,
       }, transaction);
-      console.log(`User ${user.name} earned achievement: ${achievement.name}`);
+      console.log(`[SUCCESS] User ${user.name} earned achievement: ${achievement.name}`);
     }
   }
 };

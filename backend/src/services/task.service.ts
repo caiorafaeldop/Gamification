@@ -5,6 +5,7 @@ import { findProjectById, isUserProjectMember } from '../repositories/project.re
 import { createActivityLog } from '../repositories/activityLog.repository';
 import { CreateTaskInput, UpdateTaskInput, MoveTaskInput } from '../schemas/task.schema';
 import { addPointsForTaskCompletion, updateStreakForUser } from './gamification.service';
+import { checkAndAwardAchievements } from './achievement.service';
 import prisma from '../utils/prisma';
 
 const DIFFICULTY_POINTS_MULTIPLIER = 5;
@@ -59,13 +60,16 @@ export const createNewTask = async (data: CreateTaskInput, createdById: string) 
       project: { connect: { id: data.projectId } },
       assignedTo: data.assignedToId ? { connect: { id: data.assignedToId } } : undefined,
       requiredTier: data.requiredTierId ? { connect: { id: data.requiredTierId } } : undefined,
-    });
+    }, tx);
 
     await createActivityLog({
       user: { connect: { id: createdById } },
       type: ActivityType.TASK_CREATED,
       description: `Created task "${task.title}" for project "${project.title}"${isExternalDemand ? ' (External Demand)' : ''}.`,
     }, tx);
+
+    console.log(`[TRIGGER] Task created, checking achievements for ${createdById}`);
+    await checkAndAwardAchievements(createdById, tx);
 
     return task;
   });
