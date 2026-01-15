@@ -55,8 +55,8 @@ const RankingScreen = () => {
   const isCurrentUserInTop10 = currentUserRankData && currentUserRankData.rank <= 10;
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden bg-background-light dark:bg-background-dark">
-      <header className="flex-none pt-6 px-4 lg:px-10 z-20 relative bg-surface-light/80 dark:bg-surface-dark/50 backdrop-blur-md border-b border-gray-100 dark:border-gray-800/50 pb-4">
+    <div className="min-h-full relative bg-background-light dark:bg-background-dark">
+      <header className="pt-6 px-4 lg:px-10 z-20 relative bg-surface-light/80 dark:bg-surface-dark/50 backdrop-blur-md border-b border-gray-100 dark:border-gray-800/50 pb-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
           <h1 className="text-2xl font-display font-bold text-secondary dark:text-white flex items-center gap-2">
             <Trophy className="text-primary" size={24} /> Ranking Global
@@ -68,7 +68,7 @@ const RankingScreen = () => {
         </div>
 
         {/* Temporal Filters - Visual only for now if backend support limited */}
-        <div className="flex overflow-x-auto gap-2 pb-2 custom-scrollbar no-scrollbar items-center">
+        <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide items-center">
           <Filter size={16} className="text-gray-400 mr-2 flex-shrink-0" />
           {FILTERS.map(filter => (
             <button

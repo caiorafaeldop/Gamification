@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  Rocket, Award, Zap, Brain, Users, Bug, MessageSquare, Flame, 
+import {
+  Rocket, Award, Zap, Brain, Users, Bug, MessageSquare, Flame,
   Search, Check, Lock, Trophy, Medal, Star, Target
 } from 'lucide-react';
 import { getAchievements, getMyAchievements } from '../services/achievement.service';
@@ -54,66 +54,66 @@ const AchievementsScreen = () => {
   }, []);
 
   if (loading) {
-     return (
-        <div className="flex flex-col h-full overflow-hidden bg-background-light dark:bg-background-dark relative">
-          <div className="absolute inset-0 z-0 bg-network-pattern opacity-[0.03] pointer-events-none"></div>
-          
-          {/* Header Skeleton */}
-          <header className="h-20 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 bg-surface-light/80 dark:bg-surface-dark/80 glass-effect sticky top-0 z-20 flex-none">
-            <Skeleton className="h-8 w-64" />
-          </header>
-  
-          <div className="flex-1 overflow-y-auto p-4 md:p-8 relative custom-scrollbar z-10">
-            {/* Stats Grid Skeleton */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Skeleton className="h-48 w-full rounded-3xl" />
-              <Skeleton className="h-48 w-full rounded-3xl" />
-              <Skeleton className="h-48 w-full rounded-3xl" />
+    return (
+      <div className="min-h-full bg-background-light dark:bg-background-dark relative">
+        <div className="absolute inset-0 z-0 bg-network-pattern opacity-[0.03] pointer-events-none"></div>
+
+        {/* Header Skeleton */}
+        <header className="h-20 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 bg-surface-light/80 dark:bg-surface-dark/80 glass-effect z-20">
+          <Skeleton className="h-8 w-64" />
+        </header>
+
+        <div className="p-4 md:p-8 relative z-10">
+          {/* Stats Grid Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Skeleton className="h-48 w-full rounded-3xl" />
+            <Skeleton className="h-48 w-full rounded-3xl" />
+            <Skeleton className="h-48 w-full rounded-3xl" />
+          </div>
+
+          {/* Filters & Search Skeleton */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+            <div className="flex gap-2 p-1 bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-200 dark:border-gray-700">
+              <Skeleton className="h-9 w-24 rounded-lg" />
+              <Skeleton className="h-9 w-32 rounded-lg" />
+              <Skeleton className="h-9 w-32 rounded-lg" />
             </div>
-  
-            {/* Filters & Search Skeleton */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-              <div className="flex gap-2 p-1 bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-200 dark:border-gray-700">
-                 <Skeleton className="h-9 w-24 rounded-lg" />
-                 <Skeleton className="h-9 w-32 rounded-lg" />
-                 <Skeleton className="h-9 w-32 rounded-lg" />
+            <Skeleton className="h-10 w-full sm:w-64 rounded-xl" />
+          </div>
+
+          {/* Achievements Grid Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-8">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <Skeleton className="w-16 h-16 rounded-2xl mb-4" />
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-full mb-1" />
+                <Skeleton className="h-4 w-2/3 mb-4" />
+                <div className="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <Skeleton className="h-5 w-16 rounded" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
               </div>
-              <Skeleton className="h-10 w-full sm:w-64 rounded-xl" />
-            </div>
-  
-            {/* Achievements Grid Skeleton */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-8">
-               {Array.from({ length: 8 }).map((_, i) => (
-                 <div key={i} className="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
-                    <Skeleton className="w-16 h-16 rounded-2xl mb-4" />
-                    <Skeleton className="h-6 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-full mb-1" />
-                    <Skeleton className="h-4 w-2/3 mb-4" />
-                    <div className="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-800">
-                       <Skeleton className="h-5 w-16 rounded" />
-                       <Skeleton className="h-4 w-20" />
-                    </div>
-                 </div>
-               ))}
-            </div>
+            ))}
           </div>
         </div>
-     );
+      </div>
+    );
   }
 
   const unlockedIds = new Set(userAchievements.map(ua => ua.achievementId));
   const unlockedCount = userAchievements.length;
   const totalAchievements = allAchievements.length;
   const progressPercent = totalAchievements > 0 ? Math.round((unlockedCount / totalAchievements) * 100) : 0;
-  
+
   // Filter logic
   const filteredAchievements = allAchievements.filter(ach => {
-    const matchesSearch = ach.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          ach.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = ach.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ach.description.toLowerCase().includes(searchTerm.toLowerCase());
     const isUnlocked = unlockedIds.has(ach.id);
-    
+
     if (!matchesSearch) return false;
-    
+
     if (filter === 'unlocked') return isUnlocked;
     if (filter === 'locked') return !isUnlocked;
     return true;
@@ -137,19 +137,19 @@ const AchievementsScreen = () => {
   const rareCount = allAchievements.filter(a => a.points >= 200 && unlockedIds.has(a.id)).length;
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-background-light dark:bg-background-dark relative">
+    <div className="min-h-full bg-background-light dark:bg-background-dark relative">
       <div className="absolute inset-0 z-0 bg-network-pattern opacity-[0.03] pointer-events-none"></div>
 
       {/* Header */}
-      <header className="h-20 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 bg-surface-light/80 dark:bg-surface-dark/80 glass-effect sticky top-0 z-20 flex-none">
+      <header className="h-20 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 bg-surface-light/80 dark:bg-surface-dark/80 glass-effect z-20">
         <h1 className="text-2xl font-display font-bold text-secondary dark:text-white">Galeria de Conquistas</h1>
         <div className="flex items-center gap-4">
-            {/* User profile could go here if not in Layout, adding simple display if needed, but keeping clean for now matching layout */}
+          {/* User profile could go here if not in Layout, adding simple display if needed, but keeping clean for now matching layout */}
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 relative custom-scrollbar z-10">
-        
+      <div className="p-4 md:p-8 relative z-10">
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Total Card */}
@@ -201,7 +201,7 @@ const AchievementsScreen = () => {
               </div>
             </div>
             <div className="flex -space-x-3">
-               {/* Mockup bubbles for visual consistency */}
+              {/* Mockup bubbles for visual consistency */}
               <div className="w-8 h-8 rounded-full bg-gold border-2 border-white dark:border-surface-dark flex items-center justify-center text-[10px] font-bold text-white shadow-sm">G</div>
               <div className="w-8 h-8 rounded-full bg-primary border-2 border-white dark:border-surface-dark flex items-center justify-center text-[10px] font-bold text-white shadow-sm">P</div>
               <div className="w-8 h-8 rounded-full bg-secondary border-2 border-white dark:border-surface-dark flex items-center justify-center text-[10px] font-bold text-white shadow-sm">E</div>
@@ -212,27 +212,27 @@ const AchievementsScreen = () => {
         {/* Filters & Search */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div className="flex bg-surface-light dark:bg-surface-dark p-1 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-x-auto">
-            <button 
-                onClick={() => setFilter('all')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${filter === 'all' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-primary'}`}
+            <button
+              onClick={() => setFilter('all')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${filter === 'all' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-primary'}`}
             >Todas</button>
-            <button 
-                onClick={() => setFilter('unlocked')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${filter === 'unlocked' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-primary'}`}
+            <button
+              onClick={() => setFilter('unlocked')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${filter === 'unlocked' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-primary'}`}
             >Desbloqueadas</button>
-            <button 
-                onClick={() => setFilter('locked')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${filter === 'locked' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-primary'}`}
+            <button
+              onClick={() => setFilter('locked')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${filter === 'locked' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-primary'}`}
             >Bloqueadas</button>
           </div>
           <div className="relative w-full sm:w-64">
             <span className="absolute left-3 top-2.5 text-gray-400"><Search size={20} /></span>
-            <input 
-                className="pl-10 pr-4 py-2 rounded-xl border-gray-200 dark:border-gray-700 bg-surface-light dark:bg-surface-dark text-sm focus:ring-primary focus:border-primary dark:text-white w-full outline-none transition-all" 
-                placeholder="Buscar conquista..." 
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+            <input
+              className="pl-10 pr-4 py-2 rounded-xl border-gray-200 dark:border-gray-700 bg-surface-light dark:bg-surface-dark text-sm focus:ring-primary focus:border-primary dark:text-white w-full outline-none transition-all"
+              placeholder="Buscar conquista..."
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
@@ -255,9 +255,9 @@ const AchievementsScreen = () => {
                   </div>
                 )}
                 {!isUnlocked && (
-                    <div className="absolute top-0 right-0 p-4">
-                        <Lock size={20} className="text-gray-300 dark:text-gray-600" />
-                    </div>
+                  <div className="absolute top-0 right-0 p-4">
+                    <Lock size={20} className="text-gray-300 dark:text-gray-600" />
+                  </div>
                 )}
 
                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 ${isUnlocked ? `bg-gradient-to-br ${achievement.color || 'from-primary to-blue-600'} text-white shadow-lg` : 'bg-gray-50 dark:bg-surface-darker text-gray-300 dark:text-gray-600 grayscale group-hover:grayscale-0'}`}>
@@ -266,7 +266,7 @@ const AchievementsScreen = () => {
 
                 <h3 className={`text-lg font-bold mb-2 transition-colors ${isUnlocked ? 'text-secondary dark:text-white group-hover:text-primary' : 'text-gray-500 dark:text-gray-400'}`}>{achievement.name}</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2 min-h-[40px]">{achievement.description}</p>
-                
+
                 <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
                   <span className={`text-xs font-semibold px-2 py-1 rounded ${rarity.color}`}>{rarity.label}</span>
                   <span className="text-xs text-gray-400">{isUnlocked ? unlockDate : 'Bloqueado'}</span>

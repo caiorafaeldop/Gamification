@@ -132,7 +132,7 @@ const ProfileScreen = () => {
     }
 
     return (
-        <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 20px) + 40px)' }}>
 
             {/* Header Background Decoration (from template) */}
             <div className="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-8 relative overflow-hidden">
