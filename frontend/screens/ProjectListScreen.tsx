@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Star, LogIn, Loader } from 'lucide-react';
+import { Plus, Search, Star, LogIn, Loader, Check } from 'lucide-react';
 import { useProjects } from '../hooks/useProjects';
+import { useAuth } from '../hooks/useAuth';
 import { joinProject } from '../services/project.service';
 import api from '../services/api';
 import { Skeleton } from '../components/Skeleton';
@@ -9,6 +10,7 @@ import toast from 'react-hot-toast';
 
 const ProjectListScreen = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { projects, loading, error, refetch } = useProjects();
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -138,12 +140,18 @@ const ProjectListScreen = () => {
                     <span className="text-xs text-gray-500 dark:text-gray-400">Líder: <span className="font-semibold text-gray-700 dark:text-gray-200">{project.leader?.name || 'Desconhecido'}</span></span>
                   </div>
                   <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleJoin(project.id); }}
-                      className="w-full bg-primary/10 hover:bg-primary text-primary hover:text-white font-bold py-2 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
-                    >
-                      Entrar no projeto
-                    </button>
+                    {project.members?.some((m: any) => m.userId === user?.id) ? (
+                      <div className="w-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold py-2 rounded-lg text-sm flex items-center justify-center gap-2 border border-emerald-500/20">
+                        <Check size={16} /> Você já participa
+                      </div>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleJoin(project.id); }}
+                        className="w-full bg-primary/10 hover:bg-primary text-primary hover:text-white font-bold py-2 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+                      >
+                        Entrar no projeto
+                      </button>
+                    )}
                   </div>
                 </div>
               </article>
