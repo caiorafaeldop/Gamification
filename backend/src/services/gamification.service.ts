@@ -10,13 +10,17 @@ import prisma from '../utils/prisma';
 export const addPointsForTaskCompletion = async (userId: string, points: number, taskId: string, transaction: Prisma.TransactionClient) => {
   const updatedUser = await updateConnectaPoints(userId, points, transaction);
   await createActivityLog({
-    user: { connect: { id: userId } }, // Corrigido: usar 'user' com 'connect'
+    user: { connect: { id: userId } },
     type: ActivityType.TASK_COMPLETED,
     description: `Completed a task and earned ${points} Connecta Points.`,
     pointsChange: points,
   }, transaction);
   await recalcUserTier(userId, transaction);
-  await checkAndAwardAchievements(userId, transaction); // Check for achievements after points update
+  
+  // Non-blocking achievement check
+  console.log(`[TRIGGER] Points added for task, checking achievements for ${userId} (Async)`);
+  checkAndAwardAchievements(userId).catch(err => console.error(err));
+  
   return updatedUser;
 };
 
@@ -36,11 +40,14 @@ export const recalcUserTier = async (userId: string, transaction: Prisma.Transac
   if (newTier && newTier.id !== currentTier.id) {
     await updateUserTier(userId, newTier.id, transaction);
     await createActivityLog({
-      user: { connect: { id: userId } }, // Corrigido: usar 'user' com 'connect'
+      user: { connect: { id: userId } },
       type: ActivityType.TIER_ACHIEVED,
       description: `Achieved new tier: ${newTier.name}!`,
     }, transaction);
-    await checkAndAwardAchievements(userId, transaction); // Check for achievements after tier change
+    
+    // Non-blocking achievement check
+    checkAndAwardAchievements(userId).catch(err => console.error(err));
+    
     return newTier;
   }
   return currentTier;
@@ -88,7 +95,10 @@ export const updateStreakForUser = async (userId: string, transaction: Prisma.Tr
     type: ActivityType.STREAK_UPDATED,
     description: `Streak updated: Current ${newStreakCurrent}, Best ${newStreakBest}.`,
   }, transaction);
-  await checkAndAwardAchievements(userId, transaction); // Check for achievements after streak update
+  await updateLastActivity(userId, transaction);
+  
+  // Non-blocking achievement check
+  checkAndAwardAchievements(userId).catch(err => console.error(err));
 };
 
 export const checkAndResetDailyStreaks = async () => {

@@ -70,16 +70,6 @@ export const joinProject = async (req: Request, res: Response, next: NextFunctio
         const userRole = req.user!.role;
 
         await addMemberToProject(id, { userId }, userId, userRole);
-        if (existing) {
-            return res.status(400).json({ message: 'Already a member' });
-        }
-
-        await prisma.projectMember.create({
-            data: {
-                projectId: id,
-                userId
-            }
-        });
 
         res.json({ message: 'Joined successfully' });
     } catch (error) {
@@ -110,7 +100,7 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
         const { title, name, description, category, coverUrl, status, color, xpReward } = req.body;
         const userId = (req as any).user?.userId;
 
-        console.log(`[UPDATE PROJECT] ID: ${id}, User: ${userId}, New Cover: ${coverUrl}`);
+        
 
         // Check if user is leader or admin
         const project = await prisma.project.findUnique({ where: { id } });

@@ -9,13 +9,16 @@ interface NewTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   projectId?: string;
+  initialColumnId?: string;
+  projectMembers?: any[];
   onSuccess: () => void;
 }
 
-const NewTaskModal = ({ isOpen, onClose, projectId: defaultProjectId, onSuccess }: NewTaskModalProps) => {
+const NewTaskModal = ({ isOpen, onClose, projectId: defaultProjectId, initialColumnId, projectMembers, onSuccess }: NewTaskModalProps) => {
   const { projects, loading: loadingProjects } = useProjects();
   const [users, setUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   
   const [taskLevel, setTaskLevel] = useState<'basic' | 'medium' | 'large'>('medium');
   const [points, setPoints] = useState(150); // This is visual only, backend calculates real points
@@ -31,9 +34,18 @@ const NewTaskModal = ({ isOpen, onClose, projectId: defaultProjectId, onSuccess 
 
   useEffect(() => {
     if (isOpen) {
-      fetchUsers();
+      // Small delay to allow render before animating in
+      requestAnimationFrame(() => setIsVisible(true));
+      
+      if (projectMembers && projectMembers.length > 0) {
+          setUsers(projectMembers.map(m => m.user || m)); // Handles structure variations
+      } else {
+          fetchUsers();
+      }
+    } else {
+        setIsVisible(false);
     }
-  }, [isOpen]);
+  }, [isOpen, projectMembers]);
 
   useEffect(() => {
     if (defaultProjectId) {
@@ -85,6 +97,7 @@ const NewTaskModal = ({ isOpen, onClose, projectId: defaultProjectId, onSuccess 
             title,
             description,
             projectId,
+            columnId: initialColumnId,
             assignedToId: assignedToId || undefined,
             difficulty: mapLevelToDifficulty(taskLevel),
             estimatedTimeMinutes: estimatedTime ? parseFloat(estimatedTime) * 60 : undefined,
@@ -95,7 +108,9 @@ const NewTaskModal = ({ isOpen, onClose, projectId: defaultProjectId, onSuccess 
         await createTask(payload);
         toast.success("Tarefa criada com sucesso!");
         onSuccess();
-        resetForm();
+        setTimeout(() => { // Small delay to clear state after animation
+             resetForm();
+        }, 300);
         onClose();
     } catch (err: any) {
         console.error(err);
@@ -118,18 +133,19 @@ const NewTaskModal = ({ isOpen, onClose, projectId: defaultProjectId, onSuccess 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+        className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose}
       ></div>
 
       {/* Modal Content */}
-      <div className="relative bg-white dark:bg-surface-dark rounded-3xl w-full max-w-4xl h-[90vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-300 ease-out">
+      <div className={`relative bg-white dark:bg-surface-dark rounded-[2rem] w-full max-w-4xl h-[90vh] flex flex-col shadow-2xl transition-all duration-300 transform ${isVisible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-4 opacity-0 scale-95'}`}>
         <header className="flex-none bg-white dark:bg-surface-dark border-b border-gray-100 dark:border-gray-800 p-6 flex items-center justify-between z-10">
             <div>
                 <h2 className="text-2xl font-display font-extrabold text-secondary dark:text-white">Nova Tarefa</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Defina as atividades e metas para sua equipe.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    {defaultProjectId ? 'Adicionando ao projeto atual' : 'Defina as atividades e metas para sua equipe.'}
+                </p>
             </div>
             <button 
                 onClick={onClose}
@@ -173,30 +189,32 @@ const NewTaskModal = ({ isOpen, onClose, projectId: defaultProjectId, onSuccess 
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Project Select (Read-onlyish if passed, but modifiable if needed) */}
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                        <Folder size={16} className="text-primary" /> Projeto
-                      </label>
-                      {loadingProjects ? (
-                        <div className="h-12 w-full bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"></div>
-                      ) : (
-                        <select 
-                            value={projectId}
-                            onChange={(e) => setProjectId(e.target.value)}
-                            required
-                            className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none"
-                        >
-                            <option value="" disabled>Selecione um projeto</option>
-                            {projects.map((project: any) => (
-                            <option key={project.id} value={project.id}>{project.title}</option>
-                            ))}
-                        </select>
-                      )}
-                    </div>
+                    {/* Project Select - Only show if NO default project */}
+                    {!defaultProjectId && (
+                        <div>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                            <Folder size={16} className="text-primary" /> Projeto
+                        </label>
+                        {loadingProjects ? (
+                            <div className="h-12 w-full bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"></div>
+                        ) : (
+                            <select 
+                                value={projectId}
+                                onChange={(e) => setProjectId(e.target.value)}
+                                required
+                                className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none"
+                            >
+                                <option value="" disabled>Selecione um projeto</option>
+                                {projects.map((project: any) => (
+                                <option key={project.id} value={project.id}>{project.title}</option>
+                                ))}
+                            </select>
+                        )}
+                        </div>
+                    )}
 
                     {/* Assignee Select */}
-                    <div>
+                    <div className={defaultProjectId ? "md:col-span-2" : ""}> 
                       <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                         <User size={16} className="text-primary" /> Responsável
                       </label>
@@ -208,9 +226,11 @@ const NewTaskModal = ({ isOpen, onClose, projectId: defaultProjectId, onSuccess 
                             onChange={(e) => setAssignedToId(e.target.value)}
                             className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none"
                         >
-                            <option value="">Atribuir a...</option>
+                            <option value="">
+                                {projectMembers ? 'Selecionar membro do projeto...' : 'Atribuir a...'}
+                            </option>
                             {users.map((u: any) => (
-                            <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
+                            <option key={u.id} value={u.id}>{u.name} {u.role ? `(${u.role})` : ''}</option>
                             ))}
                         </select>
                       )}

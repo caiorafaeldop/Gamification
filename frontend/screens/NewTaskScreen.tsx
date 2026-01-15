@@ -4,6 +4,7 @@ import { Calendar, User, AlignLeft, Folder, ArrowLeft, Check, Clock, Zap, BarCha
 import { createTask, getTask, updateTask } from '../services/task.service'; // Added getTask, updateTask
 import { useProjects } from '../hooks/useProjects';
 import { getAllUsers } from '../services/user.service';
+import { getProjectDetails } from '../services/project.service';
 import { useAuth } from '../hooks/useAuth';
 
 const NewTaskScreen = () => {
@@ -31,19 +32,41 @@ const NewTaskScreen = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchContextData = async () => {
+      setLoadingUsers(true);
       try {
-        setLoadingUsers(true);
-        const data = await getAllUsers();
-        setUsers(data || []);
+        if (projectId) {
+            // If project is selected (or comes from context), fetch its members
+            const projectData = await getProjectDetails(projectId);
+            // Map project members to users format if needed
+            // Assuming projectData.members includes user info
+            if (projectData.members) {
+                 setUsers(projectData.members.map((m: any) => m.user || m));
+            } else {
+                 // Fallback if structure is different
+                 const allUsers = await getAllUsers();
+                 setUsers(allUsers);
+            }
+        } else {
+            const data = await getAllUsers();
+            setUsers(data || []);
+        }
       } catch (err) {
-        console.error("Failed to fetch users", err);
+        console.error("Failed to fetch context data", err);
+        // Fallback
+        try {
+            const data = await getAllUsers();
+            setUsers(data || []);
+        } catch(e) { console.error(e) }
       } finally {
         setLoadingUsers(false);
       }
     };
-    fetchUsers();
-  }, []);
+    
+    if (projectId || !projectId) { // Run always, but logic changes inside
+        fetchContextData();
+    }
+  }, [projectId]);
 
   // Fetch task details if editing
   useEffect(() => {
@@ -188,27 +211,29 @@ const NewTaskScreen = () => {
                 />
               </div>
 
-              {/* Project Select */}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <Folder size={16} className="text-primary" /> Projeto
-                </label>
-                {loadingProjects ? (
-                  <div className="h-12 w-full bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"></div>
-                ) : (
-                  <select
-                    value={projectId}
-                    onChange={(e) => setProjectId(e.target.value)}
-                    required
-                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none"
-                  >
-                    <option value="" disabled>Selecione um projeto</option>
-                    {projects.map((project: any) => (
-                      <option key={project.id} value={project.id}>{project.title}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
+              {/* Project Select - Only if not pre-selected via context */}
+              {!location.state?.projectId && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                      <Folder size={16} className="text-primary" /> Projeto
+                    </label>
+                    {loadingProjects ? (
+                      <div className="h-12 w-full bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"></div>
+                    ) : (
+                      <select
+                        value={projectId}
+                        onChange={(e) => setProjectId(e.target.value)}
+                        required
+                        className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none"
+                      >
+                        <option value="" disabled>Selecione um projeto</option>
+                        {projects.map((project: any) => (
+                          <option key={project.id} value={project.id}>{project.title}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+              )}
 
               {/* Assignee Select */}
               <div>

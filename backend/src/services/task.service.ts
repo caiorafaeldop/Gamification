@@ -46,7 +46,7 @@ export const createNewTask = async (data: CreateTaskInput, createdById: string) 
 
   const pointsReward = calculateTaskPoints(data.difficulty, data.estimatedTimeMinutes);
 
-  return prisma.$transaction(async (tx) => {
+  const taskResult = await prisma.$transaction(async (tx) => {
     const task = await createTask({
       title: data.title,
       description: data.description,
@@ -59,6 +59,7 @@ export const createNewTask = async (data: CreateTaskInput, createdById: string) 
       createdBy: { connect: { id: createdById } },
       project: { connect: { id: data.projectId } },
       assignedTo: data.assignedToId ? { connect: { id: data.assignedToId } } : undefined,
+      KanbanColumn: data.columnId ? ({ connect: { id: data.columnId } } as any) : undefined,
       requiredTier: data.requiredTierId ? { connect: { id: data.requiredTierId } } : undefined,
     }, tx);
 
@@ -68,11 +69,14 @@ export const createNewTask = async (data: CreateTaskInput, createdById: string) 
       description: `Created task "${task.title}" for project "${project.title}"${isExternalDemand ? ' (External Demand)' : ''}.`,
     }, tx);
 
-    console.log(`[TRIGGER] Task created, checking achievements for ${createdById}`);
-    await checkAndAwardAchievements(createdById, tx);
-
     return task;
   });
+
+  console.log(`[TRIGGER] Task created, checking achievements for ${createdById} (Async)`);
+  // Run outside the main transaction to avoid timeouts
+  checkAndAwardAchievements(createdById).catch(err => console.error("Achievement check failed:", err));
+
+  return taskResult;
 };
 
 export const getTaskDetails = async (id: string) => {

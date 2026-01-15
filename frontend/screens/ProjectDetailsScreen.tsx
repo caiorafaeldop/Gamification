@@ -1,18 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { deleteTask, getProjectKanban, updateTaskStatus } from '../services/task.service';
-import { getProfile } from '../services/user.service';
-import { uploadProjectCover, updateProject } from '../services/project.service';
 import { DragDropContext, Draggable } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '../components/StrictModeDroppable';
 import { deleteTask, getProjectKanban, updateTaskStatus, createColumn, updateColumn, deleteColumn, reorderColumns } from '../services/task.service';
+import { getProfile } from '../services/user.service';
+import { uploadProjectCover, updateProject } from '../services/project.service';
 import { useProjectDetails } from '../hooks/useProjects';
 import { Skeleton } from '../components/Skeleton';
 import NewTaskModal from '../components/NewTaskModal';
 import { Camera, Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
-import TaskDetailsModal from '../components/TaskDetailsModal'; // Imported Modal
+import TaskDetailsModal from '../components/TaskDetailsModal';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 const ProjectDetailsScreen = () => {
     const { id } = useParams<{ id: string }>();
@@ -23,6 +22,40 @@ const ProjectDetailsScreen = () => {
     const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
     const [uploadingCover, setUploadingCover] = useState(false);
     const [user, setUser] = useState<any>(null);
+    const [initialColumnId, setInitialColumnId] = useState<string | undefined>(undefined);
+
+    // Column Editing State
+    const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
+    const [editingTitle, setEditingTitle] = useState("");
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Search & Filter State
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedMemberFilters, setSelectedMemberFilters] = useState<string[]>([]);
+    const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+    const filterMenuRef = useRef<HTMLDivElement>(null);
+
+    // Close filter menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (filterMenuRef.current && !filterMenuRef.current.contains(event.target as Node)) {
+                setIsFilterMenuOpen(false);
+            }
+        };
+
+        if (isFilterMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isFilterMenuOpen]);
+
+    useEffect(() => {
+        if (editingColumnId && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [editingColumnId]);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -45,6 +78,9 @@ const ProjectDetailsScreen = () => {
     // Task Details Modal State
     const [selectedTask, setSelectedTask] = useState<any>(null);
     const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false);
+
+    // Delete Confirmation State
+    const [columnToDelete, setColumnToDelete] = useState<string | null>(null);
 
     useEffect(() => {
         if (id) fetchKanban();
@@ -153,37 +189,117 @@ const ProjectDetailsScreen = () => {
     };
 
     const handleAddColumn = async () => {
-        const title = prompt("Digite o nome da nova coluna:");
-        if (!title) return;
         try {
-            await createColumn(id!, title, columns.length);
-            fetchKanban();
+            const defaultTitle = "Nova Coluna";
+            // Create column with default title
+            const newColumn = await createColumn(id!, defaultTitle, columns.length);
+            
+            // Refresh kanban to get the updated list including the new column
+            await fetchKanban();
+
+            // Enter edit mode for the new column
+            setEditingColumnId(newColumn.id);
+            setEditingTitle(defaultTitle);
         } catch (err) {
-            console.error(err);
+            console.error("Failed to create column", err);
+            toast.error("Erro ao criar coluna");
         }
     };
 
-    const handleRenameColumn = async (columnId: string, oldTitle: string) => {
-        const newTitle = prompt("Novo nome da coluna:", oldTitle);
-        if (!newTitle || newTitle === oldTitle) return;
+    const startEditing = (columnId: string, currentTitle: string) => {
+        setEditingColumnId(columnId);
+        setEditingTitle(currentTitle);
+    };
+
+    const handleSaveColumnTitle = async () => {
+        if (!editingColumnId) return;
+
+        if (!editingTitle.trim()) {
+            toast.error("O nome da coluna não pode ser vazio");
+            return;
+        }
+
+        // Optimistic update
+        const newColumns = columns.map((col: any) => 
+            col.id === editingColumnId ? { ...col, title: editingTitle } : col
+        );
+        setColumns(newColumns);
+        
+        const idToUpdate = editingColumnId;
+        const titleToUpdate = editingTitle;
+        
+        // Close edit mode immediately
+        setEditingColumnId(null);
+
         try {
-            await updateColumn(columnId, { title: newTitle });
-            fetchKanban();
+            await updateColumn(idToUpdate, { title: titleToUpdate });
         } catch (err) {
-            console.error(err);
+            console.error("Failed to update column", err);
+            toast.error("Erro ao atualizar nome da coluna");
+            fetchKanban(); // Revert
         }
     };
 
-    const handleDeleteColumn = async (columnId: string) => {
-        if (!window.confirm("Tem certeza que deseja excluir esta coluna? Apenas colunas vazias podem ser excluídas.")) return;
+
+
+    const handleDeleteColumn = (columnId: string) => {
+        setColumnToDelete(columnId);
+    };
+
+    const confirmDeleteColumn = async () => {
+        if (!columnToDelete) return;
+
         try {
-            await deleteColumn(columnId);
+            await deleteColumn(columnToDelete);
             fetchKanban();
+            toast.success("Coluna excluída com sucesso!");
         } catch (err: any) {
             console.error(err);
-            alert(err.response?.data?.message || "Erro ao excluir coluna");
+            toast.error(err.response?.data?.message || "Erro ao excluir coluna");
+        } finally {
+            setColumnToDelete(null);
         }
     };
+
+    const toggleMemberFilter = (memberId: string) => {
+        setSelectedMemberFilters(prev =>
+            prev.includes(memberId)
+                ? prev.filter(id => id !== memberId)
+                : [...prev, memberId]
+        );
+    };
+
+    const getFilteredColumns = () => {
+        if (!columns) return null;
+        // If no filters are active, return original columns
+        if (selectedMemberFilters.length === 0 && !searchQuery.trim()) return columns;
+
+        return columns.map((col: any) => ({
+            ...col,
+            tasks: col.tasks.filter((task: any) => {
+                // 1. Filter by Members
+                let matchesMember = true;
+                if (selectedMemberFilters.length > 0) {
+                    const isUnassigned = !task.assignedTo;
+                    const matchesUnassigned = selectedMemberFilters.includes('unassigned') && isUnassigned;
+                    const matchesSpecific = task.assignedTo && selectedMemberFilters.includes(task.assignedTo.id);
+                    matchesMember = matchesUnassigned || matchesSpecific;
+                }
+
+                // 2. Filter by Search Query
+                let matchesSearch = true;
+                if (searchQuery.trim()) {
+                    matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
+                }
+
+                return matchesMember && matchesSearch;
+            })
+        }));
+    };
+
+    const displayedColumns = getFilteredColumns();
+    // Disable drag if ANY filter is active (member or search)
+    const isDragDisabled = selectedMemberFilters.length > 0 || !!searchQuery.trim();
 
     const getColumnStyles = (title: string) => {
         const lowerTitle = title.toLowerCase();
@@ -298,7 +414,7 @@ const ProjectDetailsScreen = () => {
             <div className="absolute inset-0 z-0 bg-network-pattern opacity-30 pointer-events-none"></div>
 
             {/* Header Section */}
-            <div className="bg-surface-light/80 dark:bg-secondary/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 z-10 p-6 flex-shrink-0 relative overflow-hidden group">
+            <div className="bg-surface-light/80 dark:bg-secondary/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 z-10 p-6 flex-shrink-0 relative group">
                 {/* Project Cover Background */}
                 {project.coverUrl && (
                     <div className="absolute inset-0 z-0 opacity-20 group-hover:opacity-30 transition-opacity">
@@ -374,7 +490,7 @@ const ProjectDetailsScreen = () => {
                                 </div>
                             </div>
                             <button
-                                onClick={() => setIsNewTaskModalOpen(true)}
+                                onClick={() => { setInitialColumnId(undefined); setIsNewTaskModalOpen(true); }}
                                 className="bg-primary hover:bg-sky-400 text-white px-5 py-2.5 rounded-lg font-bold shadow-lg shadow-primary/30 transition-all flex items-center gap-2"
                             >
                                 <span className="material-icons text-sm">add</span>
@@ -398,11 +514,82 @@ const ProjectDetailsScreen = () => {
                                     className="pl-9 pr-4 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-primary focus:border-primary w-64 dark:text-white dark:placeholder-gray-400 outline-none"
                                     placeholder="Buscar tarefas..."
                                     type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                             </div>
-                            <button className="p-2 text-gray-500 hover:text-primary transition-colors">
-                                <span className="material-icons">filter_list</span>
-                            </button>
+                            <div className="relative" ref={filterMenuRef}>
+                                <button
+                                    onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
+                                    className={`p-2 transition-all rounded-lg flex items-center gap-2 ${selectedMemberFilters.length > 0
+                                            ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-bold'
+                                            : 'text-gray-500 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800'
+                                        }`}
+                                >
+                                    <span className="material-icons">filter_list</span>
+                                    {selectedMemberFilters.length > 0 && (
+                                        <span className="text-xs bg-primary text-white px-1.5 py-0.5 rounded-full">
+                                            {selectedMemberFilters.length}
+                                        </span>
+                                    )}
+                                </button>
+
+                                {isFilterMenuOpen && (
+                                    <div className="absolute right-0 top-12 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 w-72 p-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                        <div className="p-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-black/20">
+                                            <h4 className="font-bold text-sm text-gray-700 dark:text-gray-200">Filtrar por responsável</h4>
+                                        </div>
+                                        <div className="p-2 space-y-1 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                            {/* Unassigned Option */}
+                                            <label className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg cursor-pointer transition-colors group">
+                                                <div className="relative flex items-center justify-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedMemberFilters.includes('unassigned')}
+                                                        onChange={() => toggleMemberFilter('unassigned')}
+                                                        className="peer appearance-none w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-surface-dark checked:bg-primary checked:border-primary transition-all"
+                                                    />
+                                                    <span className="material-icons absolute text-white text-[14px] opacity-0 peer-checked:opacity-100 pointer-events-none transform scale-50 peer-checked:scale-100 transition-all">check</span>
+                                                </div>
+                                                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 font-bold text-xs ring-2 ring-transparent group-hover:ring-gray-200 dark:group-hover:ring-gray-700 transition-all">?</div>
+                                                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Sem responsável</span>
+                                            </label>
+
+                                            {/* Members */}
+                                            {project?.members?.map((member: any) => (
+                                                <label key={member.user?.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg cursor-pointer transition-colors group">
+                                                    <div className="relative flex items-center justify-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedMemberFilters.includes(member.user?.id)}
+                                                            onChange={() => toggleMemberFilter(member.user?.id)}
+                                                            className="peer appearance-none w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-surface-dark checked:bg-primary checked:border-primary transition-all"
+                                                        />
+                                                        <span className="material-icons absolute text-white text-[14px] opacity-0 peer-checked:opacity-100 pointer-events-none transform scale-50 peer-checked:scale-100 transition-all">check</span>
+                                                    </div>
+                                                    <img
+                                                        src={member.user?.avatarUrl || `https://ui-avatars.com/api/?name=${member.user?.name}&background=random`}
+                                                        className="w-8 h-8 rounded-full object-cover ring-2 ring-transparent group-hover:ring-gray-200 dark:group-hover:ring-gray-700 transition-all"
+                                                        alt={member.user?.name}
+                                                    />
+                                                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300 truncate">{member.user?.name}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {selectedMemberFilters.length > 0 && (
+                                            <div className="p-2 border-t border-gray-100 dark:border-gray-800">
+                                                <button
+                                                    onClick={() => { setSelectedMemberFilters([]); setIsFilterMenuOpen(false); }}
+                                                    className="w-full py-2 text-xs text-red-500 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center justify-center gap-1"
+                                                >
+                                                    <span className="material-icons text-sm">close</span>
+                                                    Limpar filtros
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -418,7 +605,7 @@ const ProjectDetailsScreen = () => {
                                 ref={provided.innerRef}
                                 className="h-full flex gap-6 min-w-max"
                             >
-                                {columns && columns.map((column: any, index: number) => {
+                                {displayedColumns && displayedColumns.map((column: any, index: number) => {
                                     const styles = getColumnStyles(column.title);
                                     return (
                                         <Draggable key={column.id} draggableId={column.id} index={index}>
@@ -432,14 +619,31 @@ const ProjectDetailsScreen = () => {
                                                         {...provided.dragHandleProps}
                                                         className="p-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 cursor-grab active:cursor-grabbing"
                                                     >
-                                                        <div className="flex items-center gap-2 overflow-hidden">
+                                                        <div className="flex items-center gap-2 overflow-hidden flex-1">
                                                             {styles.headerIcon}
-                                                            <h3 className={`font-display font-bold truncate ${styles.titleColor}`}>{column.title}</h3>
-                                                            <span className={`${styles.badge} text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0`}>{column.tasks.length}</span>
+                                                            {editingColumnId === column.id ? (
+                                                                <input
+                                                                    ref={inputRef}
+                                                                    value={editingTitle}
+                                                                    onChange={(e) => setEditingTitle(e.target.value)}
+                                                                    onBlur={handleSaveColumnTitle}
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === 'Enter') handleSaveColumnTitle();
+                                                                        if (e.key === 'Escape') setEditingColumnId(null);
+                                                                    }}
+                                                                    className="font-display font-bold bg-white dark:bg-surface-dark border border-primary px-2 py-0.5 rounded text-sm w-full outline-none text-gray-800 dark:text-gray-100"
+                                                                    onClick={(e) => e.stopPropagation()} // Prevent drag conflict if needed
+                                                                />
+                                                            ) : (
+                                                                <>
+                                                                    <h3 className={`font-display font-bold truncate ${styles.titleColor}`}>{column.title}</h3>
+                                                                    <span className={`${styles.badge} text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0`}>{column.tasks.length}</span>
+                                                                </>
+                                                            )}
                                                         </div>
                                                         <div className="flex items-center">
                                                             <button
-                                                                onClick={() => handleRenameColumn(column.id, column.title)}
+                                                                onClick={() => startEditing(column.id, column.title)}
                                                                 className="p-1 text-gray-400 hover:text-blue-500"
                                                                 title="Renomear"
                                                             >
@@ -463,14 +667,14 @@ const ProjectDetailsScreen = () => {
                                                                 className="p-3 flex-1 overflow-y-auto custom-scrollbar space-y-3"
                                                             >
                                                                 {column.tasks.map((task: any, index: number) => (
-                                                                    <Draggable key={task.id} draggableId={task.id} index={index}>
+                                                                    <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={isDragDisabled}>
                                                                         {(provided, snapshot) => (
                                                                             <div
                                                                                 ref={provided.innerRef}
                                                                                 {...provided.draggableProps}
                                                                                 {...provided.dragHandleProps}
                                                                                 onClick={() => { setSelectedTask(task); setIsTaskDetailsOpen(true); }}
-                                                                                className={`bg-white dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 cursor-grab hover:shadow-md hover:border-primary/30 group relative transition-all duration-200 ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-primary/40 rotate-1 z-50 scale-105' : ''
+                                                                                className={`bg-white dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-gray-300 dark:border-gray-600 border-t-4 border-t-blue-500 cursor-grab hover:shadow-md hover:border-blue-500/50 group relative transition-all duration-200 ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-blue-500/40 rotate-1 z-50 scale-105' : ''
                                                                                     }`}
                                                                                 style={{
                                                                                     ...provided.draggableProps.style,
@@ -501,7 +705,11 @@ const ProjectDetailsScreen = () => {
                                                                                     </div>
                                                                                 </div>
                                                                                 <button
-                                                                                    onClick={(e) => { e.stopPropagation(); navigate(`/edit-task/${task.id}`); }}
+                                                                                    onClick={(e) => { 
+                                                                                        e.stopPropagation(); 
+                                                                                        setSelectedTask(task); 
+                                                                                        setIsTaskDetailsOpen(true); 
+                                                                                    }}
                                                                                     className="absolute top-2 right-8 text-gray-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                                                                 >
                                                                                     <span className="material-icons text-sm">edit</span>
@@ -517,8 +725,8 @@ const ProjectDetailsScreen = () => {
                                                                     </Draggable>
                                                                 ))}
                                                                 {provided.placeholder}
-                                                                <button
-                                                                    onClick={() => setIsNewTaskModalOpen(true)}
+                                                                    <button
+                                                                    onClick={() => { setInitialColumnId(column.id); setIsNewTaskModalOpen(true); }}
                                                                     className="w-full py-2 text-sm text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center gap-1 font-medium border border-dashed border-gray-300 dark:border-gray-700"
                                                                 >
                                                                     <span className="material-icons text-sm">add</span> Adicionar cartão
@@ -552,6 +760,8 @@ const ProjectDetailsScreen = () => {
                 isOpen={isNewTaskModalOpen}
                 onClose={() => setIsNewTaskModalOpen(false)}
                 projectId={id}
+                initialColumnId={initialColumnId}
+                projectMembers={project?.members}
                 onSuccess={fetchKanban}
             />
 
@@ -559,6 +769,16 @@ const ProjectDetailsScreen = () => {
                 isOpen={isTaskDetailsOpen}
                 onClose={() => setIsTaskDetailsOpen(false)}
                 task={selectedTask}
+            />
+
+            <ConfirmationModal
+                isOpen={!!columnToDelete}
+                onClose={() => setColumnToDelete(null)}
+                onConfirm={confirmDeleteColumn}
+                title="Excluir Coluna"
+                message="Tem certeza que deseja excluir esta coluna? Esta ação não pode ser desfeita e apenas colunas vazias podem ser removidas."
+                confirmText="Sim, excluir"
+                type="danger"
             />
         </div>
     );

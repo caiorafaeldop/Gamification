@@ -72,9 +72,11 @@ export const getUserAchievements = async (userId: string, page: number, limit: n
 
 // This function will be called by other services (e.g., gamification.service)
 // to check if a user has earned any new achievements based on their current state.
-export const checkAndAwardAchievements = async (userId: string, transaction: Prisma.TransactionClient) => {
-  console.log(`[DEBUG_LIVE] checkAndAwardAchievements START for ${userId}`);
-  const user = await transaction.user.findUnique({
+export const checkAndAwardAchievements = async (userId: string, transaction?: Prisma.TransactionClient) => {
+  const client = transaction || prisma;
+  console.log(`[DEBUG_LIVE] checkAndAwardAchievements START for ${userId} (Using ${transaction ? 'transaction' : 'global client'})`);
+  
+  const user = await client.user.findUnique({
     where: { id: userId },
     include: {
       _count: {
@@ -110,7 +112,7 @@ export const checkAndAwardAchievements = async (userId: string, transaction: Pri
   // Get weekly points
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const weeklyPointsResult = await transaction.activityLog.aggregate({
+  const weeklyPointsResult = await client.activityLog.aggregate({
     where: {
       userId,
       createdAt: { gte: sevenDaysAgo },
@@ -124,8 +126,8 @@ export const checkAndAwardAchievements = async (userId: string, transaction: Pri
 
   const completedProjectsCount = user.memberOfProjects.filter(m => m.project.progress === 100).length;
 
-  const allAchievements = await findAllAchievements(transaction);
-  const earnedAchievements = await findUserAchievements(userId, undefined, transaction);
+  const allAchievements = await findAllAchievements(client);
+  const earnedAchievements = await findUserAchievements(userId, undefined, client);
   const earnedAchievementIds = new Set(earnedAchievements.map(ua => ua.achievementId));
 
   for (const achievement of allAchievements) {

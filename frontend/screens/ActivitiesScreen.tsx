@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import api from '../services/api';
 import { getEvents, joinEvent, leaveEvent, deleteEvent, Event } from '../services/event.service';
 import { Skeleton } from '../components/Skeleton';
+import NewEventModal from '../components/NewEventModal';
 import toast from 'react-hot-toast';
 
 const ActivitiesScreen = () => {
@@ -36,6 +37,33 @@ const ActivitiesScreen = () => {
     setDeleteConfirm({ show: false, eventId: null, eventTitle: '' });
   };
 
+  // Modal State
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+
+  const openNewEventModal = () => {
+    setEditingEventId(null);
+    setIsEventModalOpen(true);
+  };
+
+  const openEditModal = (id: string) => {
+    setEditingEventId(id);
+    setIsEventModalOpen(true);
+  };
+
+  const loadEvents = async () => {
+    setLoadingEvents(true);
+    try {
+      const data = await getEvents();
+      setEvents(data);
+    } catch (err) {
+      console.warn("Could not fetch events", err);
+      setEvents([]);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
   useEffect(() => {
     const fetchDeadlines = async () => {
       try {
@@ -49,20 +77,8 @@ const ActivitiesScreen = () => {
       }
     };
 
-    const fetchEvents = async () => {
-      try {
-        const data = await getEvents();
-        setEvents(data);
-      } catch (err) {
-        console.warn("Could not fetch events", err);
-        setEvents([]);
-      } finally {
-        setLoadingEvents(false);
-      }
-    };
-
     fetchDeadlines();
-    fetchEvents();
+    loadEvents();
   }, []);
 
   const handleToggleParticipation = async (eventId: string, isParticipating: boolean) => {
@@ -75,8 +91,7 @@ const ActivitiesScreen = () => {
         toast.success('Participação confirmada! 🎉');
       }
       // Refresh events
-      const data = await getEvents();
-      setEvents(data);
+      await loadEvents();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Erro ao atualizar participação.');
     }
@@ -89,8 +104,7 @@ const ActivitiesScreen = () => {
     try {
       await deleteEvent(deleteConfirm.eventId);
       toast.success('Evento excluído com sucesso.');
-      const data = await getEvents();
-      setEvents(data);
+      await loadEvents();
       closeDeleteConfirm();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Erro ao excluir evento.');
@@ -316,7 +330,7 @@ const ActivitiesScreen = () => {
                             <>
                               <div className="flex gap-2 mt-3 p-2 bg-gray-50 dark:bg-white/5 rounded-lg">
                                 <button
-                                  onClick={() => navigate(`/eventos/editar/${event.id}`)}
+                                  onClick={() => openEditModal(event.id)}
                                   className="px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-primary transition-all shadow-sm"
                                 >
                                   <Edit2 size={12} />
@@ -391,7 +405,7 @@ const ActivitiesScreen = () => {
 
             {/* Botão para criar novo evento */}
             <button
-              onClick={() => navigate('/eventos/novo')}
+              onClick={openNewEventModal}
               className="w-full mt-4 px-4 py-3 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:bg-sky-500 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
             >
               <Plus size={18} />
@@ -401,6 +415,14 @@ const ActivitiesScreen = () => {
 
         </div>
       </div>
+      
+      {/* New Event Modal */}
+      <NewEventModal 
+        isOpen={isEventModalOpen} 
+        onClose={() => setIsEventModalOpen(false)} 
+        eventId={editingEventId}
+        onSuccess={loadEvents}
+      />
     </>
   );
 };

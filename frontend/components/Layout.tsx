@@ -165,13 +165,21 @@ const Layout = () => {
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0">
                 <header className="h-16 flex items-center justify-between px-4 sm:px-6 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                         <button
                             onClick={() => setSidebarOpen(true)}
                             className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300"
                         >
                             <Menu size={24} />
                         </button>
+                        
+                        {!loading && user && (
+                            <div className="flex flex-col animate-in fade-in slide-in-from-left-4 duration-500">
+                                <h1 className="text-xl font-display font-bold text-secondary dark:text-white">
+                                    Olá, <span className="text-primary">{user.name?.split(' ')[0]}</span>! 
+                                </h1>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-3">

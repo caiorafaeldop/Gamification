@@ -89,13 +89,16 @@ export const updateUserDetails = async (userId: string, data: UpdateUserInput, r
     data.password = await hashPassword(data.password);
   }
 
-  return prisma.$transaction(async (tx) => {
+  const updateResult = await prisma.$transaction(async (tx) => {
     const updatedUser = await updateUser(userId, data, tx);
-    console.log(`[TRIGGER] User updated, checking achievements for ${userId}`);
-    await checkAndAwardAchievements(userId, tx);
-    const { passwordHash, ...userWithoutHash } = updatedUser;
-    return userWithoutHash;
+    return updatedUser;
   });
+
+  console.log(`[TRIGGER] User updated, checking achievements for ${userId} (Async)`);
+  checkAndAwardAchievements(userId).catch(err => console.error(err));
+
+  const { passwordHash, ...userWithoutHash } = updateResult;
+  return userWithoutHash;
   try {
     const updatedUser = await updateUser(userId, data);
     const { passwordHash, ...userWithoutHash } = updatedUser;

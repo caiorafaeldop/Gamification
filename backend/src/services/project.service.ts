@@ -15,7 +15,7 @@ export const createNewProject = async (data: CreateProjectInput, creatorId: stri
     await updateUser(leader.id, { role: Role.LEADER });
   }
 
-  return prisma.$transaction(async (tx) => {
+  const createdProject = await prisma.$transaction(async (tx) => {
     const uniqueMemberIds = new Set(data.memberIds || []);
     uniqueMemberIds.add(data.leaderId);
 
@@ -40,18 +40,18 @@ export const createNewProject = async (data: CreateProjectInput, creatorId: stri
       description: `Created project "${project.title}" with ${leader.name} as leader.`,
     }, tx);
 
-    for (const memberId of Array.from(uniqueMemberIds)) {
-      await createActivityLog({
-        user: { connect: { id: memberId } },
-        type: ActivityType.USER_JOINED_PROJECT,
-        description: `Joined project "${project.title}".`,
-      }, tx);
-      console.log(`[TRIGGER] Project member added, checking achievements for ${memberId}`);
-      await checkAndAwardAchievements(memberId, tx);
-    }
-
     return project;
   });
+
+  // Check achievements after transaction commits
+  const uniqueMemberIdsForAchievements = new Set(data.memberIds || []);
+  uniqueMemberIdsForAchievements.add(data.leaderId);
+  for (const memberId of Array.from(uniqueMemberIdsForAchievements)) {
+    console.log(`[TRIGGER] Project creator/member added, checking achievements for ${memberId} (Async)`);
+    checkAndAwardAchievements(memberId).catch(err => console.error("Achievement check failed:", err));
+  }
+
+  return createdProject;
 };
 
 export const getProjectDetails = async (id: string) => {
@@ -102,24 +102,24 @@ export const updateProjectDetails = async (id: string, data: UpdateProjectInput,
     }
   }
 
-  return prisma.$transaction(async (tx) => {
+  const updatedProjectResult = await prisma.$transaction(async (tx) => {
     const updatedProject = await updateProject(id, data, tx);
-
-    // If project is completed (progress = 100), check achievements for all members
-    if (data.progress === 100) {
-      console.log(`[TRIGGER] Project completed, checking achievements for all members of ${id}`);
-      const members = await tx.projectMember.findMany({ where: { projectId: id } });
-      for (const member of members) {
-        await checkAndAwardAchievements(member.userId, tx);
-      }
-    } else if (requestingUserId) {
-      // Check achievements for the requester
-      console.log(`[TRIGGER] Project updated, checking achievements for requester ${requestingUserId}`);
-      await checkAndAwardAchievements(requestingUserId, tx);
-    }
-
     return updatedProject;
   });
+
+  // Check achievements after transaction commits
+  if (data.progress === 100) {
+    console.log(`[TRIGGER] Project completed, checking achievements for all members of ${id} (Async)`);
+    prisma.projectMember.findMany({ where: { projectId: id } })
+      .then(members => {
+        members.forEach(member => checkAndAwardAchievements(member.userId).catch(err => console.error(err)));
+      });
+  } else if (requestingUserId) {
+    console.log(`[TRIGGER] Project updated, checking achievements for requester ${requestingUserId} (Async)`);
+    checkAndAwardAchievements(requestingUserId).catch(err => console.error(err));
+  }
+
+  return updatedProjectResult;
 };
 
 export const deleteProjectById = async (id: string, adminId: string) => {
@@ -159,16 +159,20 @@ export const addMemberToProject = async (projectId: string, data: AddProjectMemb
     throw { statusCode: 409, message: 'User is already a member of this project.' };
   }
 
-  return prisma.$transaction(async (tx) => {
+  const resultMember = await prisma.$transaction(async (tx) => {
     const projectMember = await addProjectMember(projectId, data.userId, tx);
     await createActivityLog({
       user: { connect: { id: data.userId } },
       type: ActivityType.USER_JOINED_PROJECT,
       description: `Joined project "${project.title}".`,
     }, tx);
-    await checkAndAwardAchievements(data.userId, tx);
     return projectMember;
   });
+
+  console.log(`[TRIGGER] Member added, checking achievements for ${data.userId} (Async)`);
+  checkAndAwardAchievements(data.userId).catch(err => console.error("Achievement check failed:", err));
+
+  return resultMember;
 };
 
 export const removeMemberFromProject = async (projectId: string, userId: string, requestingUserId: string, requestingUserRole: Role) => {
