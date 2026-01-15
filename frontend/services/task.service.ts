@@ -12,13 +12,12 @@ export const getTask = async (id: string) => {
 };
 
 export const getTasks = async (projectId: string) => {
-  // Use kanban as the main way to get tasks for now, as there isn't a flat list endpoint yet
-  const response = await api.get(`/tasks/project/${projectId}/kanban`);
+  const response = await api.get(`/kanban/projects/${projectId}`);
   return response.data;
 };
 
 export const getProjectKanban = async (projectId: string) => {
-  const response = await api.get(`/tasks/project/${projectId}/kanban`);
+  const response = await api.get(`/kanban/projects/${projectId}`);
   return response.data;
 };
 
@@ -32,8 +31,8 @@ export const updateTask = async (id: string, data: any) => {
   return response.data;
 };
 
-export const updateTaskStatus = async (taskId: string, newStatus: string) => {
-  const response = await api.post(`/tasks/${taskId}/move`, { newStatus }); // Correction: Endpoint is POST /move, body is { newStatus }
+export const updateTaskStatus = async (taskId: string, columnId: string) => {
+  const response = await api.patch(`/kanban/tasks/${taskId}/move`, { columnId });
   return response.data;
 };
 
@@ -41,3 +40,25 @@ export const deleteTask = async (taskId: string) => {
   const response = await api.delete(`/tasks/${taskId}`);
   return response.data;
 };
+
+// Column Management
+export const createColumn = async (projectId: string, title: string, order: number) => {
+  const response = await api.post('/kanban/columns', { projectId, title, order });
+  return response.data;
+};
+
+export const updateColumn = async (columnId: string, data: { title?: string, order?: number, status?: string }) => {
+  const response = await api.put(`/kanban/columns/${columnId}`, data);
+  return response.data;
+};
+
+export const deleteColumn = async (columnId: string) => {
+  const response = await api.delete(`/kanban/columns/${columnId}`);
+  return response.data;
+};
+
+export const reorderColumns = async (projectId: string, columnIds: string[]) => {
+  const response = await api.post('/kanban/columns/reorder', { projectId, columnIds });
+  return response.data;
+};
+

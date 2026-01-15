@@ -36,6 +36,7 @@ export const updateProjectSchema = z.object({
     xpReward: z.number().int().positive().optional(),
     progress: z.number().int().min(0).max(100).optional(),
     coverUrl: z.string().optional(),
+    coverUrl: z.string().url().optional(),
   }).partial(),
 });
 

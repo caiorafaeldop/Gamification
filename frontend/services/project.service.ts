@@ -44,3 +44,7 @@ export const joinProject = async (projectId: string) => {
   const response = await api.post(`/projects/${projectId}/join`);
   return response.data;
 };
+export const updateProject = async (id: string, data: Partial<Project>) => {
+  const response = await api.patch(`/projects/${id}`, data);
+  return response.data;
+};

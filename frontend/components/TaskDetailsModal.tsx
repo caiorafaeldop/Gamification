@@ -43,8 +43,8 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
                     <div>
                         <div className="flex items-center gap-3 mb-2">
                             <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase ${task.status === 'done' ? 'bg-green-100 text-green-600' :
-                                    task.status === 'in_progress' ? 'bg-blue-100 text-blue-600' :
-                                        'bg-gray-200 text-gray-600'
+                                task.status === 'in_progress' ? 'bg-blue-100 text-blue-600' :
+                                    'bg-gray-200 text-gray-600'
                                 }`}>
                                 {getStatusLabel(task.status)}
                             </span>
@@ -80,8 +80,12 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ isOpen, onClose, ta
                     {/* Metrics Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="bg-gray-50 dark:bg-surface-darker p-4 rounded-xl flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
-                                <User size={20} />
+                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 overflow-hidden">
+                                {task.assignedTo?.avatarUrl ? (
+                                    <img src={task.assignedTo.avatarUrl} alt={task.assignedTo.name} className="w-full h-full object-cover" />
+                                ) : (
+                                    <User size={20} />
+                                )}
                             </div>
                             <div>
                                 <p className="text-xs font-bold text-gray-500 uppercase">Responsável</p>
