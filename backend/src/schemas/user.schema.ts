@@ -21,7 +21,7 @@ export const updateUserSchema = z.object({
     course: z.string().optional(),
     avatarColor: z.string().optional(),
     bio: z.string().optional(),
-    avatarUrl: z.string().url().optional(),
+    avatarUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
     skills: z.array(z.string()).optional(),
   }).partial(),
 });

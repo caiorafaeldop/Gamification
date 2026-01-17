@@ -100,7 +100,7 @@ const Layout = () => {
             }
         };
         fetchUser();
-    }, []);
+    }, [location.pathname]); // Recarrega quando a rota muda
 
     return (
         <div className="flex h-screen bg-background-light dark:bg-background-dark text-slate-800 dark:text-gray-100 font-sans transition-colors duration-300 overflow-hidden">

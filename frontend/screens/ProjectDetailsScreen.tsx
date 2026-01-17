@@ -569,21 +569,6 @@ const ProjectDetailsScreen = () => {
                     </div>
                 )}
 
-                {/* Cover Upload Overlay */}
-                {isLeaderOrAdmin && !isHeaderMinimized && (
-                    <label className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer bg-black/50 hover:bg-black/70 text-white px-3 py-1.5 rounded-full flex items-center gap-2 backdrop-blur-sm">
-                        <input type="file" className="hidden" accept="image/*" onChange={handleCoverUpload} disabled={uploadingCover} />
-                        {uploadingCover ? (
-                            <Loader className="animate-spin" size={16} />
-                        ) : (
-                            <>
-                                <Camera size={16} />
-                                <span className="text-xs font-bold uppercase tracking-wider">Alterar Capa</span>
-                            </>
-                        )}
-                    </label>
-                )}
-
                 <div className="max-w-full mx-auto relative z-10">
                     <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center transition-all duration-300 ${isHeaderMinimized ? 'gap-1' : 'gap-3'
                         }`}>
@@ -602,7 +587,7 @@ const ProjectDetailsScreen = () => {
                                 )}
                             </div>
                             {!isHeaderMinimized && (
-                                <p className="text-gray-600 dark:text-gray-300 text-xs line-clamp-1">
+                                <p className="text-gray-600 dark:text-gray-300 text-xs line-clamp-2">
                                     {project.description}
                                 </p>
                             )}
@@ -690,7 +675,7 @@ const ProjectDetailsScreen = () => {
                             </button>
 
                             {isFilterMenuOpen && (
-                                <div className="absolute right-0 top-12 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 w-72 p-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                <div className="absolute right-0 top-10 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 w-72 p-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                                     <div className="p-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-black/20">
                                         <h4 className="font-bold text-sm text-gray-700 dark:text-gray-200">Filtrar por responsável</h4>
                                     </div>
@@ -745,6 +730,34 @@ const ProjectDetailsScreen = () => {
                                 </div>
                             )}
                         </div>
+
+                        {/* Alterar Capa - Apenas para líder/admin */}
+                        {isLeaderOrAdmin && (
+                            <label 
+                                className="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors border border-gray-200 dark:border-gray-700 relative z-20"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const input = e.currentTarget.querySelector('input');
+                                    if (input && !uploadingCover) input.click();
+                                }}
+                            >
+                                <input 
+                                    type="file" 
+                                    className="hidden absolute inset-0 opacity-0 w-0 h-0" 
+                                    accept="image/*" 
+                                    onChange={handleCoverUpload} 
+                                    disabled={uploadingCover} 
+                                />
+                                {uploadingCover ? (
+                                    <Loader className="animate-spin" size={14} />
+                                ) : (
+                                    <>
+                                        <Camera size={14} />
+                                        <span className="text-xs font-medium hidden sm:inline">Capa</span>
+                                    </>
+                                )}
+                            </label>
+                        )}
                     </div>
                 </div>
 
