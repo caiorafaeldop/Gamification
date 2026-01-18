@@ -197,26 +197,27 @@ const ProjectDetailsScreen = () => {
         }
     };
 
-    const handleInlineBlur = async () => {
-        // Small delay to allow clicking the add button
-        setTimeout(async () => {
-            if (inlineTaskTitle.trim()) {
-                await submitInlineTask();
-            } else {
+    const handleInlineBlur = () => {
+        // Only cancel if empty - do NOT auto-submit on blur
+        // This prevents double submission when clicking the Add button
+        setTimeout(() => {
+            if (!inlineTaskTitle.trim() && !isCreatingInline) {
                 cancelInlineCreate();
             }
-        }, 150);
+        }, 200);
     };
 
     const submitInlineTask = async () => {
-        if (!inlineTaskTitle.trim() || !inlineCreatingColumnId || isCreatingInline) return;
+        if (!inlineTaskTitle.trim() || !inlineCreatingColumnId) return;
+        if (isCreatingInline) return; // Prevent double submission
         
         setIsCreatingInline(true);
         try {
             await createQuickTask(id!, inlineCreatingColumnId, inlineTaskTitle.trim());
             toast.success('Cartão criado!');
+            setInlineCreatingColumnId(null);
+            setInlineTaskTitle('');
             fetchKanban();
-            cancelInlineCreate();
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Erro ao criar cartão');
         } finally {

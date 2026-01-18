@@ -25,17 +25,37 @@ const formatLink = (url: string): string => {
 const textToHtmlWithImages = (text: string): string => {
   if (!text) return '';
   const imageRegex = /(https?:\/\/[^\s]+\.(?:png|jpg|jpeg|gif|webp|svg)(?:\?[^\s]*)?)/gi;
-  return text.replace(imageRegex, '<img src="$1" alt="imagem" style="max-width:100%;max-height:200px;border-radius:8px;margin:4px 0;display:block;" />');
+  // Primeiro substituir imagens, depois converter quebras de linha para <br>
+  let html = text.replace(imageRegex, '<img src="$1" alt="imagem" style="max-width:100%;max-height:200px;border-radius:8px;margin:4px 0;display:block;" />');
+  // Converter \n para <br> para preservar quebras de linha
+  html = html.replace(/\n/g, '<br>');
+  return html;
 };
 
 // Função para converter HTML de volta para texto
 const htmlToText = (html: string): string => {
   const div = document.createElement('div');
   div.innerHTML = html;
+  
+  // Substituir imagens pelo URL
   div.querySelectorAll('img').forEach(img => {
     const textNode = document.createTextNode(img.src + '\n');
     img.replaceWith(textNode);
   });
+  
+  // Preservar quebras de linha: converter <br> e </div> para \n
+  div.querySelectorAll('br').forEach(br => {
+    br.replaceWith(document.createTextNode('\n'));
+  });
+  
+  // Divs criam novas linhas no contenteditable
+  div.querySelectorAll('div').forEach(d => {
+    if (d.textContent) {
+      const text = document.createTextNode('\n' + d.textContent);
+      d.replaceWith(text);
+    }
+  });
+  
   return div.textContent || div.innerText || '';
 };
 
