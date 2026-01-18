@@ -706,8 +706,61 @@ const ProjectDetailsScreen = () => {
 
                 {/* Toolbar */}
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex space-x-2">
-                        {/* Mobile only: Nova Tarefa ao lado do Quadro */}
+                    <div className="flex items-center gap-2">
+                        {/* Points Config - Only for team members */}
+                        {(user && (project?.leaderId === user.id || project?.members?.some((m: any) => m.user?.id === user.id))) && (
+                            <>
+                                {/* Points per Open Task */}
+                                <div className="relative group">
+                                    <select
+                                        value={project?.pointsPerOpenTask || 50}
+                                        onChange={async (e) => {
+                                            try {
+                                                await updateProject(id!, { pointsPerOpenTask: Number(e.target.value) });
+                                                toast.success('Pontuação por abertura atualizada!');
+                                                window.location.reload();
+                                            } catch (err) {
+                                                toast.error('Erro ao atualizar pontuação');
+                                            }
+                                        }}
+                                        className="appearance-none bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 px-2 py-1 pr-6 rounded-lg text-xs font-bold cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                                        title="Pontos por abertura de tarefa"
+                                    >
+                                        <option value={25}>🪙 25 abertura</option>
+                                        <option value={50}>🪙 50 abertura</option>
+                                        <option value={100}>🪙 100 abertura</option>
+                                        <option value={200}>🪙 200 abertura</option>
+                                    </select>
+                                    <span className="material-icons absolute right-1 top-1/2 -translate-y-1/2 text-amber-500 text-xs pointer-events-none">expand_more</span>
+                                </div>
+
+                                {/* Points per Completed Task */}
+                                <div className="relative group">
+                                    <select
+                                        value={project?.pointsPerCompletedTask || 100}
+                                        onChange={async (e) => {
+                                            try {
+                                                await updateProject(id!, { pointsPerCompletedTask: Number(e.target.value) });
+                                                toast.success('Pontuação por conclusão atualizada!');
+                                                window.location.reload();
+                                            } catch (err) {
+                                                toast.error('Erro ao atualizar pontuação');
+                                            }
+                                        }}
+                                        className="appearance-none bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 px-2 py-1 pr-6 rounded-lg text-xs font-bold cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+                                        title="Pontos por conclusão de tarefa"
+                                    >
+                                        <option value={25}>🪙 25 conclusão</option>
+                                        <option value={50}>🪙 50 conclusão</option>
+                                        <option value={100}>🪙 100 conclusão</option>
+                                        <option value={200}>🪙 200 conclusão</option>
+                                    </select>
+                                    <span className="material-icons absolute right-1 top-1/2 -translate-y-1/2 text-emerald-500 text-xs pointer-events-none">expand_more</span>
+                                </div>
+                            </>
+                        )}
+                        
+                        {/* Mobile only: Nova Tarefa */}
                         <button
                             onClick={() => { setInitialColumnId(undefined); setIsNewTaskModalOpen(true); }}
                             className="lg:hidden bg-primary hover:bg-sky-400 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-lg shadow-primary/30 transition-all flex items-center gap-1"

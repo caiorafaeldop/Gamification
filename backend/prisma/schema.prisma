@@ -43,22 +43,24 @@ model User {
 }
 
 model Project {
-  id           String          @id @default(uuid())
-  title        String          @unique
-  description  String?
-  category     String?
-  leaderId     String
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  status       String?         @default("active")
-  progress     Int             @default(0)
-  xpReward     Int             @default(100)
-  color        String?
-  coverUrl     String?
-  KanbanColumn KanbanColumn[]
-  leader       User            @relation("ProjectLeader", fields: [leaderId], references: [id], onDelete: Cascade)
-  members      ProjectMember[]
-  tasks        Task[]
+  id                     String          @id @default(uuid())
+  title                  String          @unique
+  description            String?
+  category               String?
+  leaderId               String
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  status                 String?         @default("active")
+  progress               Int             @default(0)
+  xpReward               Int             @default(100)
+  color                  String?
+  coverUrl               String?
+  pointsPerOpenTask      Int             @default(50)
+  pointsPerCompletedTask Int             @default(100)
+  KanbanColumn           KanbanColumn[]
+  leader                 User            @relation("ProjectLeader", fields: [leaderId], references: [id], onDelete: Cascade)
+  members                ProjectMember[]
+  tasks                  Task[]
 }
 
 model ProjectMember {
