@@ -7,10 +7,9 @@ import { getProfile } from '../services/user.service';
 import { uploadProjectCover, updateProject } from '../services/project.service';
 import { useProjectDetails } from '../hooks/useProjects';
 import { Skeleton } from '../components/Skeleton';
-import NewTaskModal from '../components/NewTaskModal';
+import TaskModal from '../components/TaskModal';
 import { Camera, Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
-import TaskDetailsModal from '../components/TaskDetailsModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 
 const ProjectDetailsScreen = () => {
@@ -28,14 +27,89 @@ const ProjectDetailsScreen = () => {
     const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
     const [editingTitle, setEditingTitle] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const scrollInterval = useRef<any>(null);
+
+    // Grab-to-scroll state for desktop
+    const [isGrabScrolling, setIsGrabScrolling] = useState(false);
+    const grabStartX = useRef(0);
+    const grabScrollLeft = useRef(0);
+
+    const handleGrabMouseDown = (e: React.MouseEvent) => {
+        // Prevent if dragging a task or clicking interactive elements
+        if (isDragging || (e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('input')) return;
+        // Check if we are clicking the background or a non-draggable area
+        if ((e.target as HTMLElement).closest('[data-rbd-drag-handle-context-id]')) return;
+
+        setIsGrabScrolling(true);
+        grabStartX.current = e.pageX - kanbanRef.current!.offsetLeft;
+        grabScrollLeft.current = kanbanRef.current!.scrollLeft;
+    };
+
+    const handleGrabMouseMove = (e: React.MouseEvent) => {
+        if (!isGrabScrolling || !kanbanRef.current) return;
+        e.preventDefault();
+        const x = e.pageX - kanbanRef.current.offsetLeft;
+        const walk = (x - grabStartX.current) * 1; // Sensitivity
+        kanbanRef.current.scrollLeft = grabScrollLeft.current - walk;
+    };
+
+    const stopGrabScrolling = () => setIsGrabScrolling(false);
 
     // Search & Filter State
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedMemberFilters, setSelectedMemberFilters] = useState<string[]>([]);
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
     const filterMenuRef = useRef<HTMLDivElement>(null);
+    const [isHeaderMinimized, setIsHeaderMinimized] = useState(false);
+    const kanbanRef = useRef<HTMLDivElement>(null);
 
-    // Close filter menu when clicking outside
+    // Minimize header on mobile scroll
+    useEffect(() => {
+        const handleScroll = (e: Event) => {
+            const target = e.target as HTMLElement;
+            if (window.innerWidth < 1024) { // Only mobile
+                if (target.scrollTop > 20) {
+                    setIsHeaderMinimized(true);
+                } else if (target.scrollTop <= 10) {
+                    setIsHeaderMinimized(false);
+                }
+            }
+        };
+
+        const kanbanArea = kanbanRef.current;
+        if (kanbanArea) {
+            // We listen to all vertical scroll events inside the board
+            kanbanArea.addEventListener('scroll', handleScroll, true);
+        }
+        return () => {
+            if (kanbanArea) {
+                kanbanArea.removeEventListener('scroll', handleScroll, true);
+            }
+        };
+    }, []);
+    const [touchStart, setTouchStart] = useState<number | null>(null);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (window.innerWidth >= 1024) return;
+        setTouchStart(e.targetTouches[0].clientY);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!touchStart || window.innerWidth >= 1024) return;
+        const currentTouch = e.targetTouches[0].clientY;
+        const diff = touchStart - currentTouch;
+
+        // Swipe Up to hide, Swipe Down to show
+        if (diff > 50) {
+            setIsHeaderMinimized(true);
+            setTouchStart(null);
+        } else if (diff < -50) {
+            setIsHeaderMinimized(false);
+            setTouchStart(null);
+        }
+    };
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (filterMenuRef.current && !filterMenuRef.current.contains(event.target as Node)) {
@@ -133,7 +207,63 @@ const ProjectDetailsScreen = () => {
         }
     };
 
+    const onDragStart = (start: any) => {
+        setIsDragging(true);
+        if (window.innerWidth < 1024) {
+            setIsHeaderMinimized(true);
+        }
+    };
+
+    // Auto-scroll logic during drag
+    useEffect(() => {
+        if (!isDragging) {
+            if (scrollInterval.current) {
+                clearInterval(scrollInterval.current);
+                scrollInterval.current = null;
+            }
+            return;
+        }
+
+        const handleMove = (clientX: number) => {
+            const threshold = 80; // Smaller threshold for mobile common areas
+            const width = window.innerWidth;
+            const speed = 12;
+
+            if (scrollInterval.current) {
+                clearInterval(scrollInterval.current);
+                scrollInterval.current = null;
+            }
+
+            if (clientX > width - threshold) {
+                scrollInterval.current = setInterval(() => {
+                    if (kanbanRef.current) kanbanRef.current.scrollLeft += speed;
+                }, 16);
+            } else if (clientX < threshold) {
+                scrollInterval.current = setInterval(() => {
+                    if (kanbanRef.current) kanbanRef.current.scrollLeft -= speed;
+                }, 16);
+            }
+        };
+
+        const onMouseMove = (e: MouseEvent) => handleMove(e.clientX);
+        const onTouchMove = (e: TouchEvent) => {
+            if (e.touches && e.touches.length > 0) {
+                handleMove(e.touches[0].clientX);
+            }
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('touchmove', onTouchMove, { passive: true });
+
+        return () => {
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('touchmove', onTouchMove);
+            if (scrollInterval.current) clearInterval(scrollInterval.current);
+        };
+    }, [isDragging]);
+
     const onDragEnd = async (result: any) => {
+        setIsDragging(false);
         if (!result.destination) return;
         const { source, destination, draggableId, type } = result;
 
@@ -193,7 +323,7 @@ const ProjectDetailsScreen = () => {
             const defaultTitle = "Nova Coluna";
             // Create column with default title
             const newColumn = await createColumn(id!, defaultTitle, columns.length);
-            
+
             // Refresh kanban to get the updated list including the new column
             await fetchKanban();
 
@@ -220,14 +350,14 @@ const ProjectDetailsScreen = () => {
         }
 
         // Optimistic update
-        const newColumns = columns.map((col: any) => 
+        const newColumns = columns.map((col: any) =>
             col.id === editingColumnId ? { ...col, title: editingTitle } : col
         );
         setColumns(newColumns);
-        
+
         const idToUpdate = editingColumnId;
         const titleToUpdate = editingTitle;
-        
+
         // Close edit mode immediately
         setEditingColumnId(null);
 
@@ -301,8 +431,19 @@ const ProjectDetailsScreen = () => {
     // Disable drag if ANY filter is active (member or search)
     const isDragDisabled = selectedMemberFilters.length > 0 || !!searchQuery.trim();
 
-    const getColumnStyles = (title: string) => {
-        const lowerTitle = title.toLowerCase();
+    const getColumnStyles = (column: any) => {
+        const lowerTitle = column.title?.toLowerCase() || '';
+
+        // Estilo especial verde para coluna de conclusão
+        if (column.isCompletionColumn) {
+            return {
+                container: "bg-emerald-50/80 dark:bg-emerald-900/20 border-t-4 border-t-emerald-500 border-x border-b border-emerald-200/50 dark:border-emerald-800/50",
+                headerIcon: <span className="material-icons text-emerald-500 text-sm">verified</span>,
+                titleColor: "text-emerald-700 dark:text-emerald-300",
+                badge: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400",
+                isCompletionColumn: true
+            };
+        }
 
         const config = [
             {
@@ -324,7 +465,7 @@ const ProjectDetailsScreen = () => {
                 }
             },
             {
-                keywords: ['concluido', 'feito', 'done', 'finished'],
+                keywords: ['concluido', 'conclusão', 'feito', 'done', 'finished'],
                 styles: {
                     container: "bg-gray-50/50 dark:bg-surface-dark/30 border-gray-200/50 dark:border-gray-800/50",
                     headerIcon: <span className="material-icons text-emerald-500 text-sm">check_circle</span>,
@@ -414,190 +555,237 @@ const ProjectDetailsScreen = () => {
             <div className="absolute inset-0 z-0 bg-network-pattern opacity-30 pointer-events-none"></div>
 
             {/* Header Section */}
-            <div className="bg-surface-light/80 dark:bg-secondary/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 z-10 p-6 flex-shrink-0 relative group">
+            <div
+                className={`bg-surface-light/80 dark:bg-secondary/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 z-10 transition-all duration-300 flex-shrink-0 relative group ${isHeaderMinimized ? 'pt-1 pb-1 px-3' : 'py-3 px-4'
+                    }`}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+            >
                 {/* Project Cover Background */}
-                {project.coverUrl && (
+                {project.coverUrl && !isHeaderMinimized && (
                     <div className="absolute inset-0 z-0 opacity-20 group-hover:opacity-30 transition-opacity">
                         <img src={project.coverUrl} alt="" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-surface-light dark:to-background-dark"></div>
                     </div>
                 )}
 
-                {/* Cover Upload Overlay */}
-                {isLeaderOrAdmin && (
-                    <label className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer bg-black/50 hover:bg-black/70 text-white px-3 py-1.5 rounded-full flex items-center gap-2 backdrop-blur-sm">
-                        <input type="file" className="hidden" accept="image/*" onChange={handleCoverUpload} disabled={uploadingCover} />
-                        {uploadingCover ? (
-                            <Loader className="animate-spin" size={16} />
-                        ) : (
-                            <>
-                                <Camera size={16} />
-                                <span className="text-xs font-bold uppercase tracking-wider">Alterar Capa</span>
-                            </>
-                        )}
-                    </label>
-                )}
-
                 <div className="max-w-full mx-auto relative z-10">
-                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-                        <div className="space-y-2 max-w-2xl">
-                            <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-1">
+                    <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center transition-all duration-300 ${isHeaderMinimized ? 'gap-1' : 'gap-3'
+                        }`}>
+                        <div className={`space-y-1 max-w-2xl transition-all duration-300 ${isHeaderMinimized ? 'hidden lg:block' : 'block'}`}>
+                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                                 <span onClick={() => navigate('/projects')} className="hover:text-primary cursor-pointer">Projetos</span>
-                                <span className="material-icons text-xs">chevron_right</span>
+                                <span className="material-icons text-[10px]">chevron_right</span>
                                 <span className="text-primary font-bold">Detalhes</span>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <h1 className="text-3xl font-display font-extrabold text-secondary dark:text-white">{project.title}</h1>
-                                <span className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border border-green-200 dark:border-green-800">
-                                    {project.status}
-                                </span>
+                            <div className="flex items-center gap-2">
+                                <h1 className={`${isHeaderMinimized ? 'text-base truncate max-w-[200px]' : 'text-xl'} transition-all duration-300 font-display font-extrabold text-secondary dark:text-white lg:max-w-none`}>{project.title}</h1>
+                                {!isHeaderMinimized && (
+                                    <span className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-green-200 dark:border-green-800">
+                                        {project.status}
+                                    </span>
+                                )}
                             </div>
-                            <p className="text-gray-600 dark:text-gray-300 text-sm">
-                                {project.description}
-                            </p>
+                            {!isHeaderMinimized && (
+                                <p className="text-gray-600 dark:text-gray-300 text-xs line-clamp-2">
+                                    {project.description}
+                                </p>
+                            )}
                         </div>
 
-                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-6">
-                            <div className="flex items-center gap-4">
-                                <div className="flex -space-x-3">
+                        <div className={`flex flex-col lg:flex-row items-end lg:items-center transition-all duration-300 ${isHeaderMinimized ? 'hidden lg:flex' : 'flex'
+                            } gap-3`}>
+                            <div className="flex items-center gap-3">
+                                <div className="flex -space-x-2">
                                     {project.members?.slice(0, 4).map((m: any, idx: number) => (
                                         <img
                                             key={idx}
                                             alt={m.user?.name || 'Member'}
-                                            className="w-10 h-10 rounded-full border-2 border-white dark:border-secondary shadow-sm object-cover"
+                                            className="w-7 h-7 rounded-full border-2 border-white dark:border-secondary shadow-sm object-cover"
                                             src={m.user?.avatarUrl || `https://ui-avatars.com/api/?name=${m.user?.name || 'User'}&background=random`}
                                             title={m.user?.name}
                                         />
                                     ))}
-                                    <button className="w-10 h-10 rounded-full bg-gray-100 dark:bg-surface-dark border-2 border-white dark:border-secondary flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                                        <span className="material-icons text-sm">add</span>
-                                    </button>
                                 </div>
-                                <div className="flex items-center gap-3 border-l border-gray-300 dark:border-gray-700 pl-4 h-10">
-                                    <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-primary shrink-0 overflow-hidden">
+                                <div className="flex items-center gap-2 border-l border-gray-300 dark:border-gray-700 pl-3 h-7">
+                                    <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-primary shrink-0 overflow-hidden">
                                         {project.leader?.avatarUrl ? (
                                             <img src={project.leader.avatarUrl} alt={project.leader.name} className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="w-full h-full bg-gradient-to-tr from-gray-200 to-gray-300 flex items-center justify-center">
-                                                <span className="text-gray-500 font-bold text-xs">{project.leader?.name?.substring(0, 2).toUpperCase()}</span>
+                                                <span className="text-gray-500 font-bold text-[10px]">{project.leader?.name?.substring(0, 2).toUpperCase()}</span>
                                             </div>
                                         )}
                                     </div>
-                                    <div className="text-left hidden sm:block">
-                                        <p className="text-xs text-gray-500 uppercase font-bold">Líder do Projeto</p>
-                                        <p className="text-sm font-bold text-secondary dark:text-white">{project.leader?.name || "Desconhecido"}</p>
+                                    <div className="text-left">
+                                        <p className="text-[9px] text-gray-500 uppercase font-bold leading-tight">Líder</p>
+                                        <p className="text-[11px] font-bold text-secondary dark:text-white truncate max-w-[80px] lg:max-w-[100px] leading-tight">{project.leader?.name || "Desconhecido"}</p>
                                     </div>
                                 </div>
                             </div>
+                            {/* Desktop only: Nova Tarefa na posição original */}
                             <button
                                 onClick={() => { setInitialColumnId(undefined); setIsNewTaskModalOpen(true); }}
-                                className="bg-primary hover:bg-sky-400 text-white px-5 py-2.5 rounded-lg font-bold shadow-lg shadow-primary/30 transition-all flex items-center gap-2"
+                                className="hidden lg:flex bg-primary hover:bg-sky-400 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-lg shadow-primary/30 transition-all items-center gap-1"
                             >
                                 <span className="material-icons text-sm">add</span>
                                 Nova Tarefa
                             </button>
                         </div>
                     </div>
+                </div>
 
-                    {/* Toolbar */}
-                    <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-                        <div className="flex space-x-2">
-                            <button className="px-4 py-2 bg-white dark:bg-surface-dark text-primary font-bold rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                                <span className="material-icons text-sm">view_kanban</span>
-                                Quadro
-                            </button>
+                {/* Toolbar */}
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex space-x-2">
+                        {/* Mobile only: Nova Tarefa ao lado do Quadro */}
+                        <button
+                            onClick={() => { setInitialColumnId(undefined); setIsNewTaskModalOpen(true); }}
+                            className="lg:hidden bg-primary hover:bg-sky-400 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-lg shadow-primary/30 transition-all flex items-center gap-1"
+                        >
+                            <span className="material-icons text-sm">add</span>
+                            Nova Tarefa
+                        </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="relative">
+                            <span className="material-icons absolute left-2.5 top-1.5 text-gray-400 text-sm">search</span>
+                            <input
+                                className="pl-8 pr-3 py-1.5 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-xs focus:ring-primary focus:border-primary w-48 dark:text-white dark:placeholder-gray-400 outline-none"
+                                placeholder="Buscar tarefas..."
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <span className="material-icons absolute left-3 top-2.5 text-gray-400 text-sm">search</span>
-                                <input
-                                    className="pl-9 pr-4 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-primary focus:border-primary w-64 dark:text-white dark:placeholder-gray-400 outline-none"
-                                    placeholder="Buscar tarefas..."
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                            </div>
-                            <div className="relative" ref={filterMenuRef}>
-                                <button
-                                    onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
-                                    className={`p-2 transition-all rounded-lg flex items-center gap-2 ${selectedMemberFilters.length > 0
-                                            ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-bold'
-                                            : 'text-gray-500 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800'
-                                        }`}
-                                >
-                                    <span className="material-icons">filter_list</span>
-                                    {selectedMemberFilters.length > 0 && (
-                                        <span className="text-xs bg-primary text-white px-1.5 py-0.5 rounded-full">
-                                            {selectedMemberFilters.length}
-                                        </span>
-                                    )}
-                                </button>
+                        <div className="relative" ref={filterMenuRef}>
+                            <button
+                                onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
+                                className={`p-1.5 transition-all rounded-lg flex items-center gap-1 ${selectedMemberFilters.length > 0
+                                    ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-bold'
+                                    : 'text-gray-500 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800'
+                                    }`}
+                            >
+                                <span className="material-icons text-lg">filter_list</span>
+                                {selectedMemberFilters.length > 0 && (
+                                    <span className="text-[10px] bg-primary text-white px-1 py-0.5 rounded-full">
+                                        {selectedMemberFilters.length}
+                                    </span>
+                                )}
+                            </button>
 
-                                {isFilterMenuOpen && (
-                                    <div className="absolute right-0 top-12 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 w-72 p-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                        <div className="p-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-black/20">
-                                            <h4 className="font-bold text-sm text-gray-700 dark:text-gray-200">Filtrar por responsável</h4>
-                                        </div>
-                                        <div className="p-2 space-y-1 max-h-[300px] overflow-y-auto custom-scrollbar">
-                                            {/* Unassigned Option */}
-                                            <label className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg cursor-pointer transition-colors group">
+                            {isFilterMenuOpen && (
+                                <div className="absolute right-0 top-10 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 w-72 p-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="p-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-black/20">
+                                        <h4 className="font-bold text-sm text-gray-700 dark:text-gray-200">Filtrar por responsável</h4>
+                                    </div>
+                                    <div className="p-2 space-y-1 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                        {/* Unassigned Option */}
+                                        <label className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg cursor-pointer transition-colors group">
+                                            <div className="relative flex items-center justify-center">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedMemberFilters.includes('unassigned')}
+                                                    onChange={() => toggleMemberFilter('unassigned')}
+                                                    className="peer appearance-none w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-surface-dark checked:bg-primary checked:border-primary transition-all"
+                                                />
+                                                <span className="material-icons absolute text-white text-[14px] opacity-0 peer-checked:opacity-100 pointer-events-none transform scale-50 peer-checked:scale-100 transition-all">check</span>
+                                            </div>
+                                            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 font-bold text-xs ring-2 ring-transparent group-hover:ring-gray-200 dark:group-hover:ring-gray-700 transition-all">?</div>
+                                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Sem responsável</span>
+                                        </label>
+
+                                        {/* Members */}
+                                        {project?.members?.map((member: any) => (
+                                            <label key={member.user?.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg cursor-pointer transition-colors group">
                                                 <div className="relative flex items-center justify-center">
                                                     <input
                                                         type="checkbox"
-                                                        checked={selectedMemberFilters.includes('unassigned')}
-                                                        onChange={() => toggleMemberFilter('unassigned')}
+                                                        checked={selectedMemberFilters.includes(member.user?.id)}
+                                                        onChange={() => toggleMemberFilter(member.user?.id)}
                                                         className="peer appearance-none w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-surface-dark checked:bg-primary checked:border-primary transition-all"
                                                     />
                                                     <span className="material-icons absolute text-white text-[14px] opacity-0 peer-checked:opacity-100 pointer-events-none transform scale-50 peer-checked:scale-100 transition-all">check</span>
                                                 </div>
-                                                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 font-bold text-xs ring-2 ring-transparent group-hover:ring-gray-200 dark:group-hover:ring-gray-700 transition-all">?</div>
-                                                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Sem responsável</span>
+                                                <img
+                                                    src={member.user?.avatarUrl || `https://ui-avatars.com/api/?name=${member.user?.name}&background=random`}
+                                                    className="w-8 h-8 rounded-full object-cover ring-2 ring-transparent group-hover:ring-gray-200 dark:group-hover:ring-gray-700 transition-all"
+                                                    alt={member.user?.name}
+                                                />
+                                                <span className="text-sm font-medium text-gray-600 dark:text-gray-300 truncate">{member.user?.name}</span>
                                             </label>
-
-                                            {/* Members */}
-                                            {project?.members?.map((member: any) => (
-                                                <label key={member.user?.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg cursor-pointer transition-colors group">
-                                                    <div className="relative flex items-center justify-center">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedMemberFilters.includes(member.user?.id)}
-                                                            onChange={() => toggleMemberFilter(member.user?.id)}
-                                                            className="peer appearance-none w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-surface-dark checked:bg-primary checked:border-primary transition-all"
-                                                        />
-                                                        <span className="material-icons absolute text-white text-[14px] opacity-0 peer-checked:opacity-100 pointer-events-none transform scale-50 peer-checked:scale-100 transition-all">check</span>
-                                                    </div>
-                                                    <img
-                                                        src={member.user?.avatarUrl || `https://ui-avatars.com/api/?name=${member.user?.name}&background=random`}
-                                                        className="w-8 h-8 rounded-full object-cover ring-2 ring-transparent group-hover:ring-gray-200 dark:group-hover:ring-gray-700 transition-all"
-                                                        alt={member.user?.name}
-                                                    />
-                                                    <span className="text-sm font-medium text-gray-600 dark:text-gray-300 truncate">{member.user?.name}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                        {selectedMemberFilters.length > 0 && (
-                                            <div className="p-2 border-t border-gray-100 dark:border-gray-800">
-                                                <button
-                                                    onClick={() => { setSelectedMemberFilters([]); setIsFilterMenuOpen(false); }}
-                                                    className="w-full py-2 text-xs text-red-500 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center justify-center gap-1"
-                                                >
-                                                    <span className="material-icons text-sm">close</span>
-                                                    Limpar filtros
-                                                </button>
-                                            </div>
-                                        )}
+                                        ))}
                                     </div>
-                                )}
-                            </div>
+                                    {selectedMemberFilters.length > 0 && (
+                                        <div className="p-2 border-t border-gray-100 dark:border-gray-800">
+                                            <button
+                                                onClick={() => { setSelectedMemberFilters([]); setIsFilterMenuOpen(false); }}
+                                                className="w-full py-2 text-xs text-red-500 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center justify-center gap-1"
+                                            >
+                                                <span className="material-icons text-sm">close</span>
+                                                Limpar filtros
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
+
+                        {/* Alterar Capa - Apenas para líder/admin */}
+                        {isLeaderOrAdmin && (
+                            <label 
+                                className="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors border border-gray-200 dark:border-gray-700 relative z-20"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const input = e.currentTarget.querySelector('input');
+                                    if (input && !uploadingCover) input.click();
+                                }}
+                            >
+                                <input 
+                                    type="file" 
+                                    className="hidden absolute inset-0 opacity-0 w-0 h-0" 
+                                    accept="image/*" 
+                                    onChange={handleCoverUpload} 
+                                    disabled={uploadingCover} 
+                                />
+                                {uploadingCover ? (
+                                    <Loader className="animate-spin" size={14} />
+                                ) : (
+                                    <>
+                                        <Camera size={14} />
+                                        <span className="text-xs font-medium hidden sm:inline">Capa</span>
+                                    </>
+                                )}
+                            </label>
+                        )}
                     </div>
+                </div>
+
+                {/* Pull Handle (Mobile Only) */}
+                <div className="lg:hidden flex justify-center mt-1 -mb-1">
+                    <button
+                        onClick={() => setIsHeaderMinimized(!isHeaderMinimized)}
+                        className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-700 hover:bg-primary transition-colors relative"
+                        title={isHeaderMinimized ? "Expandir" : "Recolher"}
+                    >
+                        <span className={`material-icons absolute -top-3 left-1/2 -translate-x-1/2 text-gray-400 text-xs transition-transform duration-300 ${isHeaderMinimized ? 'rotate-180' : ''}`}>
+                            expand_less
+                        </span>
+                    </button>
                 </div>
             </div>
 
             {/* Kanban Board Area */}
-            <div className="flex-1 overflow-x-auto p-6">
-                <DragDropContext onDragEnd={onDragEnd}>
+            <div
+                ref={kanbanRef}
+                className={`flex-1 overflow-x-auto p-4 lg:p-6 transition-colors duration-500 custom-scrollbar-hide ${isDragging ? 'bg-gray-100/50 dark:bg-black/10' : ''
+                    } ${isGrabScrolling ? 'cursor-grabbing select-none' : 'cursor-default'}`}
+                onMouseDown={handleGrabMouseDown}
+                onMouseMove={handleGrabMouseMove}
+                onMouseUp={stopGrabScrolling}
+                onMouseLeave={stopGrabScrolling}
+            >
+                <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
                     <StrictModeDroppable droppableId="all-columns" direction="horizontal" type="column">
                         {(provided) => (
                             <div
@@ -606,7 +794,7 @@ const ProjectDetailsScreen = () => {
                                 className="h-full flex gap-6 min-w-max"
                             >
                                 {displayedColumns && displayedColumns.map((column: any, index: number) => {
-                                    const styles = getColumnStyles(column.title);
+                                    const styles = getColumnStyles(column);
                                     return (
                                         <Draggable key={column.id} draggableId={column.id} index={index}>
                                             {(provided) => (
@@ -642,20 +830,24 @@ const ProjectDetailsScreen = () => {
                                                             )}
                                                         </div>
                                                         <div className="flex items-center">
-                                                            <button
-                                                                onClick={() => startEditing(column.id, column.title)}
-                                                                className="p-1 text-gray-400 hover:text-blue-500"
-                                                                title="Renomear"
-                                                            >
-                                                                <span className="material-icons text-sm">edit</span>
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDeleteColumn(column.id)}
-                                                                className="p-1 text-gray-400 hover:text-red-500"
-                                                                title="Excluir"
-                                                            >
-                                                                <span className="material-icons text-sm">delete</span>
-                                                            </button>
+                                                            {!column.isCompletionColumn && (
+                                                                <button
+                                                                    onClick={() => startEditing(column.id, column.title)}
+                                                                    className="p-1 text-gray-400 hover:text-blue-500"
+                                                                    title="Renomear"
+                                                                >
+                                                                    <span className="material-icons text-sm">edit</span>
+                                                                </button>
+                                                            )}
+                                                            {!column.isCompletionColumn && (
+                                                                <button
+                                                                    onClick={() => handleDeleteColumn(column.id)}
+                                                                    className="p-1 text-gray-400 hover:text-red-500"
+                                                                    title="Excluir"
+                                                                >
+                                                                    <span className="material-icons text-sm">delete</span>
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </div>
 
@@ -699,16 +891,12 @@ const ProjectDetailsScreen = () => {
                                                                                             <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-[10px] font-bold text-gray-500 dark:text-gray-300 border border-white dark:border-surface-dark">?</div>
                                                                                         )}
                                                                                     </div>
-                                                                                    <div className="flex items-center gap-3 text-gray-400 text-xs font-medium">
-                                                                                        <span className="flex items-center gap-1 hover:text-primary"><span className="material-icons text-[14px]">chat_bubble_outline</span> 2</span>
-                                                                                        <span className="flex items-center gap-1 hover:text-primary"><span className="material-icons text-[14px]">attach_file</span> 1</span>
-                                                                                    </div>
                                                                                 </div>
                                                                                 <button
-                                                                                    onClick={(e) => { 
-                                                                                        e.stopPropagation(); 
-                                                                                        setSelectedTask(task); 
-                                                                                        setIsTaskDetailsOpen(true); 
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setSelectedTask(task);
+                                                                                        setIsTaskDetailsOpen(true);
                                                                                     }}
                                                                                     className="absolute top-2 right-8 text-gray-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                                                                 >
@@ -725,7 +913,7 @@ const ProjectDetailsScreen = () => {
                                                                     </Draggable>
                                                                 ))}
                                                                 {provided.placeholder}
-                                                                    <button
+                                                                <button
                                                                     onClick={() => { setInitialColumnId(column.id); setIsNewTaskModalOpen(true); }}
                                                                     className="w-full py-2 text-sm text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center gap-1 font-medium border border-dashed border-gray-300 dark:border-gray-700"
                                                                 >
@@ -756,18 +944,13 @@ const ProjectDetailsScreen = () => {
                     </StrictModeDroppable>
                 </DragDropContext>
             </div>
-            <NewTaskModal
-                isOpen={isNewTaskModalOpen}
-                onClose={() => setIsNewTaskModalOpen(false)}
+            <TaskModal
+                isOpen={isNewTaskModalOpen || isTaskDetailsOpen}
+                onClose={() => { setIsNewTaskModalOpen(false); setIsTaskDetailsOpen(false); setSelectedTask(null); }}
                 projectId={id}
                 initialColumnId={initialColumnId}
                 projectMembers={project?.members}
                 onSuccess={fetchKanban}
-            />
-
-            <TaskDetailsModal
-                isOpen={isTaskDetailsOpen}
-                onClose={() => setIsTaskDetailsOpen(false)}
                 task={selectedTask}
             />
 
@@ -776,7 +959,7 @@ const ProjectDetailsScreen = () => {
                 onClose={() => setColumnToDelete(null)}
                 onConfirm={confirmDeleteColumn}
                 title="Excluir Coluna"
-                message="Tem certeza que deseja excluir esta coluna? Esta ação não pode ser desfeita e apenas colunas vazias podem ser removidas."
+                message="Apenas colunas vazias podem ser removidas."
                 confirmText="Sim, excluir"
                 type="danger"
             />

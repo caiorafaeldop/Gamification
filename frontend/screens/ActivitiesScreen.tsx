@@ -179,7 +179,7 @@ const ActivitiesScreen = () => {
               <div className="bg-red-100 dark:bg-red-900/20 p-2 rounded-lg text-red-600 dark:text-red-400">
                 <AlertCircle size={20} />
               </div>
-              <h2 className="text-xl font-bold text-secondary dark:text-white">Perto do Prazo (Minhas Tarefas)</h2>
+              <h2 className="text-xl font-bold text-secondary dark:text-white">Minhas Tarefas</h2>
             </div>
 
             <div className="space-y-4">
@@ -201,7 +201,6 @@ const ActivitiesScreen = () => {
               ) : deadlines.length === 0 ? (
                 <div className="text-center py-10 text-gray-400 bg-white dark:bg-surface-dark rounded-2xl border border-gray-100 dark:border-gray-800">
                   <p>Nenhuma tarefa pendente encontrada.</p>
-                  <p className="text-xs mt-2">Isso pode ocorrer se você não tiver tarefas ou se o endpoint /tasks/my-tasks ainda não estiver ativo.</p>
                 </div>
               ) : deadlines.map((item: any) => (
                 <div key={item.id} className="bg-white dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-md transition-shadow relative overflow-hidden group">
@@ -328,7 +327,7 @@ const ActivitiesScreen = () => {
                           {/* Botões de editar e deletar - apenas para criador */}
                           {event.createdById === user?.id && (
                             <>
-                              <div className="flex gap-2 mt-3 p-2 bg-gray-50 dark:bg-white/5 rounded-lg">
+                              <div className="flex flex-wrap gap-2 mt-3 p-2 bg-gray-50 dark:bg-white/5 rounded-lg">
                                 <button
                                   onClick={() => openEditModal(event.id)}
                                   className="px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-primary transition-all shadow-sm"
@@ -407,6 +406,7 @@ const ActivitiesScreen = () => {
             <button
               onClick={openNewEventModal}
               className="w-full mt-4 px-4 py-3 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:bg-sky-500 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+              style={{ marginBottom: 'calc(env(safe-area-inset-bottom, 20px) + 32px)' }}
             >
               <Plus size={18} />
               Criar Novo Evento
@@ -415,11 +415,11 @@ const ActivitiesScreen = () => {
 
         </div>
       </div>
-      
+
       {/* New Event Modal */}
-      <NewEventModal 
-        isOpen={isEventModalOpen} 
-        onClose={() => setIsEventModalOpen(false)} 
+      <NewEventModal
+        isOpen={isEventModalOpen}
+        onClose={() => setIsEventModalOpen(false)}
         eventId={editingEventId}
         onSuccess={loadEvents}
       />

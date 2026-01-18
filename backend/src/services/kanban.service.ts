@@ -37,9 +37,9 @@ export const getProjectBoard = async (projectId: string) => {
 
 const createDefaultColumns = async (projectId: string) => {
     const defaultData = [
-        { title: 'A Fazer', order: 0, status: TaskStatus.todo, projectId },
-        { title: 'Em Progresso', order: 1, status: TaskStatus.in_progress, projectId },
-        { title: 'Concluído', order: 2, status: TaskStatus.done, projectId },
+        { title: 'A Fazer', order: 0, status: TaskStatus.todo, projectId, isCompletionColumn: false },
+        { title: 'Em Progresso', order: 1, status: TaskStatus.in_progress, projectId, isCompletionColumn: false },
+        { title: 'Conclusão', order: 2, status: TaskStatus.done, projectId, isCompletionColumn: true },
     ];
 
     await prisma.kanbanColumn.createMany({ data: defaultData });
@@ -56,6 +56,16 @@ export const createColumnService = async (projectId: string, title: string, orde
 };
 
 export const updateColumnService = async (columnId: string, data: any) => {
+    const column = await prisma.kanbanColumn.findUnique({ where: { id: columnId } });
+    if (!column) {
+        throw { statusCode: 404, message: 'Column not found.' };
+    }
+
+    // Bloquear edição do título se for coluna de conclusão
+    if (column.isCompletionColumn && data.title && data.title !== column.title) {
+        throw { statusCode: 400, message: 'O nome da coluna de conclusão não pode ser alterado.' };
+    }
+
     return prisma.kanbanColumn.update({
         where: { id: columnId },
         data
@@ -63,6 +73,16 @@ export const updateColumnService = async (columnId: string, data: any) => {
 };
 
 export const deleteColumnService = async (columnId: string) => {
+    const column = await prisma.kanbanColumn.findUnique({ where: { id: columnId } });
+    if (!column) {
+        throw { statusCode: 404, message: 'Column not found.' };
+    }
+
+    // Bloquear exclusão da coluna de conclusão
+    if (column.isCompletionColumn) {
+        throw { statusCode: 400, message: 'A coluna de conclusão não pode ser excluída.' };
+    }
+
     const tasksCount = await prisma.task.count({ where: { columnId } });
     if (tasksCount > 0) {
         throw { statusCode: 400, message: 'Cannot delete a column that contains tasks.' };
@@ -73,20 +93,60 @@ export const deleteColumnService = async (columnId: string) => {
 export const moveTaskService = async (taskId: string, columnId: string, userId: string, isAdmin: boolean) => {
     const task = await prisma.task.findUnique({
         where: { id: taskId },
-        include: { project: { include: { members: true } } }
+        include: { 
+            project: { include: { members: true } },
+            KanbanColumn: true // Buscar coluna atual
+        }
     });
 
     if (!task) throw { statusCode: 404, message: 'Task not found' };
 
-    const isMember = task.project.members.some(m => m.userId === userId);
-    if (!isMember && !isAdmin) throw { statusCode: 403, message: 'Not authorized' };
+    /* Permissão removida conforme solicitação: qualquer usuário autenticado pode mover */
+    // const isMember = task.project.members.some(m => m.userId === userId);
+    // if (!isMember && !isAdmin) throw { statusCode: 403, message: 'Not authorized' };
 
-    const column = await prisma.kanbanColumn.findUnique({ where: { id: columnId } });
-    if (!column) throw { statusCode: 404, message: 'Column not found' };
+    const newColumn = await prisma.kanbanColumn.findUnique({ where: { id: columnId } });
+    if (!newColumn) throw { statusCode: 404, message: 'Column not found' };
 
-    return prisma.task.update({
-        where: { id: taskId },
-        data: { columnId, status: column.status }
+    const oldColumn = task.KanbanColumn;
+    const wasInCompletionColumn = oldColumn?.isCompletionColumn || false;
+    const isGoingToCompletionColumn = newColumn.isCompletionColumn;
+
+    // Se não há mudança de coluna, apenas retorna
+    if (task.columnId === columnId) {
+        return task;
+    }
+
+    // Import gamification functions
+    const { addPointsForTaskCompletion, removePointsForTaskUncompletion } = await import('./gamification.service');
+
+    return prisma.$transaction(async (tx) => {
+        // Atualizar task
+        const updatedTask = await tx.task.update({
+            where: { id: taskId },
+            data: { 
+                columnId, 
+                status: newColumn.status,
+                completedAt: isGoingToCompletionColumn ? new Date() : (wasInCompletionColumn ? null : task.completedAt)
+            }
+        });
+
+        // Lógica de pontuação
+        if (task.assignedToId) {
+            // Caso 1: Task entrando na coluna de conclusão
+            if (!wasInCompletionColumn && isGoingToCompletionColumn) {
+                await addPointsForTaskCompletion(task.assignedToId, task.pointsReward, taskId, tx);
+                console.log(`[POINTS] Added ${task.pointsReward} points to user ${task.assignedToId} for completing task`);
+            }
+
+            // Caso 2: Task saindo da coluna de conclusão
+            if (wasInCompletionColumn && !isGoingToCompletionColumn) {
+                await removePointsForTaskUncompletion(task.assignedToId, task.pointsReward, taskId, tx);
+                console.log(`[POINTS] Removed ${task.pointsReward} points from user ${task.assignedToId} for uncompleting task`);
+            }
+        }
+
+        return updatedTask;
     });
 };
 

@@ -23,13 +23,49 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      // Redirect to login if needed, or let the UI handle it via state
-      // window.location.href = '/'; // Simple redirect approach
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Se o erro for 401 e não for uma tentativa de refresh token
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem('refreshToken');
+        
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
+
+        // Tenta renovar o token
+        // Usamos axios diretamente para evitar loop infinito nos interceptors da instância 'api'
+        const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/refresh`, {
+          refreshToken,
+        });
+
+        const { accessToken, refreshToken: newRefreshToken } = response.data;
+
+        // Atualiza tokens
+        localStorage.setItem('token', accessToken);
+        localStorage.setItem('refreshToken', newRefreshToken); // Atualiza também o refresh token (rolling session)
+
+        // Atualiza o header da requisição original
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        
+        // Retenta a requisição original com o novo token
+        return api(originalRequest);
+        
+      } catch (refreshError) {
+        // Se falhar o refresh (ex: refresh token expirado), desloga o usuário
+        console.error("Token refresh failed:", refreshError);
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login'; // Ou use navigate se possível, mas window.location é mais seguro aqui
+        return Promise.reject(refreshError);
+      }
     }
+    
     return Promise.reject(error);
   }
 );

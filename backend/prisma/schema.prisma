@@ -55,7 +55,7 @@ model Project {
   color        String?
   coverUrl     String?
   KanbanColumn KanbanColumn[]
-  leader       User            @relation("ProjectLeader", fields: [leaderId], references: [id])
+  leader       User            @relation("ProjectLeader", fields: [leaderId], references: [id], onDelete: Cascade)
   members      ProjectMember[]
   tasks        Task[]
 }
@@ -64,8 +64,8 @@ model ProjectMember {
   userId     String
   projectId  String
   assignedAt DateTime @default(now())
-  project    Project  @relation(fields: [projectId], references: [id])
-  user       User     @relation(fields: [userId], references: [id])
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, projectId])
 }
@@ -89,10 +89,10 @@ model Task {
   projectId            String
   difficulty           Int
   columnId             String?
-  assignedTo           User?         @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  assignedTo           User?         @relation("AssignedTasks", fields: [assignedToId], references: [id], onDelete: SetNull)
   KanbanColumn         KanbanColumn? @relation(fields: [columnId], references: [id])
-  createdBy            User          @relation("CreatedTasks", fields: [createdById], references: [id])
-  project              Project       @relation(fields: [projectId], references: [id])
+  createdBy            User          @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: Cascade)
+  project              Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   requiredTier         Tier?         @relation("RequiredTier", fields: [requiredTierId], references: [id])
   comments             Comment[]
 }
@@ -116,7 +116,7 @@ model ActivityLog {
   description  String
   pointsChange Int?
   createdAt    DateTime     @default(now())
-  user         User         @relation(fields: [userId], references: [id])
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Achievement {
@@ -138,7 +138,7 @@ model UserAchievement {
   achievementId String
   earnedAt      DateTime    @default(now())
   achievement   Achievement @relation(fields: [achievementId], references: [id])
-  user          User        @relation(fields: [userId], references: [id])
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, achievementId])
 }
@@ -151,7 +151,7 @@ model Notification {
   read      Boolean  @default(false)
   type      String
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model StoreItem {
@@ -172,19 +172,20 @@ model Order {
   cost      Int
   createdAt DateTime  @default(now())
   item      StoreItem @relation(fields: [itemId], references: [id])
-  user      User      @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model KanbanColumn {
-  id        String     @id @default(uuid())
-  title     String
-  order     Int        @default(0)
-  projectId String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  status    TaskStatus @default(todo)
-  Project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  Task      Task[]
+  id                 String     @id @default(uuid())
+  title              String
+  order              Int        @default(0)
+  projectId          String
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  status             TaskStatus @default(todo)
+  isCompletionColumn Boolean    @default(false)
+  Project            Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  Task               Task[]
 }
 
 model Event {
@@ -198,7 +199,7 @@ model Event {
   createdById  String
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
-  createdBy    User               @relation("CreatedEvents", fields: [createdById], references: [id])
+  createdBy    User               @relation("CreatedEvents", fields: [createdById], references: [id], onDelete: Cascade)
   participants EventParticipant[]
 }
 
@@ -207,8 +208,8 @@ model EventParticipant {
   userId   String
   eventId  String
   joinedAt DateTime @default(now())
-  event    Event    @relation(fields: [eventId], references: [id])
-  user     User     @relation(fields: [userId], references: [id])
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventId])
 }
@@ -259,5 +260,5 @@ model Comment {
   updatedAt DateTime @updatedAt
 
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

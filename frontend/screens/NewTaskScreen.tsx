@@ -6,6 +6,7 @@ import { useProjects } from '../hooks/useProjects';
 import { getAllUsers } from '../services/user.service';
 import { getProjectDetails } from '../services/project.service';
 import { useAuth } from '../hooks/useAuth';
+import MemberSelect from '../components/MemberSelect';
 
 const NewTaskScreen = () => {
   const navigate = useNavigate();
@@ -79,9 +80,9 @@ const NewTaskScreen = () => {
           setProjectId(task.projectId);
           setAssignedToId(task.assignedToId || '');
           // Map difficulty back to level (approximate)
-          if (task.difficulty <= 3) setTaskLevel('basic');
-          else if (task.difficulty <= 6) setTaskLevel('medium');
-          else setTaskLevel('large');
+          if (task.difficulty === 1) setTaskLevel('basic');
+          else if (task.difficulty === 2) setTaskLevel('medium');
+          else setTaskLevel('large'); // difficulty 3
 
           if (task.estimatedTimeMinutes) {
             setEstimatedTime((task.estimatedTimeMinutes / 60).toString());
@@ -101,17 +102,17 @@ const NewTaskScreen = () => {
   useEffect(() => {
     switch (taskLevel) {
       case 'basic': setPoints(50); break; // Visual cue
-      case 'medium': setPoints(150); break;
-      case 'large': setPoints(300); break;
+      case 'medium': setPoints(100); break;
+      case 'large': setPoints(200); break;
     }
   }, [taskLevel]);
 
   const mapLevelToDifficulty = (level: string) => {
     switch (level) {
-      case 'basic': return 3;
-      case 'medium': return 6;
-      case 'large': return 9;
-      default: return 5;
+      case 'basic': return 1;
+      case 'medium': return 2;
+      case 'large': return 3;
+      default: return 2;
     }
   };
 
@@ -240,20 +241,15 @@ const NewTaskScreen = () => {
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                   <User size={16} className="text-primary" /> Responsável
                 </label>
-                {loadingUsers ? (
-                  <div className="h-12 w-full bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"></div>
-                ) : (
-                  <select
-                    value={assignedToId}
-                    onChange={(e) => setAssignedToId(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none"
-                  >
-                    <option value="">Atribuir a...</option>
-                    {users.map((u: any) => (
-                      <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
-                    ))}
-                  </select>
-                )}
+                <MemberSelect
+                  members={users}
+                  selectedId={assignedToId}
+                  onChange={setAssignedToId}
+                  loading={loadingUsers}
+                  placeholder="Atribuir a..."
+                  allowUnassigned={true}
+                  unassignedLabel="Sem responsável"
+                />
               </div>
 
               {/* Task Level & Points */}
@@ -263,9 +259,9 @@ const NewTaskScreen = () => {
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                   {[
-                    { id: 'basic', label: 'Básica (lvl 1)', pts: 50 },
-                    { id: 'medium', label: 'Média (lvl 2)', pts: 150 },
-                    { id: 'large', label: 'Grande (lvl 3)', pts: 300 }
+                    { id: 'basic', label: 'Básica', pts: 50 },
+                    { id: 'medium', label: 'Média', pts: 100 },
+                    { id: 'large', label: 'Grande', pts: 200 }
                   ].map((level) => (
                     <button
                       key={level.id}
@@ -278,7 +274,7 @@ const NewTaskScreen = () => {
                     >
                       <div className="text-xs font-bold uppercase tracking-wider mb-1 text-gray-500 dark:text-gray-400">{level.label}</div>
                       <div className={`text-lg font-black ${taskLevel === level.id ? 'text-primary' : 'text-gray-400'}`}>
-                        {level.pts} XP
+                        {level.pts} 🪙
                       </div>
                       {taskLevel === level.id && (
                         <div className="absolute top-0 right-0 p-1">
@@ -289,10 +285,6 @@ const NewTaskScreen = () => {
                   ))}
                 </div>
 
-                <div className="flex items-center gap-2 text-sm text-sky-700 dark:text-sky-300 bg-white dark:bg-surface-dark p-3 rounded-lg border border-sky-100 dark:border-sky-800/50">
-                  <Zap size={18} className="text-yellow-500 fill-yellow-500" />
-                  <span>Esta tarefa gerará aproximadamente <strong>{points} Connecta Points</strong> para o responsável.</span>
-                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -343,7 +335,7 @@ const NewTaskScreen = () => {
                 className="px-8 py-3 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:bg-blue-600 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? <Clock size={20} className="animate-spin" /> : <Check size={20} />}
-                {submitting ? 'Salvando...' : (isEditing ? 'Salvar Alterações' : 'Criar Tarefa')}
+                {submitting ? 'Salvando...' : (isEditing ? 'Salvar' : 'Criar Tarefa')}
               </button>
             </div>
           </form>

@@ -250,7 +250,7 @@ const NewEventScreen = () => {
                                 <Rocket size={20} />
                                 {submitting
                                     ? (isEditing ? 'Salvando...' : 'Criando...')
-                                    : (isEditing ? 'Salvar Alterações' : 'Criar Evento')
+                                    : (isEditing ? 'Salvar' : 'Criar Evento')
                                 }
                             </button>
                         </div>

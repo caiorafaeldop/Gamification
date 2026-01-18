@@ -62,16 +62,31 @@ const SidebarItem = ({ to, icon: Icon, label }: { to: string; icon: any; label: 
     );
 };
 
+const BottomNavItem = ({ to, icon: Icon, label }: { to: string; icon: any; label: string }) => {
+    const location = useLocation();
+    const isActive = location.pathname === to || location.pathname.startsWith(to + '/');
+
+    return (
+        <Link
+            to={to}
+            className={`flex flex-col items-center justify-center flex-1 gap-1 py-1 transition-all duration-300 relative
+                ${isActive ? 'text-primary scale-110' : 'text-gray-500 dark:text-gray-400'}
+            `}
+        >
+            <Icon size={20} className={isActive ? 'stroke-[2.5px]' : 'stroke-[1.5px]'} />
+            <span className="text-[10px] font-bold uppercase tracking-tighter">{label}</span>
+            {isActive && (
+                <div className="absolute -top-1 w-12 h-1 bg-primary rounded-full blur-[2px] opacity-50" />
+            )}
+        </Link>
+    );
+};
+
 const Layout = () => {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const location = useLocation();
-
-    useEffect(() => {
-        setSidebarOpen(false);
-    }, [location]);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -85,24 +100,13 @@ const Layout = () => {
             }
         };
         fetchUser();
-    }, []);
+    }, [location.pathname]); // Recarrega quando a rota muda
 
     return (
         <div className="flex h-screen bg-background-light dark:bg-background-dark text-slate-800 dark:text-gray-100 font-sans transition-colors duration-300 overflow-hidden">
 
-            {/* Mobile Overlay */}
-            {sidebarOpen && (
-                <div
-                    className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
-                    onClick={() => setSidebarOpen(false)}
-                ></div>
-            )}
-
-            {/* Sidebar */}
-            <aside className={`
-          fixed md:static inset-y-0 left-0 z-50 w-64 bg-surface-light dark:bg-surface-dark border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 transform
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
-      `}>
+            {/* Sidebar - Desktop Only */}
+            <aside className="hidden md:flex w-64 bg-surface-light dark:bg-surface-dark border-r border-gray-200 dark:border-gray-800 flex-col sticky top-0 h-screen">
                 <div className="h-16 flex items-center px-6 border-b border-gray-100 dark:border-gray-800/50">
                     <div className="flex items-center gap-2 cursor-pointer p-2 rounded-md bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 shadow-sm shadow-primary/5 hover:shadow-md hover:shadow-primary/10 transition-all duration-300" onClick={() => navigate('/dashboard')}>
                         <img src={logo} alt="ConnectaCI Logo" className="h-7 w-auto rounded-sm shadow-sm" />
@@ -143,7 +147,7 @@ const Layout = () => {
                                 <>
                                     <p className="text-sm font-bold text-secondary dark:text-white truncate">{user?.name || 'Visitante'}</p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                        {typeof user?.tier === 'object' ? user.tier.name : (user?.tier || 'Iniciante')} • {user?.connectaPoints || 0} XP
+                                        {typeof user?.tier === 'object' ? user.tier.name : (user?.tier || 'Iniciante')} • {user?.connectaPoints || 0} 🪙
                                     </p>
                                 </>
                             )}
@@ -163,27 +167,28 @@ const Layout = () => {
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 relative h-screen">
                 <header className="h-16 flex items-center justify-between px-4 sm:px-6 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
                     <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => setSidebarOpen(true)}
-                            className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300"
-                        >
-                            <Menu size={24} />
-                        </button>
+                        <div className="md:hidden flex items-center gap-2 cursor-pointer" onClick={() => navigate('/dashboard')}>
+                            <img src={logo} alt="Logo" className="h-7 w-auto rounded-sm" />
+                            <span className="font-display font-bold text-lg text-secondary dark:text-white">Connecta<span className="text-primary">CI</span></span>
+                        </div>
                         
                         {!loading && user && (
-                            <div className="flex flex-col animate-in fade-in slide-in-from-left-4 duration-500">
+                            <div className="hidden sm:flex flex-col animate-in fade-in slide-in-from-left-4 duration-500">
                                 <h1 className="text-xl font-display font-bold text-secondary dark:text-white">
-                                    Olá, <span className="text-primary">{user.name?.split(' ')[0]}</span>! 
+                                    Olá, <span className="text-primary">{user.name?.split(' ')[0]}</span>!
                                 </h1>
                             </div>
                         )}
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 relative group">
+                        <button 
+                            onClick={() => navigate('/activities')}
+                            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 relative group"
+                        >
                             <Bell size={20} />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border border-white dark:border-surface-dark"></span>
                         </button>
@@ -191,9 +196,18 @@ const Layout = () => {
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto overflow-x-hidden relative custom-scrollbar bg-background-light dark:bg-background-dark">
+                <main className="flex-1 overflow-y-auto overflow-x-hidden relative custom-scrollbar bg-background-light dark:bg-background-dark pb-20 md:pb-0">
                     <Outlet />
                 </main>
+
+                {/* Bottom Navigation - Mobile Only */}
+                <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 flex items-center justify-around px-2 z-50">
+                    <BottomNavItem to="/dashboard" icon={LayoutDashboard} label="Home" />
+                    <BottomNavItem to="/projects" icon={FolderOpen} label="Projetos" />
+                    <BottomNavItem to="/ranking" icon={Trophy} label="Rank" />
+                    <BottomNavItem to="/activities" icon={Calendar} label="Ativ" />
+                    <BottomNavItem to="/profile" icon={User} label="Perfil" />
+                </nav>
             </div>
         </div>
     );

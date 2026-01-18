@@ -45,7 +45,14 @@ export const getDashboardStats = async (userId: string) => {
       },
       take: 5,
       include: {
-          tasks: true // simplified
+          tasks: true,
+          leader: {
+              select: {
+                  id: true,
+                  name: true,
+                  avatarUrl: true
+              }
+          }
       }
   });
   
@@ -71,9 +78,12 @@ export const getDashboardStats = async (userId: string) => {
     projects: activeProjects.map(p => ({
         id: p.id,
         title: p.title,
+        description: p.description,
+        coverUrl: p.coverUrl,
+        category: p.category,
         status: p.status,
         color: p.color,
-        // Calculate progress roughly
+        leader: p.leader,
         progress: p.tasks.length > 0 ? (p.tasks.filter(t => t.status === TaskStatus.done).length / p.tasks.length) * 100 : 0
     })),
     recentActivity

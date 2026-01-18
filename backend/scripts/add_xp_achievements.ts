@@ -3,13 +3,13 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding XP Achievements...');
+  console.log('🌱 Seeding 🪙 Achievements...');
 
   const achievements = [
-    { name: 'Iniciante Dedicado', description: 'Atingir 100 de XP.', points: 50, icon: 'Zap', color: 'from-yellow-400 to-orange-500', criteria: 'points 100' },
-    { name: 'Guerreiro da Jornada', description: 'Atingir 200 de XP.', points: 100, icon: 'Sword', color: 'from-orange-400 to-red-500', criteria: 'points 200' },
-    { name: 'Mestre em Ascensão', description: 'Atingir 500 de XP.', points: 200, icon: 'Crown', color: 'from-purple-400 to-pink-500', criteria: 'points 500' },
-    { name: 'Lenda do Connecta', description: 'Atingir 1000 de XP.', points: 500, icon: 'Star', color: 'from-blue-400 to-indigo-500', criteria: 'points 1000' },
+    { name: 'Iniciante Dedicado', description: 'Atingir 100 de 🪙.', points: 50, icon: 'Zap', color: 'from-yellow-400 to-orange-500', criteria: 'points 100' },
+    { name: 'Guerreiro da Jornada', description: 'Atingir 200 de 🪙.', points: 100, icon: 'Sword', color: 'from-orange-400 to-red-500', criteria: 'points 200' },
+    { name: 'Mestre em Ascensão', description: 'Atingir 500 de 🪙.', points: 200, icon: 'Crown', color: 'from-purple-400 to-pink-500', criteria: 'points 500' },
+    { name: 'Lenda do Connecta', description: 'Atingir 1000 de 🪙.', points: 500, icon: 'Star', color: 'from-blue-400 to-indigo-500', criteria: 'points 1000' },
   ];
 
   for (const ach of achievements) {
@@ -31,7 +31,7 @@ async function main() {
     }
   }
 
-  console.log('✅ XP Achievements seeded successfully.');
+  console.log('✅ 🪙 Achievements seeded successfully.');
 }
 
 main()

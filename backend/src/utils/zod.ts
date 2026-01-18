@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // Custom error messages for common validations
 export const emailSchema = z.string().email('Invalid email address');
-export const passwordSchema = z.string().min(8, 'Password must be at least 8 characters long');
+export const passwordSchema = z.string().min(6, 'Password must be at least 6 characters long');
 export const uuidSchema = z.string().uuid('Invalid UUID format');
 
 // Helper for optional UUIDs

@@ -312,7 +312,7 @@ const NewEventModal = ({ isOpen, onClose, eventId, onSuccess }: NewEventModalPro
                         {submitting ? <Clock size={20} className="animate-spin" /> : (isEditing ? <Check size={20} /> : <Rocket size={20} />)}
                         {submitting
                             ? (isEditing ? 'Salvando...' : 'Criando...')
-                            : (isEditing ? 'Salvar Alterações' : 'Criar Evento')
+                            : (isEditing ? 'Salvar' : 'Criar Evento')
                         }
                     </button>
                 </div>
