@@ -562,7 +562,7 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
             className="px-8 py-3 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:bg-blue-600 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? <Clock size={20} className="animate-spin" /> : <Check size={20} />}
-            {submitting ? (isEditMode ? 'Salvando...' : 'Criando...') : (isEditMode ? 'Salvar' : 'Criar Tarefa')}
+            {submitting ? (isEditMode ? 'Salvando...' : 'Criando...') : (isEditMode ? 'Salvar' : 'Criar')}
           </button>
         </div>
       </div>
