@@ -135,7 +135,10 @@ const Layout = () => {
                 </nav>
 
                 <div className="p-4 border-t border-gray-100 dark:border-gray-800">
-                    <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group">
+                    <button 
+                        onClick={() => navigate('/profile')}
+                        className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group text-left"
+                    >
                         <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-sky-400 p-0.5">
                             <div className="w-full h-full rounded-full bg-white dark:bg-surface-dark flex items-center justify-center overflow-hidden">
                                 {loading ? (
@@ -162,17 +165,19 @@ const Layout = () => {
                                 </>
                             )}
                         </div>
-                        <button
-                            onClick={() => {
+                        <div
+                            role="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
                                 localStorage.removeItem('token');
                                 localStorage.removeItem('user');
                                 navigate('/');
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
+                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/10"
                         >
                             <LogOut size={16} />
-                        </button>
-                    </div>
+                        </div>
+                    </button>
                 </div>
             </aside>
 
