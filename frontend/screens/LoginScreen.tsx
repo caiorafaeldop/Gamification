@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Network, Rocket, Mail, Lock, EyeOff, Loader2 } from 'lucide-react';
 import { login, register, resetPassword } from '../services/auth.service';
 import toast from 'react-hot-toast';
-import logo from '../assets/logo.jpeg';
+import logo from '../assets/logo.webp';
 
 const LoginScreen = () => {
   const navigate = useNavigate();
@@ -129,7 +129,7 @@ const LoginScreen = () => {
         <div className="w-full max-w-md space-y-8">
           <div className="flex flex-col items-center text-center">
             <div className="mb-10 group cursor-pointer inline-flex items-center gap-3 px-5 py-3.5 rounded-md bg-white/50 dark:bg-white/5 backdrop-blur-md border border-white dark:border-white/10 shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all duration-300" onClick={() => { resetForm(); setView('login'); }}>
-              <img src={logo} alt="ConnectaCI Logo" className="h-10 w-auto rounded-sm shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform" />
+              <img src={logo} alt="ConnectaCI Logo" className="h-10 w-auto rounded-xl shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform" />
               <span className="font-display font-bold text-2xl text-secondary dark:text-white tracking-tight">
                 Connecta<span className="text-primary">CI</span>
               </span>
