@@ -421,8 +421,6 @@ const ProjectDetailsScreen = () => {
             toast.error("O nome da coluna não pode ser vazio");
             return;
         }
-
-        // Optimistic update
         const newColumns = columns.map((col: any) =>
             col.id === editingColumnId ? { ...col, title: editingTitle } : col
         );
@@ -466,23 +464,22 @@ const ProjectDetailsScreen = () => {
     const handleUpdateColumnColor = async (colorKey: string) => {
     if (!pickingColorColumnId) return;
 
-    // Atualização Otimista
     const newColumns = columns.map((col: any) => 
         col.id === pickingColorColumnId ? { ...col, color: colorKey } : col
     );
     setColumns(newColumns);
     
     const idToUpdate = pickingColorColumnId;
-    setPickingColorColumnId(null); // Fecha o menu
+    setPickingColorColumnId(null); 
 
     try {
-        // Assume que seu backend aceita um campo 'color' no updateColumn
+
         await updateColumn(idToUpdate, { color: colorKey });
         toast.success("Cor da coluna atualizada!");
     } catch (err) {
         console.error("Failed to update column color", err);
         toast.error("Erro ao salvar cor");
-        fetchKanban(); // Reverte
+        fetchKanban(); 
     }
 };
     const toggleMemberFilter = (memberId: string) => {
