@@ -713,76 +713,90 @@ const ProjectDetailsScreen = () => {
                 {/* Toolbar */}
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-3 flex-wrap">
-                        {/* Points Config - Only for team members */}
-                        {(user && (project?.leaderId === user.id || project?.members?.some((m: any) => m.user?.id === user.id))) && (
+                        {/* Points Display - For all project members */}
+                        {(user && (project?.leaderId === user.id || project?.leader?.id === user.id || project?.members?.some((m: any) => m.user?.id === user.id))) && (
                             <>
                                 {/* Points per Open Task */}
-                                <div className="relative" ref={openPointsMenuRef}>
-                                    <button
-                                        onClick={() => { setIsOpenPointsMenuOpen(!isOpenPointsMenuOpen); setIsCompletedPointsMenuOpen(false); }}
-                                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                                    >
-                                        <span>pontos por criar Task</span>
+                                {(user && (project?.leaderId === user.id || project?.leader?.id === user.id)) ? (
+                                    <div className="relative" ref={openPointsMenuRef}>
+                                        <button
+                                            onClick={() => { setIsOpenPointsMenuOpen(!isOpenPointsMenuOpen); setIsCompletedPointsMenuOpen(false); }}
+                                            className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                        >
+                                            <span>pontos por criar Task:</span>
+                                            <span className="font-bold text-primary">{project?.pointsPerOpenTask || 50}</span>
+                                            <span className="material-icons text-sm text-gray-400">expand_more</span>
+                                        </button>
+                                        {isOpenPointsMenuOpen && (
+                                            <div className="absolute left-0 top-7 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                                                {[25, 50, 100, 200].map((val) => (
+                                                    <button
+                                                        key={val}
+                                                        onClick={async () => {
+                                                            try {
+                                                                await updateProject(id!, { pointsPerOpenTask: val });
+                                                                setProject((prev: any) => ({ ...prev, pointsPerOpenTask: val }));
+                                                                toast.success(`Criação: ${val}`);
+                                                                setIsOpenPointsMenuOpen(false);
+                                                            } catch (err) {
+                                                                toast.error('Erro');
+                                                            }
+                                                        }}
+                                                        className={`w-full px-3 py-1 text-xs text-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${(project?.pointsPerOpenTask || 50) === val ? 'bg-primary/10 text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                                                    >
+                                                        {val}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300">
+                                        <span>pontos por criar Task:</span>
                                         <span className="font-bold text-primary">{project?.pointsPerOpenTask || 50}</span>
-                                        <span className="material-icons text-sm text-gray-400">expand_more</span>
-                                    </button>
-                                    {isOpenPointsMenuOpen && (
-                                        <div className="absolute left-0 top-7 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                                            {[25, 50, 100, 200].map((val) => (
-                                                <button
-                                                    key={val}
-                                                    onClick={async () => {
-                                                        try {
-                                                            await updateProject(id!, { pointsPerOpenTask: val });
-                                                            setProject((prev: any) => ({ ...prev, pointsPerOpenTask: val }));
-                                                            toast.success(`Criação: ${val}`);
-                                                            setIsOpenPointsMenuOpen(false);
-                                                        } catch (err) {
-                                                            toast.error('Erro');
-                                                        }
-                                                    }}
-                                                    className={`w-full px-3 py-1 text-xs text-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${(project?.pointsPerOpenTask || 50) === val ? 'bg-primary/10 text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                                                >
-                                                    {val}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
 
                                 {/* Points per Completed Task */}
-                                <div className="relative" ref={completedPointsMenuRef}>
-                                    <button
-                                        onClick={() => { setIsCompletedPointsMenuOpen(!isCompletedPointsMenuOpen); setIsOpenPointsMenuOpen(false); }}
-                                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                                    >
-                                        <span>pontos por conclusão</span>
+                                {(user && (project?.leaderId === user.id || project?.leader?.id === user.id)) ? (
+                                    <div className="relative" ref={completedPointsMenuRef}>
+                                        <button
+                                            onClick={() => { setIsCompletedPointsMenuOpen(!isCompletedPointsMenuOpen); setIsOpenPointsMenuOpen(false); }}
+                                            className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                        >
+                                            <span>pontos por conclusão:</span>
+                                            <span className="font-bold text-primary">{project?.pointsPerCompletedTask || 50}</span>
+                                            <span className="material-icons text-sm text-gray-400">expand_more</span>
+                                        </button>
+                                        {isCompletedPointsMenuOpen && (
+                                            <div className="absolute left-0 top-7 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                                                {[25, 50, 100, 200].map((val) => (
+                                                    <button
+                                                        key={val}
+                                                        onClick={async () => {
+                                                            try {
+                                                                await updateProject(id!, { pointsPerCompletedTask: val });
+                                                                setProject((prev: any) => ({ ...prev, pointsPerCompletedTask: val }));
+                                                                toast.success(`Conclusão: ${val}`);
+                                                                setIsCompletedPointsMenuOpen(false);
+                                                            } catch (err) {
+                                                                toast.error('Erro');
+                                                            }
+                                                        }}
+                                                        className={`w-full px-3 py-1 text-xs text-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${(project?.pointsPerCompletedTask || 50) === val ? 'bg-primary/10 text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                                                    >
+                                                        {val}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300">
+                                        <span>pontos por conclusão:</span>
                                         <span className="font-bold text-primary">{project?.pointsPerCompletedTask || 50}</span>
-                                        <span className="material-icons text-sm text-gray-400">expand_more</span>
-                                    </button>
-                                    {isCompletedPointsMenuOpen && (
-                                        <div className="absolute left-0 top-7 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                                            {[25, 50, 100, 200].map((val) => (
-                                                <button
-                                                    key={val}
-                                                    onClick={async () => {
-                                                        try {
-                                                            await updateProject(id!, { pointsPerCompletedTask: val });
-                                                            setProject((prev: any) => ({ ...prev, pointsPerCompletedTask: val }));
-                                                            toast.success(`Conclusão: ${val}`);
-                                                            setIsCompletedPointsMenuOpen(false);
-                                                        } catch (err) {
-                                                            toast.error('Erro');
-                                                        }
-                                                    }}
-                                                    className={`w-full px-3 py-1 text-xs text-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${(project?.pointsPerCompletedTask || 50) === val ? 'bg-primary/10 text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                                                >
-                                                    {val}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
                             </>
                         )}
 
