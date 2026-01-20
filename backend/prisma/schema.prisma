@@ -192,6 +192,7 @@ model KanbanColumn {
   updatedAt          DateTime   @updatedAt
   status             TaskStatus @default(todo)
   isCompletionColumn Boolean    @default(false)
+  color              String?
   Project            Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   Task               Task[]
 }

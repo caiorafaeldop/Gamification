@@ -13,8 +13,8 @@ export const getProjectKanban = async (req: Request, res: Response, next: NextFu
 
 export const createColumn = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { projectId, title, order } = req.body;
-    const result = await createColumnService(projectId, title, order);
+    const { projectId, title, order, color } = req.body;
+    const result = await createColumnService(projectId, title, order, color);
     res.status(201).json(result);
   } catch (error) {
     next(error);
