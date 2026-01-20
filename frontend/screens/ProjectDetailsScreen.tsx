@@ -4,7 +4,7 @@ import { DragDropContext, Draggable } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '../components/StrictModeDroppable';
 import { deleteTask, getProjectKanban, updateTaskStatus, createColumn, updateColumn, deleteColumn, reorderColumns, createQuickTask } from '../services/task.service';
 import { getProfile } from '../services/user.service';
-import { uploadProjectCover, updateProject } from '../services/project.service';
+import { uploadProjectCover, updateProject, leaveProject } from '../services/project.service';
 import { useProjectDetails } from '../hooks/useProjects';
 import { Skeleton } from '../components/Skeleton';
 import TaskModal from '../components/TaskModal';
@@ -172,6 +172,9 @@ const ProjectDetailsScreen = () => {
 
     // Delete Confirmation State
     const [columnToDelete, setColumnToDelete] = useState<string | null>(null);
+
+    // Leave Project Confirmation State
+    const [isLeaveProjectModalOpen, setIsLeaveProjectModalOpen] = useState(false);
 
     useEffect(() => {
         if (id) fetchKanban();
@@ -800,6 +803,22 @@ const ProjectDetailsScreen = () => {
                             </>
                         )}
 
+                        {/* Leave Project Button - Only for members who are not the leader */}
+                        {user && project?.members?.some((m: any) => m.user?.id === user.id) &&
+                            project?.leaderId !== user.id && project?.leader?.id !== user.id && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setIsLeaveProjectModalOpen(true);
+                                    }}
+                                    className="flex items-center gap-1.5 px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer z-10 relative"
+                                >
+                                    <span className="material-icons text-sm">logout</span>
+                                    <span>Sair do Projeto</span>
+                                </button>
+                            )}
 
                     </div>
                     <div className="flex items-center gap-2">
@@ -1185,6 +1204,25 @@ const ProjectDetailsScreen = () => {
                 title="Excluir Coluna"
                 message="Apenas colunas vazias podem ser removidas."
                 confirmText="Sim, excluir"
+                type="danger"
+            />
+
+            <ConfirmationModal
+                isOpen={isLeaveProjectModalOpen}
+                onClose={() => setIsLeaveProjectModalOpen(false)}
+                onConfirm={async () => {
+                    try {
+                        await leaveProject(id!);
+                        toast.success('Você saiu do projeto com sucesso.');
+                        navigate('/projects');
+                    } catch (err: any) {
+                        toast.error(err.response?.data?.message || 'Erro ao sair do projeto.');
+                    }
+                }}
+                title="Sair do Projeto"
+                message="Tem certeza que deseja sair deste projeto? Você perderá acesso às tarefas e não poderá contribuir até que seja adicionado novamente."
+                confirmText="Sim, sair"
+                cancelText="Cancelar"
                 type="danger"
             />
         </div>

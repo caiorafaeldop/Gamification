@@ -106,13 +106,13 @@ export const updateProjectDetails = async (id: string, data: UpdateProjectInput,
     // PONTUAÇÃO RETROATIVA: Se pontosPerCompletedTask mudou, recalcular para tasks concluídas
     const oldPointsPerCompleted = (project as any).pointsPerCompletedTask ?? 100;
     const newPointsPerCompleted = (data as any).pointsPerCompletedTask;
-    
+
     if (newPointsPerCompleted !== undefined && newPointsPerCompleted !== oldPointsPerCompleted) {
       const pointsDifference = newPointsPerCompleted - oldPointsPerCompleted;
-      
+
       // Buscar todas as tasks concluídas do projeto com seus assignees
       const completedTasks = await tx.task.findMany({
-        where: { 
+        where: {
           projectId: id,
           completedAt: { not: null }
         },
@@ -120,13 +120,13 @@ export const updateProjectDetails = async (id: string, data: UpdateProjectInput,
           assignees: { include: { user: { select: { id: true } } } }
         }
       });
-      
+
       console.log(`[RETROACTIVE] Points changed from ${oldPointsPerCompleted} to ${newPointsPerCompleted}. Difference: ${pointsDifference}. Found ${completedTasks.length} completed tasks.`);
-      
+
       // Para cada task concluída, ajustar pontos de todos os assignees
       for (const task of completedTasks) {
         const assigneeIds = task.assignees.map(a => a.user.id);
-        
+
         for (const userId of assigneeIds) {
           // Ajustar pontuação do usuário diretamente
           await tx.user.update({
@@ -137,7 +137,7 @@ export const updateProjectDetails = async (id: string, data: UpdateProjectInput,
         }
       }
     }
-    
+
     const updatedProject = await updateProject(id, data, tx);
     return updatedProject;
   });
@@ -225,6 +225,33 @@ export const removeMemberFromProject = async (projectId: string, userId: string,
     if (!isMember) {
       throw { statusCode: 404, message: 'User is not a member of this project.' };
     }
+    const projectMember = await removeProjectMember(projectId, userId, tx);
+    await createActivityLog({
+      user: { connect: { id: userId } },
+      type: ActivityType.USER_LEFT_PROJECT,
+      description: `Left project "${project.title}".`,
+    }, tx);
+    return projectMember;
+  });
+};
+
+export const leaveProject = async (projectId: string, userId: string) => {
+  const project = await findProjectById(projectId);
+  if (!project) {
+    throw { statusCode: 404, message: 'Project not found.' };
+  }
+
+  // Leader cannot leave the project
+  if (project.leaderId === userId) {
+    throw { statusCode: 403, message: 'O líder não pode sair do projeto. Transfira a liderança primeiro.' };
+  }
+
+  const isMember = await isUserProjectMember(projectId, userId);
+  if (!isMember) {
+    throw { statusCode: 400, message: 'Você não é membro deste projeto.' };
+  }
+
+  return prisma.$transaction(async (tx) => {
     const projectMember = await removeProjectMember(projectId, userId, tx);
     await createActivityLog({
       user: { connect: { id: userId } },

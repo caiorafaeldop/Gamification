@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createProject, getProjectDetails, getProjects, joinProject, uploadProjectCover, updateProject } from '../controllers/project.controller';
+import { createProject, getProjectDetails, getProjects, joinProject, uploadProjectCover, updateProject, leaveProject } from '../controllers/project.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import upload from '../middlewares/upload.middleware';
 
@@ -14,5 +14,6 @@ router.get('/:id', getProjectDetails);
 router.post('/', createProject);
 router.patch('/:id', updateProject);
 router.post('/:id/join', joinProject);
+router.delete('/:id/leave', leaveProject);
 
 export default router;
