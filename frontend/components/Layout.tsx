@@ -21,14 +21,23 @@ import { getProfile } from '../services/user.service';
 import { Skeleton } from './Skeleton';
 
 const ThemeToggle = () => {
-    const [isDark, setIsDark] = useState(false);
+    const [isDark, setIsDark] = useState(() => {
+        // Check localStorage first, then system preference
+        const saved = localStorage.getItem('theme');
+        if (saved) {
+            return saved === 'dark';
+        }
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    });
 
     useEffect(() => {
         const root = document.documentElement;
         if (isDark) {
             root.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
         } else {
             root.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
         }
     }, [isDark]);
 
@@ -106,7 +115,7 @@ const Layout = () => {
             fetchUser();
         };
         window.addEventListener('pointsUpdated', handlePointsUpdated);
-        
+
         return () => {
             window.removeEventListener('pointsUpdated', handlePointsUpdated);
         };
@@ -189,7 +198,7 @@ const Layout = () => {
                             <img src={logo} alt="Logo" className="h-7 w-auto rounded-xl" />
                             <span className="font-display font-bold text-lg text-secondary dark:text-white">Connecta<span className="text-primary">CI</span></span>
                         </div>
-                        
+
                         {!loading && user && (
                             <div className="hidden sm:flex flex-col animate-in fade-in slide-in-from-left-4 duration-500">
                                 <h1 className="text-xl font-display font-bold text-secondary dark:text-white">
@@ -200,7 +209,7 @@ const Layout = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button 
+                        <button
                             onClick={() => navigate('/activities')}
                             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 relative group"
                         >

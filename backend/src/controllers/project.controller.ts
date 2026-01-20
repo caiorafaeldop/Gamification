@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../utils/prisma';
 import { Role, TaskStatus } from '@prisma/client';
 
-import { createNewProject, addMemberToProject } from '../services/project.service';
+import { createNewProject, addMemberToProject, leaveProject as leaveProjectService } from '../services/project.service';
 
 export const getProjects = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -82,7 +82,7 @@ export const getProjectDetails = async (req: Request, res: Response, next: NextF
         const { id } = req.params;
         const project = await prisma.project.findUnique({
             where: { id },
-           
+
             include: {
                 members: { include: { user: { select: { id: true, name: true, avatarColor: true } } } },
                 leader: { select: { id: true, name: true, avatarColor: true } }
@@ -100,7 +100,7 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
         const { title, name, description, category, coverUrl, status, color, xpReward, pointsPerOpenTask, pointsPerCompletedTask } = req.body;
         const userId = (req as any).user?.userId;
 
-        
+
 
         // Check if user is leader or admin
         const project = await prisma.project.findUnique({ where: { id } });
@@ -137,6 +137,19 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
         res.json(updatedProject);
     } catch (error: any) {
         console.error(`[UPDATE PROJECT ERROR]:`, error);
+        next(error);
+    }
+};
+
+export const leaveProject = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user!.userId;
+
+        await leaveProjectService(id, userId);
+
+        res.json({ message: 'Você saiu do projeto com sucesso.' });
+    } catch (error) {
         next(error);
     }
 };

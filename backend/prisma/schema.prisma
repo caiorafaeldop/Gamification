@@ -24,10 +24,11 @@ model User {
   tierId              String
   avatarColor         String?
   course              String?
-  bio                 String?
   avatarUrl           String?
+  bio                 String?
   skills              String[]           @default([])
   activityLogs        ActivityLog[]
+  comments            Comment[]
   createdEvents       Event[]            @relation("CreatedEvents")
   eventParticipations EventParticipant[]
   notifications       Notification[]
@@ -36,10 +37,9 @@ model User {
   memberOfProjects    ProjectMember[]
   assignedTasks       Task[]             @relation("AssignedTasks")
   createdTasks        Task[]             @relation("CreatedTasks")
+  taskAssignments     TaskAssignee[]     @relation("TaskAssignees")
   tier                Tier               @relation(fields: [tierId], references: [id])
   userAchievements    UserAchievement[]
-  comments            Comment[]
-  taskAssignments     TaskAssignee[]     @relation("TaskAssignees")
 }
 
 model Project {
@@ -55,8 +55,8 @@ model Project {
   xpReward               Int             @default(100)
   color                  String?
   coverUrl               String?
-  pointsPerOpenTask      Int             @default(50)
-  pointsPerCompletedTask Int             @default(100)
+  pointsPerOpenTask      Int?            @default(50)
+  pointsPerCompletedTask Int?            @default(50)
   KanbanColumn           KanbanColumn[]
   leader                 User            @relation("ProjectLeader", fields: [leaderId], references: [id], onDelete: Cascade)
   members                ProjectMember[]
@@ -74,34 +74,33 @@ model ProjectMember {
 }
 
 model Task {
-  id                   String        @id @default(uuid())
+  id                   String         @id @default(uuid())
   title                String
   description          String?
-  status               TaskStatus    @default(todo)
+  status               TaskStatus     @default(todo)
   pointsReward         Int
   estimatedTimeMinutes Int?
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
   dueDate              DateTime?
   completedAt          DateTime?
-  tags                 String[]      @default([])
-  isExternalDemand     Boolean       @default(false)
+  tags                 String[]       @default([])
+  isExternalDemand     Boolean        @default(false)
   createdById          String
   assignedToId         String?
   requiredTierId       String?
   projectId            String
   difficulty           Int
   columnId             String?
-  // Novos campos para estilo Trello
-  startDate            DateTime?
-  durationMinutes      Int?
   attachmentUrl        String?
-  assignedTo           User?         @relation("AssignedTasks", fields: [assignedToId], references: [id], onDelete: SetNull)
-  KanbanColumn         KanbanColumn? @relation(fields: [columnId], references: [id])
-  createdBy            User          @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: Cascade)
-  project              Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  requiredTier         Tier?         @relation("RequiredTier", fields: [requiredTierId], references: [id])
+  durationMinutes      Int?
+  startDate            DateTime?
   comments             Comment[]
+  assignedTo           User?          @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  KanbanColumn         KanbanColumn?  @relation(fields: [columnId], references: [id])
+  createdBy            User           @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: Cascade)
+  project              Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  requiredTier         Tier?          @relation("RequiredTier", fields: [requiredTierId], references: [id])
   assignees            TaskAssignee[]
 }
 
@@ -223,6 +222,28 @@ model EventParticipant {
   @@unique([userId, eventId])
 }
 
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  taskId    String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TaskAssignee {
+  id         String   @id @default(uuid())
+  taskId     String
+  userId     String
+  assignedAt DateTime @default(now())
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user       User     @relation("TaskAssignees", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+}
+
 enum Role {
   ADMIN
   LEADER
@@ -239,12 +260,8 @@ enum ActivityType {
   TASK_COMPLETED
   TASK_CREATED
   TASK_ASSIGNED
-  TASK_UNASSIGNED
   TASK_STATUS_CHANGED
   TASK_DELETED
-  TASK_DATES_CHANGED
-  TASK_DURATION_CHANGED
-  TASK_ATTACHMENT_ADDED
   POINTS_ADJUSTED
   TIER_ACHIEVED
   STREAK_UPDATED
@@ -256,34 +273,14 @@ enum ActivityType {
   USER_STATUS_CHANGED
   ACHIEVEMENT_EARNED
   ADMIN_ACTION
+  TASK_UNASSIGNED
+  TASK_DATES_CHANGED
+  TASK_DURATION_CHANGED
+  TASK_ATTACHMENT_ADDED
 }
 
 enum EventType {
   MEETING
   WORKSHOP
   EVENT
-}
-
-model Comment {
-  id        String   @id @default(uuid())
-  content   String
-  taskId    String
-  userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model TaskAssignee {
-  id         String   @id @default(uuid())
-  taskId     String
-  userId     String
-  assignedAt DateTime @default(now())
-
-  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user User @relation("TaskAssignees", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([taskId, userId])
 }
