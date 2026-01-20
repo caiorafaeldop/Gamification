@@ -42,12 +42,12 @@ export const deleteTask = async (taskId: string) => {
 };
 
 // Column Management
-export const createColumn = async (projectId: string, title: string, order: number) => {
-  const response = await api.post('/kanban/columns', { projectId, title, order });
+export const createColumn = async (projectId: string, title: string, order: number, color?: string) => {
+  const response = await api.post('/kanban/columns', { projectId, title, order, color });
   return response.data;
 };
 
-export const updateColumn = async (columnId: string, data: { title?: string, order?: number, status?: string }) => {
+export const updateColumn = async (columnId: string, data: { title?: string, order?: number, status?: string, color?: string }) => {
   const response = await api.put(`/kanban/columns/${columnId}`, data);
   return response.data;
 };

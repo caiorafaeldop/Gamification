@@ -12,7 +12,7 @@ import TaskDetailModal from '../components/TaskDetailModal';
 import { Camera, Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../components/ConfirmationModal';
-
+import { COLUMN_COLORS } from '../constants';
 const ProjectDetailsScreen = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -30,6 +30,8 @@ const ProjectDetailsScreen = () => {
     const inputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
 
+    const [pickingColorColumnId, setPickingColorColumnId] = useState<string | null>(null);
+    
     // Inline card creation state (Trello-style)
     const [inlineCreatingColumnId, setInlineCreatingColumnId] = useState<string | null>(null);
     const [inlineTaskTitle, setInlineTaskTitle] = useState('');
@@ -423,8 +425,6 @@ const ProjectDetailsScreen = () => {
             toast.error("O nome da coluna não pode ser vazio");
             return;
         }
-
-        // Optimistic update
         const newColumns = columns.map((col: any) =>
             col.id === editingColumnId ? { ...col, title: editingTitle } : col
         );
@@ -465,7 +465,27 @@ const ProjectDetailsScreen = () => {
             setColumnToDelete(null);
         }
     };
+    const handleUpdateColumnColor = async (colorKey: string) => {
+    if (!pickingColorColumnId) return;
 
+    const newColumns = columns.map((col: any) => 
+        col.id === pickingColorColumnId ? { ...col, color: colorKey } : col
+    );
+    setColumns(newColumns);
+    
+    const idToUpdate = pickingColorColumnId;
+    setPickingColorColumnId(null); 
+
+    try {
+
+        await updateColumn(idToUpdate, { color: colorKey });
+        toast.success("Cor da coluna atualizada!");
+    } catch (err) {
+        console.error("Failed to update column color", err);
+        toast.error("Erro ao salvar cor");
+        fetchKanban(); 
+    }
+};
     const toggleMemberFilter = (memberId: string) => {
         setSelectedMemberFilters(prev =>
             prev.includes(memberId)
@@ -529,7 +549,15 @@ const ProjectDetailsScreen = () => {
                 isCompletionColumn: true
             };
         }
-
+        if (column.color && COLUMN_COLORS[column.color as keyof typeof COLUMN_COLORS]) {
+        const theme = COLUMN_COLORS[column.color as keyof typeof COLUMN_COLORS];
+        return {
+            container: `${theme.bg} ${theme.border} ${theme.decoration}`,
+            headerIcon: <span className={`w-3 h-3 rounded-full ${theme.bg.replace('/80', '').replace('/10', '-400')}`}></span>, // Exemplo simples de icone
+            titleColor: theme.text,
+            badge: theme.badge
+        };
+    }
         const config = [
             {
                 keywords: ['fazer', 'todo', 'backlog'],
@@ -967,6 +995,7 @@ const ProjectDetailsScreen = () => {
                                 ref={provided.innerRef}
                                 className="h-full flex gap-6 min-w-max"
                             >
+                            {/* columns list */}
                                 {displayedColumns && displayedColumns.map((column: any, index: number) => {
                                     const styles = getColumnStyles(column);
                                     return (
@@ -1021,6 +1050,46 @@ const ProjectDetailsScreen = () => {
                                                                 >
                                                                     <span className="material-icons text-sm">delete</span>
                                                                 </button>
+                                                            )}
+                                                            {!column.isCompletionColumn && (
+                                                                <div className="relative">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            // Se já estiver aberto nesta coluna, fecha. Se não, abre.
+                                                                            setPickingColorColumnId(pickingColorColumnId === column.id ? null : column.id);
+                                                                        }}
+                                                                        className={`p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors ${pickingColorColumnId === column.id ? 'text-primary' : 'text-gray-400'}`}
+                                                                        title="Trocar Cor"
+                                                                    >
+                                                                        <span className="material-icons text-sm">palette</span>
+                                                                    </button>
+
+                                                                    {/* Menu Flutuante de Cores */}
+                                                                    {pickingColorColumnId === column.id && (
+                                                                        <div className="absolute top-8 left-0 z-50 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 shadow-xl rounded-xl p-2 w-32 animate-in fade-in zoom-in-95 duration-200 grid grid-cols-3 gap-2">
+                                                                            {Object.entries(COLUMN_COLORS).map(([key, theme]) => (
+                                                                                <button
+                                                                                    key={key}
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handleUpdateColumnColor(key);
+                                                                                    }}
+                                                                                    className={`w-8 h-8 rounded-full border-2 ${theme.bg.split(' ')[0].replace(/-200\/.*/, '-500')} ${column.color === key ? 'border-gray-600 dark:border-white scale-110' : 'border-transparent hover:scale-105'} transition-all shadow-sm`}
+                                                                                    title={theme.name}
+                                                                                />
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    {/* Overlay transparente para fechar ao clicar fora (opcional, mas recomendado) */}
+                                                                    {pickingColorColumnId === column.id && (
+                                                                        <div 
+                                                                            className="fixed inset-0 z-40 bg-transparent" 
+                                                                            onClick={(e) => { e.stopPropagation(); setPickingColorColumnId(null); }} 
+                                                                        />
+                                                                    )}
+                                                                </div>
                                                             )}
                                                         </div>
                                                     </div>
