@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { AssigneeType } from '../types';
 
 interface Member {
   id: string;
@@ -16,7 +17,10 @@ interface MemberSelectProps {
   allowUnassigned?: boolean;
   unassignedLabel?: string;
   className?: string;
+  assigneeType?: string;
+  onAssigneeTypeChange?: (type: string) => void;
 }
+
 
 const MemberSelect: React.FC<MemberSelectProps> = ({
   members,
@@ -26,7 +30,10 @@ const MemberSelect: React.FC<MemberSelectProps> = ({
   loading = false,
   allowUnassigned = true,
   unassignedLabel = 'Sem responsável',
+
   className = '',
+  assigneeType,
+  onAssigneeTypeChange
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -76,7 +83,24 @@ const MemberSelect: React.FC<MemberSelectProps> = ({
                 {selectedMember.name}
               </span>
               {selectedMember.role && (
-                <span className="text-xs text-gray-500 dark:text-gray-400">{selectedMember.role}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {selectedMember.role}
+                  {assigneeType && (
+                     <span 
+                       className="ml-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase cursor-pointer hover:bg-primary/20"
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         const types = Object.values(AssigneeType);
+                         const currentIndex = types.indexOf(assigneeType as AssigneeType);
+                         const nextType = types[(currentIndex + 1) % types.length];
+                         onAssigneeTypeChange?.(nextType);
+                       }}
+                       title="Clique para alterar função"
+                     >
+                       {assigneeType}
+                     </span>
+                  )}
+                </span>
               )}
             </div>
           </>
@@ -164,6 +188,15 @@ const MemberSelect: React.FC<MemberSelectProps> = ({
                   </span>
                   {member.role && (
                     <span className="text-xs text-gray-400 dark:text-gray-500">{member.role}</span>
+                  )}
+                  {assigneeType === 'IMPLEMENTER' && (
+                     <span className="ml-auto text-[10px] font-bold text-gray-400 uppercase">Implementador</span>
+                  )}
+                  {assigneeType === 'CREATOR' && (
+                     <span className="ml-auto text-[10px] font-bold text-gray-400 uppercase">Criador</span>
+                  )}
+                  {assigneeType === 'REVIEWER' && (
+                     <span className="ml-auto text-[10px] font-bold text-gray-400 uppercase">Revisor</span>
                   )}
                 </div>
               </button>

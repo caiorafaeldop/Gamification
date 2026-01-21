@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient, Role, AssigneeType, TaskStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -147,6 +147,172 @@ async function main() {
   }
 
   console.log('🏅 Achievements created.');
+
+  // --- USERS ---
+  const usersData = [
+    {
+      name: 'Alice Developer',
+      email: 'alice@example.com',
+      role: Role.MEMBER,
+      bio: 'Frontend Specialist',
+      tierName: 'Bronze',
+      avatarColor: 'from-pink-500 to-rose-500',
+    },
+    {
+      name: 'Bob Backend',
+      email: 'bob@example.com',
+      role: Role.MEMBER,
+      bio: 'Backend Specialist',
+      tierName: 'Silver',
+      avatarColor: 'from-blue-500 to-cyan-500',
+    },
+    {
+      name: 'Charlie Reviewer',
+      email: 'charlie@example.com',
+      role: Role.MEMBER,
+      bio: 'QA & Reviewer',
+      tierName: 'Gold',
+      avatarColor: 'from-green-500 to-emerald-500',
+    },
+  ];
+
+  const createdUsers = [];
+
+  for (const userData of usersData) {
+     const userTier = await prisma.tier.findUnique({ where: { name: userData.tierName } });
+     if (userTier) {
+        const user = await prisma.user.upsert({
+            where: { email: userData.email },
+            update: {
+                role: userData.role,
+            },
+            create: {
+                name: userData.name,
+                email: userData.email,
+                passwordHash: passwordHash, // reusing admin password for simplicity
+                role: userData.role,
+                tierId: userTier.id,
+                bio: userData.bio,
+                avatarColor: userData.avatarColor,
+            },
+        });
+        createdUsers.push(user);
+     }
+  }
+  console.log(`👥 ${createdUsers.length} Sample users created.`);
+
+  // --- PROJECT ---
+  // Need the admin user (leader)
+  const adminUser = await prisma.user.findUnique({ where: { email: 'admin@gmail.com' } });
+  
+  if (adminUser) {
+    const project = await prisma.project.upsert({
+        where: { title: 'Gamification Platform' },
+        update: {},
+        create: {
+            title: 'Gamification Platform',
+            description: 'Main project for the gamified task management system.',
+            leaderId: adminUser.id,
+            status: 'active',
+            color: 'from-violet-600 to-indigo-600',
+            xpReward: 500,
+        }
+    });
+    console.log('🚀 Project created: Gamification Platform');
+
+    // Add members to project
+    for (const user of createdUsers) {
+        await prisma.projectMember.upsert({
+            where: {
+                userId_projectId: {
+                    userId: user.id,
+                    projectId: project.id
+                }
+            },
+            update: {},
+            create: {
+                userId: user.id,
+                projectId: project.id
+            }
+        });
+    }
+    console.log('🤝 Members added to project.');
+
+    // --- TASKS ---
+    const tasksData = [
+        {
+            title: 'Setup Database Schema',
+            description: 'Define the initial Prisma schema and run migrations.',
+            status: TaskStatus.done,
+            pointsReward: 50,
+            difficulty: 3,
+            tags: ['backend', 'database'],
+        },
+        {
+            title: 'Implement Authentication',
+            description: 'Setup JWT auth and user login/register endpoints.',
+            status: TaskStatus.in_progress,
+            pointsReward: 80,
+            difficulty: 4,
+            tags: ['backend', 'security'],
+        },
+        {
+            title: 'Design Dashboard UI',
+            description: 'Create high-fidelity mockups for the main dashboard.',
+            status: TaskStatus.todo,
+            pointsReward: 60,
+            difficulty: 3,
+            tags: ['design', 'frontend'],
+        }
+    ];
+
+    for (const taskData of tasksData) {
+        const newTask = await prisma.task.create({
+            data: {
+                ...taskData,
+                projectId: project.id,
+                createdById: adminUser.id,
+            }
+        });
+
+        // Assign random users as assignees
+        if (createdUsers.length > 0) {
+            // Assign Creator (Admin)
+            await prisma.taskAssignee.create({
+                data: {
+                    taskId: newTask.id,
+                    userId: adminUser.id,
+                    type: AssigneeType.CREATOR
+                }
+            });
+
+            // Assign Implementer (Random User)
+            const implementer = createdUsers[Math.floor(Math.random() * createdUsers.length)];
+            await prisma.taskAssignee.create({
+                data: {
+                    taskId: newTask.id,
+                    userId: implementer.id,
+                    type: AssigneeType.IMPLEMENTER
+                }
+            });
+             
+             // Assign Reviewer (Another Random User or same)
+             const reviewer = createdUsers[Math.floor(Math.random() * createdUsers.length)];
+             // Ensure uniqueness if needed, but schema allows unique(taskId, userId, type). 
+             // Logic in app might want unique users per role, but for seed we keep it simple.
+             // Just avoiding partial constraint errors if we try to add same user/type pair twice.
+             
+             await prisma.taskAssignee.create({
+                data: {
+                    taskId: newTask.id,
+                    userId: reviewer.id,
+                    type: AssigneeType.REVIEWER
+                }
+            });
+        }
+    }
+    console.log('✅ Tasks and Assignees created.');
+  }
   console.log('✅ Seeding completed.');
 }
 

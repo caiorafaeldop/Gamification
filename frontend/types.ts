@@ -93,3 +93,9 @@ export interface Notification {
   type: 'info' | 'success' | 'warning' | 'error';
   createdAt: string;
 }
+
+export enum AssigneeType {
+  IMPLEMENTER = 'IMPLEMENTER',
+  REVIEWER = 'REVIEWER',
+  CREATOR = 'CREATOR'
+}

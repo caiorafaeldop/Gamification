@@ -1,4 +1,4 @@
-import { Prisma, Task, TaskStatus, Role, ActivityType } from '@prisma/client';
+import { Prisma, Task, TaskStatus, Role, ActivityType, AssigneeType } from '@prisma/client';
 import { createTask, findTaskById, updateTask, deleteTask, findTasksByProjectId, findUserTasks, syncTaskAssignees } from '../repositories/task.repository';
 import { findUserById } from '../repositories/user.repository';
 import { findProjectById, isUserProjectMember } from '../repositories/project.repository';
@@ -63,9 +63,18 @@ export const createNewTask = async (data: CreateTaskInput, createdById: string) 
       requiredTier: data.requiredTierId ? { connect: { id: data.requiredTierId } } : undefined,
     } as any, tx);
 
-    // Sincronizar múltiplos assignees se fornecidos
-    if (data.assigneeIds && data.assigneeIds.length > 0) {
-      await syncTaskAssignees(task.id, data.assigneeIds, tx);
+    // Sincronizar múltiplos assignees se fornecidos, adicionando o criador
+    let assigneesToSync = data.assignees || [];
+    
+    // Verificar se o criador já está na lista
+    const isCreatorInList = assigneesToSync.some(a => a.userId === createdById);
+    
+    if (!isCreatorInList) {
+      assigneesToSync = [...assigneesToSync, { userId: createdById, type: AssigneeType.CREATOR }];
+    }
+
+    if (assigneesToSync.length > 0) {
+      await syncTaskAssignees(task.id, assigneesToSync, tx);
     }
 
     await createActivityLog({
@@ -128,8 +137,14 @@ export const updateTaskDetails = async (id: string, data: UpdateTaskInput, reque
     }
   }
 
-  // Extrair assigneeIds do data antes de passar para o Prisma
-  const { assigneeIds, ...taskData } = data as any;
+  // Extrair assignees e assigneeIds do data antes de passar para o Prisma
+  const { assignees, assigneeIds, ...taskData } = data as any;
+
+  // Normalizar assignees
+  let assigneesToProcess = assignees;
+  if (!assigneesToProcess && assigneeIds) {
+    assigneesToProcess = assigneeIds.map((userId: string) => ({ userId, type: AssigneeType.IMPLEMENTER }));
+  }
 
   return prisma.$transaction(async (tx) => {
     const updateData: any = { ...taskData };
@@ -156,14 +171,14 @@ export const updateTaskDetails = async (id: string, data: UpdateTaskInput, reque
     const updatedTask = await updateTask(id, updateData, tx);
 
     // Sincronizar múltiplos assignees se fornecidos
-    if (assigneeIds !== undefined) {
+    if (assigneesToProcess !== undefined) {
       // PONTUAÇÃO RETROATIVA: Se a task está concluída, dar/remover pontos
       const isCompleted = task.completedAt !== null;
       
       if (isCompleted) {
         const pointsForCompletion = (project as any).pointsPerCompletedTask ?? 100;
         const currentAssigneeIds = (task as any).assignees?.map((a: any) => a.user?.id || a.userId) || [];
-        const newAssigneeIds = assigneeIds || [];
+        const newAssigneeIds = assigneesToProcess.map((a: any) => a.userId) as string[];
         
         // Quem foi ADICIONADO ganha pontos
         const addedAssignees = newAssigneeIds.filter((id: string) => !currentAssigneeIds.includes(id));
@@ -180,7 +195,7 @@ export const updateTaskDetails = async (id: string, data: UpdateTaskInput, reque
         }
       }
       
-      await syncTaskAssignees(id, assigneeIds || [], tx);
+      await syncTaskAssignees(id, assigneesToProcess || [], tx);
     }
 
     if (data.assignedToId && data.assignedToId !== task.assignedToId) {
