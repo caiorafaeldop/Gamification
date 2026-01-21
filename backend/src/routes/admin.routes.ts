@@ -2,17 +2,22 @@ import { Router } from 'express';
 import { authenticate } from '../middlewares/auth.middleware';
 import { authorize } from '../middlewares/role.middleware';
 import { Role } from '@prisma/client';
-import { resetDailyStreaks } from '../controllers/adminGamification.controller'; // Importar o novo controlador
+import * as adminController from '../controllers/admin.controller';
 
 const router = Router();
 
-router.use(authenticate);
-router.use(authorize([Role.ADMIN]));
+// Apply authentication and admin authorization to ALL admin routes
+router.use(authenticate, authorize([Role.ADMIN]));
 
-// Exemplo: A route for global analytics, if it were a separate endpoint
-// router.get('/analytics', getGlobalAnalytics);
+// Projects
+router.get('/projects', adminController.getAllProjects);
+router.put('/projects/:projectId', adminController.updateProject);
 
-// Nova rota para resetar sequências diárias
-router.post('/reset-streaks', resetDailyStreaks);
+// Users
+router.get('/users', adminController.getAllUsers);
+router.patch('/users/:userId/points', adminController.updateUserPoints);
+
+// Logs
+router.get('/logs', adminController.getAdminLogs);
 
 export default router;
