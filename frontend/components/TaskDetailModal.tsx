@@ -447,21 +447,6 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   };
   
 
-  
-  const cycleAssigneeType = async (userId: string) => {
-    const types = ['IMPLEMENTER', 'REVIEWER', 'CREATOR'];
-    const newAssignees = assignees.map(a => {
-      if (a.user.id === userId) {
-        const currentIdx = types.indexOf(a.type || 'IMPLEMENTER');
-        const nextType = types[(currentIdx + 1) % types.length];
-        return { ...a, type: nextType };
-      }
-      return a;
-    });
-    setAssignees(newAssignees);
-    await handleSave('assignees', newAssignees);
-  };
-  
   const toggleSection = (section: 'dates' | 'duration') => {
     setActiveSection(prev => prev === section ? null : section);
   };
@@ -612,45 +597,77 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 {assignees.length === 0 && !showMemberPicker && (
                    <span className="text-sm text-gray-400 italic">Ninguém atribuído</span>
                 )}
-                {assignees.map((assignee: any) => (
-                  <div key={assignee.user.id} className="group flex items-center gap-2 bg-gray-100 dark:bg-gray-800/50 pr-3 rounded-full border border-gray-200 dark:border-gray-700">
-                    
-                    <img src={assignee.user.avatarUrl || `https://ui-avatars.com/api/?name=${assignee.user.name}&background=random`} className="w-6 h-6 rounded-full" />
-                    <div className="flex flex-col">
-                      <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">{assignee.user.name}</span>
-                      <button 
-                        onClick={() => cycleAssigneeType(assignee.user.id)}
-                        className="text-[9px] text-primary uppercase font-bold hover:underline text-left -mt-0.5"
-                        title="Clique para alterar função"
-                      >
-                        {assignee.type || 'IMPLEMENTER'}
-                      </button>
+                {[
+                  { type: 'CREATOR', label: 'Criação' },
+                  { type: 'IMPLEMENTER', label: 'Implementação' },
+                  { type: 'REVIEWER', label: 'Revisão' }
+                ].map((group) => {
+                  
+                  const groupMembers = assignees.filter((a: any) => 
+                    a.type === group.type || (!a.type && group.type === 'IMPLEMENTER')
+                  );
+
+                  if (groupMembers.length === 0 && !showMemberPicker) return null; // Only hide if not editing AND empty? Actually, we want to show 'Add' buttons potentially? 
+                  
+                  return (
+                    <div key={group.type} className="w-full space-y-2 mb-2">
+                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">{group.label}</p>
+                       <div className="flex flex-wrap gap-2">
+                        
+                        {/* Add Button with Dropdown */}
+                        <div className="relative">
+                           <button 
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               setActiveAddGroup(activeAddGroup === group.type ? null : group.type);
+                             }}
+                             className={`w-7 h-7 rounded-full border-2 border-dashed flex items-center justify-center text-xs transition-colors ${activeAddGroup === group.type ? 'border-primary text-primary bg-primary/10' : 'border-gray-300 dark:border-gray-600 text-gray-400 hover:text-primary hover:border-primary'}`}
+                           >
+                             +
+                           </button>
+                           {activeAddGroup === group.type && (
+                             <div className="absolute top-full left-0 mt-1 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 min-w-[200px] max-h-[200px] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+                               {projectMembers.map((member: any) => {
+                                 const user = member.user || member;
+                                 const isAssigned = assignees.some((a: any) => a.user.id === user.id && a.type === group.type);
+                                 return (
+                                 <button 
+                                     key={user.id} 
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       toggleAssignee(user, group.type);
+                                       setActiveAddGroup(null);
+                                     }} 
+                                     className={`w-full px-3 py-2 flex items-center gap-2 text-left text-xs border-b border-gray-50 dark:border-gray-800 last:border-0 hover:bg-gray-100 dark:hover:bg-gray-700 ${isAssigned ? 'bg-primary/10' : ''}`}
+                                   >
+                                     <img src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.name}&background=random`} alt={user.name} className="w-6 h-6 rounded-full" />
+                                     <span className="flex-1 truncate text-gray-700 dark:text-gray-300">{user.name}</span>
+                                     {isAssigned && <Check size={14} className="text-primary" />}
+                                   </button>
+                                 );
+                               })}
+                             </div>
+                           )}
+                        </div>
+                        {groupMembers.map((assignee: any) => (
+                          <div key={assignee.user.id} className="group flex items-center gap-2 bg-gray-100 dark:bg-gray-800/50 pr-3 rounded-full border border-gray-200 dark:border-gray-700">
+                            
+                            <img src={assignee.user.avatarUrl || `https://ui-avatars.com/api/?name=${assignee.user.name}&background=random`} className="w-6 h-6 rounded-full" />
+                            <div className="flex flex-col">
+                              <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">{assignee.user.name}</span>
+                            </div>
+                            {showMemberPicker && (
+                              <button onClick={() => toggleAssignee(assignee.user,assignee.type)} className="p-1 hover:text-red-400"><X size={12}/></button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    {showMemberPicker && (
-                      <button onClick={() => toggleAssignee(assignee.user,assignee.type)} className="p-1 hover:text-red-400"><X size={12}/></button>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-               {showMemberPicker && (
-                  <div className="mt-3 ml-9 grid grid-cols-2 gap-2 animate-in fade-in slide-in-from-top-2">
-                    {projectMembers.map((member: any) => {
-                      const user = member.user || member;
-                      const isAssigned = assignees.some(a => a.user.id === user.id);
-                      return (
-                        <button 
-                          key={user.id} 
-                          onClick={() => toggleAssignee(user,member.type)} 
-                          className={`flex items-center gap-2 p-2 rounded-lg border text-left transition-all ${isAssigned ? 'bg-primary/10 border-primary/50' : 'bg-gray-50/50 dark:bg-gray-800/30 border-gray-200 dark:border-gray-700'}`}
-                        >
-                           <img src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.name}&background=random`} className="w-6 h-6 rounded-full" />
-                           <span className={`text-xs truncate ${isAssigned ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-400'}`}>{user.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-               )}
+              
             </div>
 
             {/* Datas */}
