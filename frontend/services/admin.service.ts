@@ -14,11 +14,17 @@ export const updateProject = async (projectId: string, data: any) => {
 
 // --- USERS ---
 
-export const getAdminUsers = async () => {
-  const response = await api.get('/admin/users');
-  return response.data;
+export type GetAdminUsersParams = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  all?: boolean;
 };
 
+export const getAdminUsers = async (params: GetAdminUsersParams) => {
+  const response = await api.get('/admin/users', { params });
+  return response.data;
+};
 export const updateUserPoints = async (userId: string, points: number) => {
   const response = await api.patch(`/admin/users/${userId}/points`, { points });
   return response.data;
@@ -26,7 +32,18 @@ export const updateUserPoints = async (userId: string, points: number) => {
 
 // --- LOGS ---
 
-export const getAdminLogs = async () => {
-  const response = await api.get('/admin/logs');
+export type GetAdminLogsParams = {
+  page?: number;
+  limit?: number;
+  date?: string;
+  search?: string;
+  all?: boolean;
+};
+
+export const getAdminLogs = async (params: GetAdminLogsParams) => {
+  const response = await api.get('/admin/logs', {
+    params
+  });
+
   return response.data;
 };
