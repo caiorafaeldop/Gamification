@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { getAdminUsers, updateUserPoints, getAdminLogs } from '../services/admin.service';
 import { User, Edit, Save, X, Search, History } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { UserProfile } from '@/types';
 
 const USERS_PER_PAGE = 10;
 
 const AdminUsersScreen = () => {
     // Users
-    const [users, setUsers] = useState<any[]>([]);
+    const [users, setUsers] = useState<UserProfile[]>([]);
     const [totalUsers, setTotalUsers] = useState(0);
     const [page, setPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
