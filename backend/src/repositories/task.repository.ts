@@ -69,7 +69,7 @@ export const findTasksByProjectId = async (projectId: string): Promise<Task[]> =
     where: { projectId },
     include: {
       assignedTo: { select: { id: true, name: true, avatarUrl: true } },
-      createdBy: { select: { id: true, name: true } },
+      createdBy: { select: { id: true, name: true, avatarUrl: true } },
       requiredTier: true,
       assignees: {
         include: {

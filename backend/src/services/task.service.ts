@@ -278,9 +278,11 @@ export const deleteTaskById = async (id: string, requestingUserId: string, reque
   }
 
   const isMember = await isUserProjectMember(task.projectId, requestingUserId);
-  console.log(`[DELETE TASK CHECK] Leader: ${project.leaderId}, Requester: ${requestingUserId}, IsMember: ${isMember}`);
+  console.log(`[DELETE TASK CHECK] Leader: ${project.leaderId}, Requester: ${requestingUserId}, IsMember: ${isMember}, Creator: ${task.createdById}`);
 
-  const isAuthorized = requestingUserRole === Role.ADMIN || project.leaderId === requestingUserId || isMember;
+  const isCreator = task.createdById === requestingUserId;
+  const isAuthorized = requestingUserRole === Role.ADMIN || project.leaderId === requestingUserId || isMember || isCreator;
+  
   if (!isAuthorized) {
     throw { statusCode: 403, message: 'You are not authorized to delete this task.' };
   }

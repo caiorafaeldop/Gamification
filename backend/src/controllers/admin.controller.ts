@@ -38,20 +38,44 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
 
 export const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const search = req.query.search as string;
+        const all = req.query.all === 'true';
+
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const skip = (page - 1) * limit;
-        const search = req.query.search as string;
 
-        const where: Prisma.UserWhereInput = search ? {
-             OR: [
-                 { name: { contains: search, mode: 'insensitive' } },
-                 { email: { contains: search, mode: 'insensitive' } }
-             ]
-        } : {};
+        const where: Prisma.UserWhereInput = search
+            ? {
+                OR: [
+                    { name: { contains: search, mode: 'insensitive' } },
+                    { email: { contains: search, mode: 'insensitive' } }
+                ]
+            }
+            : {};
 
+        // Retorna todos os usuários
+        if (all) {
+            const users = await findUsers({
+                where,
+                orderBy: { createdAt: 'desc' }
+            });
+
+            return res.status(200).json({
+                users,
+                total: users.length,
+                all: true
+            });
+        }
+
+        // Paginação padrão
         const [users, total] = await Promise.all([
-            findUsers({ skip, take: limit, where, orderBy: { createdAt: 'desc' } }),
+            findUsers({
+                skip,
+                take: limit,
+                where,
+                orderBy: { createdAt: 'desc' }
+            }),
             countUsers(where)
         ]);
 
@@ -76,18 +100,83 @@ export const updateUserPoints = async (req: Request, res: Response, next: NextFu
 
 export const getAdminLogs = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const search = req.query.search as string;
+        const date = req.query.date as string;
+        const all = req.query.all === 'true';
+
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 20;
         const skip = (page - 1) * limit;
 
+        const where: Prisma.ActivityLogWhereInput =
+            search || date
+                ? {
+                    ...(date && {
+                        createdAt: {
+                            gte: new Date(`${date}T00:00:00.000Z`),
+                            lte: new Date(`${date}T23:59:59.999Z`)
+                        }
+                    }),
+                    ...(search && {
+                        user: {
+                            OR: [
+                                {
+                                    name: {
+                                        contains: search,
+                                        mode: 'insensitive'
+                                    }
+                                },
+                                {
+                                    email: {
+                                        contains: search,
+                                        mode: 'insensitive'
+                                    }
+                                }
+                            ]
+                        }
+                    })
+                }
+                : {};
+
+        // 🔹 Retorna TODOS os logs
+        if (all) {
+            const logs = await prisma.activityLog.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            email: true
+                        }
+                    }
+                }
+            });
+
+            return res.status(200).json({
+                logs,
+                total: logs.length,
+                all: true
+            });
+        }
+
+        // 🔹 Paginação padrão
         const [logs, total] = await Promise.all([
             prisma.activityLog.findMany({
                 skip,
                 take: limit,
+                where,
                 orderBy: { createdAt: 'desc' },
-                include: { user: { select: { name: true, email: true } } }
+                include: {
+                    user: {
+                        select: {
+                            name: true,
+                            email: true
+                        }
+                    }
+                }
             }),
-            prisma.activityLog.count()
+            prisma.activityLog.count({ where })
         ]);
 
         res.status(200).json({ logs, total, page, limit });

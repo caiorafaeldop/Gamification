@@ -141,6 +141,14 @@ const Layout = () => {
                     <SidebarItem to="/achievements" icon={Medal} label="Conquistas" />
                     <SidebarItem to="/activities" icon={Calendar} label="Atividades" />
                     <SidebarItem to="/profile" icon={User} label="Perfil" />
+
+                    {user?.role === 'ADMIN' && (
+                        <>
+                            <p className="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 mt-6">Administração</p>
+                            <SidebarItem to="/admin/users" icon={User} label="Pessoas" />
+                            <SidebarItem to="/admin/projects" icon={FolderOpen} label="Projetos Admin" />
+                        </>
+                    )}
                 </nav>
 
                 <div className="p-4 border-t border-gray-100 dark:border-gray-800">

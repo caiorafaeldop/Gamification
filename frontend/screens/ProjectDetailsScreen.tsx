@@ -174,6 +174,7 @@ const ProjectDetailsScreen = () => {
 
     // Delete Confirmation State
     const [columnToDelete, setColumnToDelete] = useState<string | null>(null);
+    const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
     // Leave Project Confirmation State
     const [isLeaveProjectModalOpen, setIsLeaveProjectModalOpen] = useState(false);
@@ -271,14 +272,22 @@ const ProjectDetailsScreen = () => {
         }
     };
 
-    const handleDeleteTask = async (taskId: string) => {
-        if (!window.confirm("Tem certeza que deseja excluir esta tarefa?")) return;
+    const handleDeleteTask = (taskId: string) => {
+        setTaskToDelete(taskId);
+    };
+
+    const confirmDeleteTask = async () => {
+        if (!taskToDelete) return;
         try {
-            await deleteTask(taskId);
-            fetchKanban(); // Refresh
+            await deleteTask(taskToDelete);
+            fetchKanban();
+            toast.success("Tarefa excluída com sucesso!");
+            window.dispatchEvent(new Event('pointsUpdated'));
         } catch (err: any) {
             console.error("Failed to delete task", err);
-            alert(err.response?.data?.message || "Erro ao excluir tarefa");
+            toast.error(err.response?.data?.message || "Erro ao excluir tarefa");
+        } finally {
+            setTaskToDelete(null);
         }
     };
 
@@ -598,10 +607,10 @@ const ProjectDetailsScreen = () => {
     };
 
     const getPriorityBadge = (priority: string) => {
-        // Logic to return badge styles based on priority if available
+        if (!priority || priority === 'Geral') return null;
         return (
             <span className="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-                {priority || 'Geral'}
+                {priority}
             </span>
         );
     };
@@ -1116,9 +1125,21 @@ const ProjectDetailsScreen = () => {
                                                                                     cursor: snapshot.isDragging ? 'grabbing' : 'grab',
                                                                                 }}
                                                                             >
-                                                                                <div className="flex items-center gap-2 mb-2">
-                                                                                    {getPriorityBadge(task.priority)}
-                                                                                </div>
+                                                                                <div className="flex items-center gap-2 mb-2 justify-between">
+                                                    {task.createdBy && (
+                                                        <div className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity" title={`Criado por: ${task.createdBy.name}`}>
+                                                            <img 
+                                                                src={task.createdBy.avatarUrl || `https://ui-avatars.com/api/?name=${task.createdBy.name}&background=random`} 
+                                                                alt={task.createdBy.name}
+                                                                className="w-4 h-4 rounded-full"
+                                                            />
+                                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium hidden group-hover:block transition-all">Criado por: {task.createdBy.name}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-center gap-2">
+                                                        {getPriorityBadge(task.priority)}
+                                                    </div>
+                                                </div>
                                                                                 <h4 className={`font-bold text-secondary dark:text-gray-100 text-sm mb-3 ${column.status === 'done' ? 'line-through text-gray-400 dark:text-gray-500' : ''}`}>
                                                                                     {task.title}
                                                                                 </h4>
@@ -1272,6 +1293,16 @@ const ProjectDetailsScreen = () => {
                 onConfirm={confirmDeleteColumn}
                 title="Excluir Coluna"
                 message="Apenas colunas vazias podem ser removidas."
+                confirmText="Sim, excluir"
+                type="danger"
+            />
+
+            <ConfirmationModal
+                isOpen={!!taskToDelete}
+                onClose={() => setTaskToDelete(null)}
+                onConfirm={confirmDeleteTask}
+                title="Excluir Tarefa"
+                message="Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita e os pontos serão revogados."
                 confirmText="Sim, excluir"
                 type="danger"
             />
