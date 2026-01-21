@@ -5,10 +5,10 @@ export const getSystemOverview = async () => {
         select: { id: true, name: true, email: true, role: true, isActive: true, avatarColor: true }
     });
     const projects = await prisma.project.findMany({
-        select: { id: true, title: true, status: true, leader: { select: { name: true } } }
+        select: { id: true, title: true, status: true, coverUrl: true, leader: { select: { name: true } } }
     });
     const events = await prisma.event.findMany({
-        select: { id: true, title: true, date: true, type: true }
+        select: { id: true, title: true, date: true, time: true, type: true }
     });
 
     return {
