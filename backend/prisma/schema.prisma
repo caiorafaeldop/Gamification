@@ -24,8 +24,8 @@ model User {
   tierId              String
   avatarColor         String?
   course              String?
-  avatarUrl           String?
   bio                 String?
+  avatarUrl           String?
   skills              String[]           @default([])
   activityLogs        ActivityLog[]
   comments            Comment[]

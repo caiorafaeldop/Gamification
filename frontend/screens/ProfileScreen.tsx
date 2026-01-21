@@ -15,9 +15,11 @@ import {
     Code,
     Camera,
     X,
-    ArrowRight
+    ArrowRight,
+    LogOut
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { getProfile, updateUser, uploadAvatar } from '../services/user.service';
 import toast from 'react-hot-toast';
 
@@ -25,6 +27,7 @@ import { Skeleton } from '../components/Skeleton';
 
 const ProfileScreen = () => {
     const navigate = useNavigate();
+    const { logout } = useAuth();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -269,15 +272,25 @@ const ProfileScreen = () => {
                         </div>
                     </div>
 
-                    {/* Edit Button */}
-                    <div className="mt-4 md:mt-0">
+                    {/* Actions */}
+                    <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
                         <button
                             onClick={() => setIsEditing(!isEditing)}
-                            className="bg-primary hover:bg-sky-600 text-white px-5 py-2.5 rounded-lg shadow-lg shadow-primary/30 flex items-center gap-2 font-bold transition-all transform hover:-translate-y-0.5"
+                            className="bg-primary hover:bg-sky-600 text-white px-5 py-2.5 rounded-lg shadow-lg shadow-primary/30 flex items-center justify-center gap-2 font-bold transition-all transform hover:-translate-y-0.5"
                         >
                             {isEditing ? <X size={18} /> : <Edit3 size={18} />}
                             {isEditing ? 'Cancelar' : 'Editar Perfil'}
                         </button>
+
+                        {!isEditing && (
+                            <button
+                                onClick={logout}
+                                className="bg-red-500/10 hover:bg-red-500 text-red-600 hover:text-white border border-red-500/20 px-5 py-2.5 rounded-lg font-bold transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                            >
+                                <LogOut size={18} />
+                                Sair
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -416,8 +429,8 @@ const ProfileScreen = () => {
                     <div>
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white">Projetos atuais: </h3>
-                            <button 
-                                onClick={() => navigate('/projects')} 
+                            <button
+                                onClick={() => navigate('/projects')}
                                 className="hidden sm:inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary/10 text-primary border border-primary/20 rounded-xl text-sm font-bold hover:bg-primary hover:text-white transition-all duration-300 group shadow-sm active:scale-95 min-w-[120px]"
                             >
                                 Ver todos
@@ -428,44 +441,44 @@ const ProfileScreen = () => {
                         {user?.memberOfProjects && user.memberOfProjects.length > 0 ? (
                             <>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {user.memberOfProjects.map((membership: any) => (
-                                    <div key={membership.project.id} className="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group cursor-pointer" onClick={() => navigate(`/project-details/${membership.project.id}`)}>
-                                        <div className="h-32 md:h-40 bg-slate-100 dark:bg-slate-800 relative flex items-center justify-center overflow-hidden">
-                                            {membership.project.coverUrl ? (
-                                                <img src={membership.project.coverUrl} alt={membership.project.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                            ) : (
-                                                <Star className="text-slate-300 dark:text-slate-600 transition-transform group-hover:scale-110" size={48} />
-                                            )}
-                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
-                                            <span className="absolute bottom-3 left-3 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
-                                                {membership.project.category || 'Atividade'}
-                                            </span>
-                                        </div>
-                                        <div className="p-5 flex flex-col flex-1">
-                                            <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors line-clamp-1">{membership.project.title}</h4>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">
-                                                {membership.project.description || 'Nenhuma descrição fornecida.'}
-                                            </p>
-                                            <div className="mt-auto">
-                                                <button className="w-full py-2.5 px-4 rounded-lg bg-sky-50 dark:bg-slate-900 text-primary dark:text-primary font-bold text-sm hover:bg-sky-100 dark:hover:bg-slate-950 transition-colors border border-transparent dark:border-slate-800">
-                                                    Continuar
-                                                </button>
+                                    {user.memberOfProjects.map((membership: any) => (
+                                        <div key={membership.project.id} className="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group cursor-pointer" onClick={() => navigate(`/project-details/${membership.project.id}`)}>
+                                            <div className="h-32 md:h-40 bg-slate-100 dark:bg-slate-800 relative flex items-center justify-center overflow-hidden">
+                                                {membership.project.coverUrl ? (
+                                                    <img src={membership.project.coverUrl} alt={membership.project.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                                ) : (
+                                                    <Star className="text-slate-300 dark:text-slate-600 transition-transform group-hover:scale-110" size={48} />
+                                                )}
+                                                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
+                                                <span className="absolute bottom-3 left-3 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
+                                                    {membership.project.category || 'Atividade'}
+                                                </span>
+                                            </div>
+                                            <div className="p-5 flex flex-col flex-1">
+                                                <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors line-clamp-1">{membership.project.title}</h4>
+                                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">
+                                                    {membership.project.description || 'Nenhuma descrição fornecida.'}
+                                                </p>
+                                                <div className="mt-auto">
+                                                    <button className="w-full py-2.5 px-4 rounded-lg bg-sky-50 dark:bg-slate-900 text-primary dark:text-primary font-bold text-sm hover:bg-sky-100 dark:hover:bg-slate-950 transition-colors border border-transparent dark:border-slate-800">
+                                                        Continuar
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                            
-                            {/* Mobile View All Button */}
-                            <div className="mt-6 sm:hidden">
-                                <button 
-                                    onClick={() => navigate('/projects')} 
-                                    className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-primary/10 text-primary border border-primary/20 rounded-xl text-sm font-bold hover:bg-primary hover:text-white transition-all duration-300 group shadow-sm active:scale-95"
-                                >
-                                    Ver todos
-                                    <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                                </button>
-                            </div>
+                                    ))}
+                                </div>
+
+                                {/* Mobile View All Button */}
+                                <div className="mt-6 sm:hidden">
+                                    <button
+                                        onClick={() => navigate('/projects')}
+                                        className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-primary/10 text-primary border border-primary/20 rounded-xl text-sm font-bold hover:bg-primary hover:text-white transition-all duration-300 group shadow-sm active:scale-95"
+                                    >
+                                        Ver todos
+                                        <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                                    </button>
+                                </div>
                             </>
                         ) : (
                             <div className="p-12 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl text-center">
