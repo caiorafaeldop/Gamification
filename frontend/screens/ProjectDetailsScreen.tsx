@@ -4,7 +4,7 @@ import { DragDropContext, Draggable } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '../components/StrictModeDroppable';
 import { deleteTask, getProjectKanban, updateTaskStatus, createColumn, updateColumn, deleteColumn, reorderColumns, createQuickTask } from '../services/task.service';
 import { getProfile } from '../services/user.service';
-import { uploadProjectCover, updateProject } from '../services/project.service';
+import { uploadProjectCover, updateProject, leaveProject } from '../services/project.service';
 import { useProjectDetails } from '../hooks/useProjects';
 import { Skeleton } from '../components/Skeleton';
 import TaskModal from '../components/TaskModal';
@@ -12,7 +12,7 @@ import TaskDetailModal from '../components/TaskDetailModal';
 import { Camera, Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../components/ConfirmationModal';
-
+import { COLUMN_COLORS } from '../constants';
 const ProjectDetailsScreen = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -29,6 +29,8 @@ const ProjectDetailsScreen = () => {
     const [editingTitle, setEditingTitle] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
+
+    const [pickingColorColumnId, setPickingColorColumnId] = useState<string | null>(null);
     
     // Inline card creation state (Trello-style)
     const [inlineCreatingColumnId, setInlineCreatingColumnId] = useState<string | null>(null);
@@ -172,6 +174,10 @@ const ProjectDetailsScreen = () => {
 
     // Delete Confirmation State
     const [columnToDelete, setColumnToDelete] = useState<string | null>(null);
+    const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+
+    // Leave Project Confirmation State
+    const [isLeaveProjectModalOpen, setIsLeaveProjectModalOpen] = useState(false);
 
     useEffect(() => {
         if (id) fetchKanban();
@@ -220,7 +226,7 @@ const ProjectDetailsScreen = () => {
     const submitInlineTask = async () => {
         if (!inlineTaskTitle.trim() || !inlineCreatingColumnId) return;
         if (isCreatingInline) return; // Prevent double submission
-        
+
         setIsCreatingInline(true);
         try {
             await createQuickTask(id!, inlineCreatingColumnId, inlineTaskTitle.trim());
@@ -266,14 +272,22 @@ const ProjectDetailsScreen = () => {
         }
     };
 
-    const handleDeleteTask = async (taskId: string) => {
-        if (!window.confirm("Tem certeza que deseja excluir esta tarefa?")) return;
+    const handleDeleteTask = (taskId: string) => {
+        setTaskToDelete(taskId);
+    };
+
+    const confirmDeleteTask = async () => {
+        if (!taskToDelete) return;
         try {
-            await deleteTask(taskId);
-            fetchKanban(); // Refresh
+            await deleteTask(taskToDelete);
+            fetchKanban();
+            toast.success("Tarefa excluída com sucesso!");
+            window.dispatchEvent(new Event('pointsUpdated'));
         } catch (err: any) {
             console.error("Failed to delete task", err);
-            alert(err.response?.data?.message || "Erro ao excluir tarefa");
+            toast.error(err.response?.data?.message || "Erro ao excluir tarefa");
+        } finally {
+            setTaskToDelete(null);
         }
     };
 
@@ -420,8 +434,6 @@ const ProjectDetailsScreen = () => {
             toast.error("O nome da coluna não pode ser vazio");
             return;
         }
-
-        // Optimistic update
         const newColumns = columns.map((col: any) =>
             col.id === editingColumnId ? { ...col, title: editingTitle } : col
         );
@@ -462,7 +474,27 @@ const ProjectDetailsScreen = () => {
             setColumnToDelete(null);
         }
     };
+    const handleUpdateColumnColor = async (colorKey: string) => {
+    if (!pickingColorColumnId) return;
 
+    const newColumns = columns.map((col: any) => 
+        col.id === pickingColorColumnId ? { ...col, color: colorKey } : col
+    );
+    setColumns(newColumns);
+    
+    const idToUpdate = pickingColorColumnId;
+    setPickingColorColumnId(null); 
+
+    try {
+
+        await updateColumn(idToUpdate, { color: colorKey });
+        toast.success("Cor da coluna atualizada!");
+    } catch (err) {
+        console.error("Failed to update column color", err);
+        toast.error("Erro ao salvar cor");
+        fetchKanban(); 
+    }
+};
     const toggleMemberFilter = (memberId: string) => {
         setSelectedMemberFilters(prev =>
             prev.includes(memberId)
@@ -486,7 +518,7 @@ const ProjectDetailsScreen = () => {
                     const hasAssignees = task.assignees && task.assignees.length > 0;
                     const isUnassigned = !hasAssignees && !task.assignedTo;
                     const matchesUnassigned = selectedMemberFilters.includes('unassigned') && isUnassigned;
-                    
+
                     // Verificar se algum dos assignees corresponde ao filtro
                     let matchesSpecific = false;
                     if (hasAssignees) {
@@ -494,7 +526,7 @@ const ProjectDetailsScreen = () => {
                     } else if (task.assignedTo) {
                         matchesSpecific = selectedMemberFilters.includes(task.assignedTo.id);
                     }
-                    
+
                     matchesMember = matchesUnassigned || matchesSpecific;
                 }
 
@@ -526,7 +558,15 @@ const ProjectDetailsScreen = () => {
                 isCompletionColumn: true
             };
         }
-
+        if (column.color && COLUMN_COLORS[column.color as keyof typeof COLUMN_COLORS]) {
+        const theme = COLUMN_COLORS[column.color as keyof typeof COLUMN_COLORS];
+        return {
+            container: `${theme.bg} ${theme.border} ${theme.decoration}`,
+            headerIcon: <span className={`w-3 h-3 rounded-full ${theme.bg.replace('/80', '').replace('/10', '-400')}`}></span>, // Exemplo simples de icone
+            titleColor: theme.text,
+            badge: theme.badge
+        };
+    }
         const config = [
             {
                 keywords: ['fazer', 'todo', 'backlog'],
@@ -567,10 +607,10 @@ const ProjectDetailsScreen = () => {
     };
 
     const getPriorityBadge = (priority: string) => {
-        // Logic to return badge styles based on priority if available
+        if (!priority || priority === 'Geral') return null;
         return (
             <span className="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-                {priority || 'Geral'}
+                {priority}
             </span>
         );
     };
@@ -705,14 +745,7 @@ const ProjectDetailsScreen = () => {
                                     </div>
                                 </div>
                             </div>
-                            {/* Desktop only: Nova Tarefa na posição original */}
-                            <button
-                                onClick={() => { setInitialColumnId(undefined); setIsNewTaskModalOpen(true); }}
-                                className="hidden lg:flex bg-primary hover:bg-sky-400 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-lg shadow-primary/30 transition-all items-center gap-1"
-                            >
-                                <span className="material-icons text-sm">add</span>
-                                Nova Tarefa
-                            </button>
+
                         </div>
                     </div>
                 </div>
@@ -720,87 +753,110 @@ const ProjectDetailsScreen = () => {
                 {/* Toolbar */}
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-3 flex-wrap">
-                        {/* Points Config - Only for team members */}
-                        {(user && (project?.leaderId === user.id || project?.members?.some((m: any) => m.user?.id === user.id))) && (
+                        {/* Points Display - For all project members */}
+                        {(user && (project?.leaderId === user.id || project?.leader?.id === user.id || project?.members?.some((m: any) => m.user?.id === user.id))) && (
                             <>
                                 {/* Points per Open Task */}
-                                <div className="relative" ref={openPointsMenuRef}>
-                                    <button
-                                        onClick={() => { setIsOpenPointsMenuOpen(!isOpenPointsMenuOpen); setIsCompletedPointsMenuOpen(false); }}
-                                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                                    >
-                                        <span>pontos por criar Task</span>
+                                {(user && (project?.leaderId === user.id || project?.leader?.id === user.id)) ? (
+                                    <div className="relative" ref={openPointsMenuRef}>
+                                        <button
+                                            onClick={() => { setIsOpenPointsMenuOpen(!isOpenPointsMenuOpen); setIsCompletedPointsMenuOpen(false); }}
+                                            className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                        >
+                                            <span>pontos por criar Task:</span>
+                                            <span className="font-bold text-primary">{project?.pointsPerOpenTask || 50}</span>
+                                            <span className="material-icons text-sm text-gray-400">expand_more</span>
+                                        </button>
+                                        {isOpenPointsMenuOpen && (
+                                            <div className="absolute left-0 top-7 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                                                {[25, 50, 100, 200].map((val) => (
+                                                    <button
+                                                        key={val}
+                                                        onClick={async () => {
+                                                            try {
+                                                                await updateProject(id!, { pointsPerOpenTask: val });
+                                                                setProject((prev: any) => ({ ...prev, pointsPerOpenTask: val }));
+                                                                toast.success(`Criação: ${val}`);
+                                                                setIsOpenPointsMenuOpen(false);
+                                                            } catch (err) {
+                                                                toast.error('Erro');
+                                                            }
+                                                        }}
+                                                        className={`w-full px-3 py-1 text-xs text-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${(project?.pointsPerOpenTask || 50) === val ? 'bg-primary/10 text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                                                    >
+                                                        {val}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300">
+                                        <span>pontos por criar Task:</span>
                                         <span className="font-bold text-primary">{project?.pointsPerOpenTask || 50}</span>
-                                        <span className="material-icons text-sm text-gray-400">expand_more</span>
-                                    </button>
-                                    {isOpenPointsMenuOpen && (
-                                        <div className="absolute left-0 top-7 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                                            {[25, 50, 100, 200].map((val) => (
-                                                <button
-                                                    key={val}
-                                                    onClick={async () => {
-                                                        try {
-                                                            await updateProject(id!, { pointsPerOpenTask: val });
-                                                            setProject((prev: any) => ({ ...prev, pointsPerOpenTask: val }));
-                                                            toast.success(`Criação: ${val}`);
-                                                            setIsOpenPointsMenuOpen(false);
-                                                        } catch (err) {
-                                                            toast.error('Erro');
-                                                        }
-                                                    }}
-                                                    className={`w-full px-3 py-1 text-xs text-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${(project?.pointsPerOpenTask || 50) === val ? 'bg-primary/10 text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                                                >
-                                                    {val}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
 
                                 {/* Points per Completed Task */}
-                                <div className="relative" ref={completedPointsMenuRef}>
-                                    <button
-                                        onClick={() => { setIsCompletedPointsMenuOpen(!isCompletedPointsMenuOpen); setIsOpenPointsMenuOpen(false); }}
-                                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                                    >
-                                        <span>pontos por conclusão</span>
+                                {(user && (project?.leaderId === user.id || project?.leader?.id === user.id)) ? (
+                                    <div className="relative" ref={completedPointsMenuRef}>
+                                        <button
+                                            onClick={() => { setIsCompletedPointsMenuOpen(!isCompletedPointsMenuOpen); setIsOpenPointsMenuOpen(false); }}
+                                            className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                        >
+                                            <span>pontos por conclusão:</span>
+                                            <span className="font-bold text-primary">{project?.pointsPerCompletedTask || 50}</span>
+                                            <span className="material-icons text-sm text-gray-400">expand_more</span>
+                                        </button>
+                                        {isCompletedPointsMenuOpen && (
+                                            <div className="absolute left-0 top-7 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                                                {[25, 50, 100, 200].map((val) => (
+                                                    <button
+                                                        key={val}
+                                                        onClick={async () => {
+                                                            try {
+                                                                await updateProject(id!, { pointsPerCompletedTask: val });
+                                                                setProject((prev: any) => ({ ...prev, pointsPerCompletedTask: val }));
+                                                                toast.success(`Conclusão: ${val}`);
+                                                                setIsCompletedPointsMenuOpen(false);
+                                                            } catch (err) {
+                                                                toast.error('Erro');
+                                                            }
+                                                        }}
+                                                        className={`w-full px-3 py-1 text-xs text-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${(project?.pointsPerCompletedTask || 50) === val ? 'bg-primary/10 text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                                                    >
+                                                        {val}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300">
+                                        <span>pontos por conclusão:</span>
                                         <span className="font-bold text-primary">{project?.pointsPerCompletedTask || 50}</span>
-                                        <span className="material-icons text-sm text-gray-400">expand_more</span>
-                                    </button>
-                                    {isCompletedPointsMenuOpen && (
-                                        <div className="absolute left-0 top-7 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                                            {[25, 50, 100, 200].map((val) => (
-                                                <button
-                                                    key={val}
-                                                    onClick={async () => {
-                                                        try {
-                                                            await updateProject(id!, { pointsPerCompletedTask: val });
-                                                            setProject((prev: any) => ({ ...prev, pointsPerCompletedTask: val }));
-                                                            toast.success(`Conclusão: ${val}`);
-                                                            setIsCompletedPointsMenuOpen(false);
-                                                        } catch (err) {
-                                                            toast.error('Erro');
-                                                        }
-                                                    }}
-                                                    className={`w-full px-3 py-1 text-xs text-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${(project?.pointsPerCompletedTask || 50) === val ? 'bg-primary/10 text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                                                >
-                                                    {val}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
                             </>
                         )}
-                        
-                        {/* Mobile only: Nova Tarefa */}
-                        <button
-                            onClick={() => { setInitialColumnId(undefined); setIsNewTaskModalOpen(true); }}
-                            className="lg:hidden bg-primary hover:bg-sky-400 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-lg shadow-primary/30 transition-all flex items-center gap-1"
-                        >
-                            <span className="material-icons text-sm">add</span>
-                            Nova Tarefa
-                        </button>
+
+                        {/* Leave Project Button - Only for members who are not the leader */}
+                        {user && project?.members?.some((m: any) => m.user?.id === user.id) &&
+                            project?.leaderId !== user.id && project?.leader?.id !== user.id && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setIsLeaveProjectModalOpen(true);
+                                    }}
+                                    className="flex items-center gap-1.5 px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer z-10 relative"
+                                >
+                                    <span className="material-icons text-sm">logout</span>
+                                    <span>Sair do Projeto</span>
+                                </button>
+                            )}
+
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="relative">
@@ -888,7 +944,7 @@ const ProjectDetailsScreen = () => {
 
                         {/* Alterar Capa - Apenas para líder/admin */}
                         {isLeaderOrAdmin && (
-                            <label 
+                            <label
                                 className="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors border border-gray-200 dark:border-gray-700 relative z-20"
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -896,12 +952,12 @@ const ProjectDetailsScreen = () => {
                                     if (input && !uploadingCover) input.click();
                                 }}
                             >
-                                <input 
-                                    type="file" 
-                                    className="hidden absolute inset-0 opacity-0 w-0 h-0" 
-                                    accept="image/*" 
-                                    onChange={handleCoverUpload} 
-                                    disabled={uploadingCover} 
+                                <input
+                                    type="file"
+                                    className="hidden absolute inset-0 opacity-0 w-0 h-0"
+                                    accept="image/*"
+                                    onChange={handleCoverUpload}
+                                    disabled={uploadingCover}
                                 />
                                 {uploadingCover ? (
                                     <Loader className="animate-spin" size={14} />
@@ -948,6 +1004,7 @@ const ProjectDetailsScreen = () => {
                                 ref={provided.innerRef}
                                 className="h-full flex gap-6 min-w-max"
                             >
+                            {/* columns list */}
                                 {displayedColumns && displayedColumns.map((column: any, index: number) => {
                                     const styles = getColumnStyles(column);
                                     return (
@@ -1003,6 +1060,46 @@ const ProjectDetailsScreen = () => {
                                                                     <span className="material-icons text-sm">delete</span>
                                                                 </button>
                                                             )}
+                                                            {!column.isCompletionColumn && (
+                                                                <div className="relative">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            // Se já estiver aberto nesta coluna, fecha. Se não, abre.
+                                                                            setPickingColorColumnId(pickingColorColumnId === column.id ? null : column.id);
+                                                                        }}
+                                                                        className={`p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors ${pickingColorColumnId === column.id ? 'text-primary' : 'text-gray-400'}`}
+                                                                        title="Trocar Cor"
+                                                                    >
+                                                                        <span className="material-icons text-sm">palette</span>
+                                                                    </button>
+
+                                                                    {/* Menu Flutuante de Cores */}
+                                                                    {pickingColorColumnId === column.id && (
+                                                                        <div className="absolute top-8 left-0 z-50 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 shadow-xl rounded-xl p-2 w-32 animate-in fade-in zoom-in-95 duration-200 grid grid-cols-3 gap-2">
+                                                                            {Object.entries(COLUMN_COLORS).map(([key, theme]) => (
+                                                                                <button
+                                                                                    key={key}
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handleUpdateColumnColor(key);
+                                                                                    }}
+                                                                                    className={`w-8 h-8 rounded-full border-2 ${theme.bg.split(' ')[0].replace(/-200\/.*/, '-500')} ${column.color === key ? 'border-gray-600 dark:border-white scale-110' : 'border-transparent hover:scale-105'} transition-all shadow-sm`}
+                                                                                    title={theme.name}
+                                                                                />
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    {/* Overlay transparente para fechar ao clicar fora (opcional, mas recomendado) */}
+                                                                    {pickingColorColumnId === column.id && (
+                                                                        <div 
+                                                                            className="fixed inset-0 z-40 bg-transparent" 
+                                                                            onClick={(e) => { e.stopPropagation(); setPickingColorColumnId(null); }} 
+                                                                        />
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
 
@@ -1028,9 +1125,21 @@ const ProjectDetailsScreen = () => {
                                                                                     cursor: snapshot.isDragging ? 'grabbing' : 'grab',
                                                                                 }}
                                                                             >
-                                                                                <div className="flex items-center gap-2 mb-2">
-                                                                                    {getPriorityBadge(task.priority)}
-                                                                                </div>
+                                                                                <div className="flex items-center gap-2 mb-2 justify-between">
+                                                    {task.createdBy && (
+                                                        <div className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity" title={`Criado por: ${task.createdBy.name}`}>
+                                                            <img 
+                                                                src={task.createdBy.avatarUrl || `https://ui-avatars.com/api/?name=${task.createdBy.name}&background=random`} 
+                                                                alt={task.createdBy.name}
+                                                                className="w-4 h-4 rounded-full"
+                                                            />
+                                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium hidden group-hover:block transition-all">Criado por: {task.createdBy.name}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-center gap-2">
+                                                        {getPriorityBadge(task.priority)}
+                                                    </div>
+                                                </div>
                                                                                 <h4 className={`font-bold text-secondary dark:text-gray-100 text-sm mb-3 ${column.status === 'done' ? 'line-through text-gray-400 dark:text-gray-500' : ''}`}>
                                                                                     {task.title}
                                                                                 </h4>
@@ -1087,7 +1196,7 @@ const ProjectDetailsScreen = () => {
                                                                     </Draggable>
                                                                 ))}
                                                                 {provided.placeholder}
-                                                                
+
                                                                 {/* Inline card creation (Trello-style) */}
                                                                 {inlineCreatingColumnId === column.id ? (
                                                                     <div className="bg-white dark:bg-surface-dark p-2 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
@@ -1164,7 +1273,7 @@ const ProjectDetailsScreen = () => {
                     window.dispatchEvent(new Event('pointsUpdated'));
                 }}
             />
-            
+
             {/* Modal para visualização/edição de tarefa existente (estilo Trello) */}
             <TaskDetailModal
                 isOpen={isTaskDetailsOpen}
@@ -1185,6 +1294,35 @@ const ProjectDetailsScreen = () => {
                 title="Excluir Coluna"
                 message="Apenas colunas vazias podem ser removidas."
                 confirmText="Sim, excluir"
+                type="danger"
+            />
+
+            <ConfirmationModal
+                isOpen={!!taskToDelete}
+                onClose={() => setTaskToDelete(null)}
+                onConfirm={confirmDeleteTask}
+                title="Excluir Tarefa"
+                message="Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita e os pontos serão revogados."
+                confirmText="Sim, excluir"
+                type="danger"
+            />
+
+            <ConfirmationModal
+                isOpen={isLeaveProjectModalOpen}
+                onClose={() => setIsLeaveProjectModalOpen(false)}
+                onConfirm={async () => {
+                    try {
+                        await leaveProject(id!);
+                        toast.success('Você saiu do projeto com sucesso.');
+                        navigate('/projects');
+                    } catch (err: any) {
+                        toast.error(err.response?.data?.message || 'Erro ao sair do projeto.');
+                    }
+                }}
+                title="Sair do Projeto"
+                message="Tem certeza que deseja sair deste projeto? Você perderá acesso às tarefas e não poderá contribuir até que seja adicionado novamente."
+                confirmText="Sim, sair"
+                cancelText="Cancelar"
                 type="danger"
             />
         </div>

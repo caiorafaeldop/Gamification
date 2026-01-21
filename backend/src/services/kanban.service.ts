@@ -55,9 +55,9 @@ const createDefaultColumns = async (projectId: string) => {
     });
 };
 
-export const createColumnService = async (projectId: string, title: string, order: number) => {
+export const createColumnService = async (projectId: string, title: string, order: number, color?: string) => {
     return prisma.kanbanColumn.create({
-        data: { projectId, title, order, status: TaskStatus.todo }
+        data: { projectId, title, order, color, status: TaskStatus.todo }
     });
 };
 

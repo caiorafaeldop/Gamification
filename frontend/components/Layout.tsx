@@ -21,14 +21,23 @@ import { getProfile } from '../services/user.service';
 import { Skeleton } from './Skeleton';
 
 const ThemeToggle = () => {
-    const [isDark, setIsDark] = useState(false);
+    const [isDark, setIsDark] = useState(() => {
+        // Check localStorage first, then system preference
+        const saved = localStorage.getItem('theme');
+        if (saved) {
+            return saved === 'dark';
+        }
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    });
 
     useEffect(() => {
         const root = document.documentElement;
         if (isDark) {
             root.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
         } else {
             root.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
         }
     }, [isDark]);
 
@@ -106,7 +115,7 @@ const Layout = () => {
             fetchUser();
         };
         window.addEventListener('pointsUpdated', handlePointsUpdated);
-        
+
         return () => {
             window.removeEventListener('pointsUpdated', handlePointsUpdated);
         };
@@ -132,10 +141,21 @@ const Layout = () => {
                     <SidebarItem to="/achievements" icon={Medal} label="Conquistas" />
                     <SidebarItem to="/activities" icon={Calendar} label="Atividades" />
                     <SidebarItem to="/profile" icon={User} label="Perfil" />
+
+                    {user?.role === 'ADMIN' && (
+                        <>
+                            <p className="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 mt-6">Administração</p>
+                            <SidebarItem to="/admin/users" icon={User} label="Pessoas" />
+                            <SidebarItem to="/admin/projects" icon={FolderOpen} label="Projetos Admin" />
+                        </>
+                    )}
                 </nav>
 
                 <div className="p-4 border-t border-gray-100 dark:border-gray-800">
-                    <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group">
+                    <button 
+                        onClick={() => navigate('/profile')}
+                        className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group text-left"
+                    >
                         <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-sky-400 p-0.5">
                             <div className="w-full h-full rounded-full bg-white dark:bg-surface-dark flex items-center justify-center overflow-hidden">
                                 {loading ? (
@@ -162,17 +182,19 @@ const Layout = () => {
                                 </>
                             )}
                         </div>
-                        <button
-                            onClick={() => {
+                        <div
+                            role="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
                                 localStorage.removeItem('token');
                                 localStorage.removeItem('user');
                                 navigate('/');
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
+                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/10"
                         >
                             <LogOut size={16} />
-                        </button>
-                    </div>
+                        </div>
+                    </button>
                 </div>
             </aside>
 
@@ -184,7 +206,7 @@ const Layout = () => {
                             <img src={logo} alt="Logo" className="h-7 w-auto rounded-xl" />
                             <span className="font-display font-bold text-lg text-secondary dark:text-white">Connecta<span className="text-primary">CI</span></span>
                         </div>
-                        
+
                         {!loading && user && (
                             <div className="hidden sm:flex flex-col animate-in fade-in slide-in-from-left-4 duration-500">
                                 <h1 className="text-xl font-display font-bold text-secondary dark:text-white">
@@ -195,7 +217,7 @@ const Layout = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button 
+                        <button
                             onClick={() => navigate('/activities')}
                             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 relative group"
                         >

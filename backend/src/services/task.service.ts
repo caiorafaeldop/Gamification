@@ -4,7 +4,7 @@ import { findUserById } from '../repositories/user.repository';
 import { findProjectById, isUserProjectMember } from '../repositories/project.repository';
 import { createActivityLog } from '../repositories/activityLog.repository';
 import { CreateTaskInput, UpdateTaskInput, MoveTaskInput } from '../schemas/task.schema';
-import { addPointsForTaskCompletion, updateStreakForUser } from './gamification.service';
+import { addPointsForTaskCompletion, updateStreakForUser, removePointsForTaskUncompletion, removePointsForTaskDeletion } from './gamification.service';
 import { checkAndAwardAchievements } from './achievement.service';
 import prisma from '../utils/prisma';
 
@@ -174,7 +174,6 @@ export const updateTaskDetails = async (id: string, data: UpdateTaskInput, reque
         
         // Quem foi REMOVIDO perde pontos
         const removedAssignees = currentAssigneeIds.filter((id: string) => !newAssigneeIds.includes(id));
-        const { removePointsForTaskUncompletion } = await import('./gamification.service');
         for (const userId of removedAssignees) {
           await removePointsForTaskUncompletion(userId, pointsForCompletion, task.id, tx);
           console.log(`[RETROACTIVE] Removed ${pointsForCompletion} points from user ${userId} for being removed from completed task`);
@@ -264,19 +263,50 @@ export const deleteTaskById = async (id: string, requestingUserId: string, reque
   }
 
   const isMember = await isUserProjectMember(task.projectId, requestingUserId);
-  console.log(`[DELETE TASK CHECK] Leader: ${project.leaderId}, Requester: ${requestingUserId}, IsMember: ${isMember}`);
+  console.log(`[DELETE TASK CHECK] Leader: ${project.leaderId}, Requester: ${requestingUserId}, IsMember: ${isMember}, Creator: ${task.createdById}`);
 
-  const isAuthorized = requestingUserRole === Role.ADMIN || project.leaderId === requestingUserId || isMember;
+  const isCreator = task.createdById === requestingUserId;
+  const isAuthorized = requestingUserRole === Role.ADMIN || project.leaderId === requestingUserId || isMember || isCreator;
+  
   if (!isAuthorized) {
     throw { statusCode: 403, message: 'You are not authorized to delete this task.' };
   }
 
   return prisma.$transaction(async (tx) => {
-    await deleteTask(id);
+    // 1. Remover pontos de criação do criador
+    const pointsForCreation = (project as any).pointsPerOpenTask ?? 50;
+    if (pointsForCreation > 0) {
+      await removePointsForTaskDeletion(task.createdById, pointsForCreation, task.id, tx);
+      console.log(`[DELETE TASK] Removed ${pointsForCreation} points from creator ${task.createdById}`);
+    }
+
+    // 2. Se a task estava concluída, remover pontos de conclusão de todos os assignees
+    if (task.status === TaskStatus.done) {
+      const pointsForCompletion = (project as any).pointsPerCompletedTask ?? 100;
+      
+      // AssignedToId principal
+      if (task.assignedToId) {
+        await removePointsForTaskUncompletion(task.assignedToId, pointsForCompletion, task.id, tx);
+        console.log(`[DELETE TASK] Removed ${pointsForCompletion} completion points from main assignee ${task.assignedToId}`);
+      }
+
+      // Múltiplos assignees
+      const assignees = (task as any).assignees || [];
+      for (const assignment of assignees) {
+        const userId = assignment.userId || assignment.user?.id;
+        // Evitar remover duas vezes se for o mesmo user
+        if (userId && userId !== task.assignedToId) {
+          await removePointsForTaskUncompletion(userId, pointsForCompletion, task.id, tx);
+          console.log(`[DELETE TASK] Removed ${pointsForCompletion} completion points from secondary assignee ${userId}`);
+        }
+      }
+    }
+
+    await deleteTask(id, tx);
     await createActivityLog({
       user: { connect: { id: requestingUserId } },
       type: ActivityType.TASK_DELETED,
-      description: `Deleted task "${task.title}".`,
+      description: `Deleted task "${task.title}". Points revoked.`,
     }, tx);
     return task;
   });

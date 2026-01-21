@@ -50,3 +50,8 @@ export const updateProject = async (id: string, data: Partial<Project>) => {
   const response = await api.patch(`/projects/${id}`, data);
   return response.data;
 };
+
+export const leaveProject = async (projectId: string) => {
+  const response = await api.delete(`/projects/${projectId}/leave`);
+  return response.data;
+};

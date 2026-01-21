@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -22,6 +23,36 @@ async function main() {
     });
   }
   console.log('🏆 Tiers created.');
+
+  // --- ADMIN USER ---
+  const salt = await bcrypt.genSalt(10);
+  const passwordHash = await bcrypt.hash('ciconectado', salt);
+  
+  // Pegar o tier Bronze para associar ao admin (obrigatório pelo schema)
+  const bronzeTier = await prisma.tier.findUnique({ where: { name: 'Bronze' } });
+  
+  if (bronzeTier) {
+      await prisma.user.upsert({
+        where: { email: 'admin@gmail.com' },
+        update: {
+            role: Role.ADMIN,
+            // Se quiser resetar a senha sempre que rodar o seed, descomente:
+            // passwordHash: passwordHash 
+        },
+        create: {
+            name: 'Super Admin',
+            email: 'admin@gmail.com',
+            passwordHash: passwordHash,
+            role: Role.ADMIN,
+            tierId: bronzeTier.id,
+            bio: 'Conta administrativa do sistema.',
+            avatarColor: 'from-gray-900 to-black',
+        },
+      });
+      console.log('🛡️ Admin user ready: admin@gmail.com');
+  } else {
+      console.error('❌ Cannot create admin: Bronze tier not found.');
+  }
 
   // --- ACHIEVEMENTS (Apenas as conquistas, como solicitado) ---
   const achievementsData = [
