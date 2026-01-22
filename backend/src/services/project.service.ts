@@ -236,6 +236,36 @@ export const removeMemberFromProject = async (projectId: string, userId: string,
   });
 };
 
+// Exporting leaveProject safely
+export const leaveProject = async (projectId: string, userId: string) => {
+  console.log('[SERVICE] leaveProject called');
+  const project = await findProjectById(projectId);
+  if (!project) {
+    throw { statusCode: 404, message: 'Project not found.' };
+  }
+
+  // Ensure user is actually a member
+  const isMember = await isUserProjectMember(projectId, userId);
+  if (!isMember) {
+    throw { statusCode: 400, message: 'You are not a member of this project.' };
+  }
+
+  // Prevent leader from leaving without transferring ownership
+  if (project.leaderId === userId) {
+    throw { statusCode: 403, message: 'Project leaders cannot leave the project without transferring ownership first.' };
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const projectMember = await removeProjectMember(projectId, userId, tx);
+    await createActivityLog({
+      user: { connect: { id: userId } },
+      type: ActivityType.USER_LEFT_PROJECT,
+      description: `Left project "${project.title}".`,
+    }, tx);
+    return projectMember;
+  });
+};
+
 
 
 export const transferProjectOwnership = async (projectId: string, newLeaderId: string, requestingUserId: string) => {
