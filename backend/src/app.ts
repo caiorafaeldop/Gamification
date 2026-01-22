@@ -59,4 +59,10 @@ app.get('/api/v1/health', (req, res) => {
 // Error handling middleware
 app.use(errorHandler);
 
+// Swagger Documentation
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
+
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 export default app;
