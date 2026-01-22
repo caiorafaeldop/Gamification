@@ -45,6 +45,7 @@ const App = () => {
           <Route path="/new-task" element={<NewTaskScreen />} />
           <Route path="/edit-task/:id" element={<NewTaskScreen />} />
           <Route path="/new-project" element={<NewProjectScreen />} />
+          <Route path="/edit-project/:id" element={<NewProjectScreen />} />
           <Route path="/join-project" element={<JoinProjectScreen />} />
           <Route path="/eventos/novo" element={<NewEventScreen />} />
           <Route path="/eventos/editar/:id" element={<NewEventScreen />} />

@@ -9,7 +9,7 @@ import { useProjectDetails } from '../hooks/useProjects';
 import { Skeleton } from '../components/Skeleton';
 import TaskModal from '../components/TaskModal';
 import TaskDetailModal from '../components/TaskDetailModal';
-import { Camera, Loader } from 'lucide-react';
+import { Camera, Loader, Edit } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../components/ConfirmationModal';
 
@@ -931,6 +931,17 @@ const ProjectDetailsScreen = () => {
                                     </>
                                 )}
                             </label>
+                        )}
+
+                        {/* Editar Projeto - Apenas para líder/admin */}
+                        {isLeaderOrAdmin && (
+                            <button
+                                onClick={() => navigate(`/edit-project/${id}`)}
+                                className="bg-primary hover:bg-blue-600 text-white px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors border border-primary relative z-20"
+                            >
+                                <Edit size={14} />
+                                <span className="text-xs font-medium hidden sm:inline">Editar</span>
+                            </button>
                         )}
                     </div>
                 </div>
