@@ -14,7 +14,21 @@ import { Camera, Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { COLUMN_COLORS } from '../constants';
+import ProjectDetailsScreenMobile from './ProjectDetailsScreenMobile';
+
 const ProjectDetailsScreen = () => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 1024);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    if (isMobile) {
+        return <ProjectDetailsScreenMobile />;
+    }
+
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { project, setProject, loading: loadingProject } = useProjectDetails(id!);
@@ -461,8 +475,6 @@ const ProjectDetailsScreen = () => {
             fetchKanban(); // Revert
         }
     };
-
-
 
     const handleDeleteColumn = (columnId: string) => {
         setColumnToDelete(columnId);
@@ -1235,16 +1247,16 @@ const ProjectDetailsScreen = () => {
                                                                         )}
                                                                     </Draggable>
                                                                 ))}
-{/* Skeleton Placeholder Animation */}
-{provided.placeholder && React.isValidElement(provided.placeholder) ? (
-     React.cloneElement(provided.placeholder as React.ReactElement, {
-         className: "bg-gray-200 dark:bg-gray-700 border-2 border-dashed border-gray-400 dark:border-gray-500 rounded-xl animate-pulse opacity-80",
-         style: {
-             ...((provided.placeholder as React.ReactElement).props.style || {}),
-             visibility: 'visible',
-         }
-     })
-) : provided.placeholder}
+                                                                {/* Skeleton Placeholder Animation */}
+                                                                {provided.placeholder && React.isValidElement(provided.placeholder) ? (
+                                                                    React.cloneElement(provided.placeholder as React.ReactElement<any>, {
+                                                                        className: "bg-gray-200 dark:bg-gray-700 border-2 border-dashed border-gray-400 dark:border-gray-500 rounded-xl animate-pulse opacity-80",
+                                                                        style: {
+                                                                            ...((provided.placeholder as React.ReactElement<any>).props.style || {}),
+                                                                            visibility: 'visible',
+                                                                        }
+                                                                    })
+                                                                ) : provided.placeholder}
 
                                                                 {/* Inline card creation (Trello-style) */}
                                                                 {inlineCreatingColumnId === column.id ? (
