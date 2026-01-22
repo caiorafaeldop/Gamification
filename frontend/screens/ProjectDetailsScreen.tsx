@@ -1190,7 +1190,7 @@ const ProjectDetailsScreen = () => {
                                                                                             <>
                                                                                                 {task.assignees.slice(0, 3).map((assignee: any, idx: number) => (
                                                                                                     <img
-                                                                                                        key={assignee.user?.id || idx}
+                                                                                                        key={idx}
                                                                                                         alt={assignee.user?.name}
                                                                                                         className={`w-6 h-6 rounded-full border border-white dark:border-surface-dark object-cover ${column.status === 'done' ? 'grayscale' : ''}`}
                                                                                                         src={assignee.user?.avatarUrl || `https://ui-avatars.com/api/?name=${assignee.user?.name}&background=random`}

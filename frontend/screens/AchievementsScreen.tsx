@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { getAchievements, getMyAchievements } from '../services/achievement.service';
 import { getProfile } from '../services/user.service';
-import { Achievement, UserAchievement, User } from '../types';
+import { Achievement, UserAchievement, UserProfile } from '../types';
 import { Skeleton } from '../components/Skeleton';
 
 // Map icons from database string or ID to Lucide components
@@ -28,7 +28,7 @@ const IconsMap: any = {
 const AchievementsScreen = () => {
   const [allAchievements, setAllAchievements] = useState<Achievement[]>([]);
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unlocked' | 'locked'>('all'); // simplified 'in_progress' to locked for now as we lack progress data
   const [searchTerm, setSearchTerm] = useState('');
