@@ -228,6 +228,7 @@ const ProjectListScreen = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                   <div className="absolute bottom-3 left-4 z-20">
                     <span className="bg-primary text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">{project.category || 'Geral'}</span>
+                    {project.type && <span className="ml-2 bg-purple-500 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">{project.type}</span>}
                   </div>
                 </div>
                 <div className="p-5 flex-1 flex flex-col">

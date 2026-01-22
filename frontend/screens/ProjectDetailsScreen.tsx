@@ -4,11 +4,12 @@ import { DragDropContext, Draggable } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '../components/StrictModeDroppable';
 import { deleteTask, getProjectKanban, updateTaskStatus, createColumn, updateColumn, deleteColumn, reorderColumns, createQuickTask } from '../services/task.service';
 import { getProfile } from '../services/user.service';
-import { uploadProjectCover, updateProject, leaveProject } from '../services/project.service';
+import { uploadProjectCover, updateProject, leaveProject, transferProjectOwnership } from '../services/project.service';
 import { useProjectDetails } from '../hooks/useProjects';
 import { Skeleton } from '../components/Skeleton';
 import TaskModal from '../components/TaskModal';
 import TaskDetailModal from '../components/TaskDetailModal';
+import MemberSelect from '../components/MemberSelect';
 import { Camera, Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -168,6 +169,8 @@ const ProjectDetailsScreen = () => {
         user.role === 'ADMIN'
     );
 
+    const isProjectMember = user && project?.members?.some((m: any) => m.user?.id === user.id);
+
     // Task Details Modal State
     const [selectedTask, setSelectedTask] = useState<any>(null);
     const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false);
@@ -178,6 +181,10 @@ const ProjectDetailsScreen = () => {
 
     // Leave Project Confirmation State
     const [isLeaveProjectModalOpen, setIsLeaveProjectModalOpen] = useState(false);
+
+    // Transfer Leadership State
+    const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+    const [selectedNewLeaderId, setSelectedNewLeaderId] = useState<string>('');
 
     useEffect(() => {
         if (id) fetchKanban();
@@ -398,8 +405,9 @@ const ProjectDetailsScreen = () => {
             window.dispatchEvent(new Event('pointsUpdated'));
             // Optionally fetch to sync with server (e.g. for points, history, or reordering persistence)
             // fetchKanban(); 
-        } catch (err) {
+        } catch (err: any) {
             console.error("Failed to move task", err);
+            toast.error(err.response?.data?.message || "Erro ao mover tarefa");
             fetchKanban(); // Revert on failure
         }
     };
@@ -416,9 +424,9 @@ const ProjectDetailsScreen = () => {
             // Enter edit mode for the new column
             setEditingColumnId(newColumn.id);
             setEditingTitle(defaultTitle);
-        } catch (err) {
+        } catch (err: any) {
             console.error("Failed to create column", err);
-            toast.error("Erro ao criar coluna");
+            toast.error(err.response?.data?.message || "Erro ao criar coluna");
         }
     };
 
@@ -447,9 +455,9 @@ const ProjectDetailsScreen = () => {
 
         try {
             await updateColumn(idToUpdate, { title: titleToUpdate });
-        } catch (err) {
+        } catch (err: any) {
             console.error("Failed to update column", err);
-            toast.error("Erro ao atualizar nome da coluna");
+            toast.error(err.response?.data?.message || "Erro ao atualizar nome da coluna");
             fetchKanban(); // Revert
         }
     };
@@ -489,9 +497,9 @@ const ProjectDetailsScreen = () => {
 
         await updateColumn(idToUpdate, { color: colorKey });
         toast.success("Cor da coluna atualizada!");
-    } catch (err) {
+    } catch (err: any) {
         console.error("Failed to update column color", err);
-        toast.error("Erro ao salvar cor");
+        toast.error(err.response?.data?.message || "Erro ao salvar cor");
         fetchKanban(); 
     }
 };
@@ -542,8 +550,8 @@ const ProjectDetailsScreen = () => {
     };
 
     const displayedColumns = getFilteredColumns();
-    // Disable drag if ANY filter is active (member or search)
-    const isDragDisabled = selectedMemberFilters.length > 0 || !!searchQuery.trim();
+    // Disable drag if ANY filter is active (member or search) or if user is not a member
+    const isDragDisabled = selectedMemberFilters.length > 0 || !!searchQuery.trim() || !isProjectMember;
 
     const getColumnStyles = (column: any) => {
         const lowerTitle = column.title?.toLowerCase() || '';
@@ -672,6 +680,22 @@ const ProjectDetailsScreen = () => {
     );
     if (!project) return <div className="p-8 text-center">Projeto não encontrado</div>;
 
+    const handleTransferLeadership = async () => {
+        if (!selectedNewLeaderId) {
+            toast.error('Selecione um membro para ser o novo líder.');
+            return;
+        }
+        try {
+            await transferProjectOwnership(id!, selectedNewLeaderId);
+            toast.success('Liderança transferida com sucesso!');
+            setIsTransferModalOpen(false);
+            // Reload to reflect changes (permissions, etc)
+            window.location.reload(); 
+        } catch (err: any) {
+             toast.error(err.response?.data?.message || 'Erro ao transferir liderança.');
+        }
+    };
+    
     return (
         <div className="flex-1 flex flex-col relative h-full">
             <div className="absolute inset-0 z-0 bg-network-pattern opacity-30 pointer-events-none"></div>
@@ -705,6 +729,11 @@ const ProjectDetailsScreen = () => {
                                 {!isHeaderMinimized && (
                                     <span className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-green-200 dark:border-green-800">
                                         {project.status}
+                                    </span>
+                                )}
+                                {project.type && !isHeaderMinimized && (
+                                     <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-purple-200 dark:border-purple-800">
+                                        {project.type}
                                     </span>
                                 )}
                             </div>
@@ -838,6 +867,17 @@ const ProjectDetailsScreen = () => {
                                     </div>
                                 )}
                             </>
+                        )}
+                        
+                        {/* Transfer Leadership - Only for Leader */}
+                        {(user && (project?.leaderId === user.id || project?.leader?.id === user.id)) && (
+                            <button
+                                onClick={() => setIsTransferModalOpen(true)}
+                                className="flex items-center gap-1.5 px-2 py-1 text-xs text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors cursor-pointer"
+                            >
+                                <span className="material-icons text-sm">manage_accounts</span>
+                                <span>Transferir Liderança</span>
+                            </button>
                         )}
 
                         {/* Leave Project Button - Only for members who are not the leader */}
@@ -1042,7 +1082,7 @@ const ProjectDetailsScreen = () => {
                                                             )}
                                                         </div>
                                                         <div className="flex items-center">
-                                                            {!column.isCompletionColumn && (
+                                                            {!column.isCompletionColumn && isProjectMember && (
                                                                 <button
                                                                     onClick={() => startEditing(column.id, column.title)}
                                                                     className="p-1 text-gray-400 hover:text-blue-500"
@@ -1051,7 +1091,7 @@ const ProjectDetailsScreen = () => {
                                                                     <span className="material-icons text-sm">edit</span>
                                                                 </button>
                                                             )}
-                                                            {!column.isCompletionColumn && (
+                                                            {!column.isCompletionColumn && isProjectMember && (
                                                                 <button
                                                                     onClick={() => handleDeleteColumn(column.id)}
                                                                     className="p-1 text-gray-400 hover:text-red-500"
@@ -1060,7 +1100,7 @@ const ProjectDetailsScreen = () => {
                                                                     <span className="material-icons text-sm">delete</span>
                                                                 </button>
                                                             )}
-                                                            {!column.isCompletionColumn && (
+                                                            {!column.isCompletionColumn && isProjectMember && (
                                                                 <div className="relative">
                                                                     <button
                                                                         onClick={(e) => {
@@ -1103,7 +1143,7 @@ const ProjectDetailsScreen = () => {
                                                         </div>
                                                     </div>
 
-                                                    <StrictModeDroppable droppableId={column.id} type="task">
+                                                    <StrictModeDroppable droppableId={column.id} type="task" direction="vertical">
                                                         {(provided) => (
                                                             <div
                                                                 {...provided.droppableProps}
@@ -1118,7 +1158,7 @@ const ProjectDetailsScreen = () => {
                                                                                 {...provided.draggableProps}
                                                                                 {...provided.dragHandleProps}
                                                                                 onClick={() => { setSelectedTask(task); setIsTaskDetailsOpen(true); }}
-                                                                                className={`bg-white dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-gray-300 dark:border-gray-600 border-t-4 border-t-blue-500 cursor-grab hover:shadow-md hover:border-blue-500/50 group relative transition-all duration-200 ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-blue-500/40 rotate-1 z-50 scale-105' : ''
+                                                                                className={`bg-white dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-gray-300 dark:border-gray-600 border-t-4 border-t-blue-500 cursor-grab hover:shadow-md hover:border-blue-500/50 group relative transition-all duration-200 ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-blue-500/40 z-50 scale-105' : ''
                                                                                     }`}
                                                                                 style={{
                                                                                     ...provided.draggableProps.style,
@@ -1195,7 +1235,16 @@ const ProjectDetailsScreen = () => {
                                                                         )}
                                                                     </Draggable>
                                                                 ))}
-                                                                {provided.placeholder}
+{/* Skeleton Placeholder Animation */}
+{provided.placeholder && React.isValidElement(provided.placeholder) ? (
+     React.cloneElement(provided.placeholder as React.ReactElement, {
+         className: "bg-gray-200 dark:bg-gray-700 border-2 border-dashed border-gray-400 dark:border-gray-500 rounded-xl animate-pulse opacity-80",
+         style: {
+             ...((provided.placeholder as React.ReactElement).props.style || {}),
+             visibility: 'visible',
+         }
+     })
+) : provided.placeholder}
 
                                                                 {/* Inline card creation (Trello-style) */}
                                                                 {inlineCreatingColumnId === column.id ? (
@@ -1229,12 +1278,14 @@ const ProjectDetailsScreen = () => {
                                                                         </div>
                                                                     </div>
                                                                 ) : (
+                                                                    isProjectMember && (
                                                                     <button
                                                                         onClick={() => handleStartInlineCreate(column.id)}
                                                                         className="w-full py-2 text-sm text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center gap-1 font-medium border border-dashed border-gray-300 dark:border-gray-700"
                                                                     >
                                                                         <span className="material-icons text-sm">add</span> Adicionar cartão
                                                                     </button>
+                                                                    )
                                                                 )}
                                                             </div>
                                                         )}
@@ -1246,7 +1297,10 @@ const ProjectDetailsScreen = () => {
                                 })}
                                 {provided.placeholder}
 
-                                {/* Add Column Button */}
+                                {provided.placeholder}
+
+                                {/* Add Column Button - Only for members */}
+                                {isProjectMember && (
                                 <div className="w-[320px] flex-shrink-0 flex items-start">
                                     <button
                                         onClick={handleAddColumn}
@@ -1256,6 +1310,7 @@ const ProjectDetailsScreen = () => {
                                         Nova Coluna
                                     </button>
                                 </div>
+                                )}
                             </div>
                         )}
                     </StrictModeDroppable>
@@ -1325,8 +1380,65 @@ const ProjectDetailsScreen = () => {
                 cancelText="Cancelar"
                 type="danger"
             />
+            
+            {/* Modal Transferência de Liderança */}
+             {isTransferModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-surface-dark w-full max-w-md rounded-2xl p-6 shadow-2xl border border-gray-100 dark:border-gray-800 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
+                                Transferir Liderança
+                            </h2>
+                            <button 
+                                onClick={() => setIsTransferModalOpen(false)}
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                            >
+                                <span className="material-icons">close</span>
+                            </button>
+                        </div>
+                        
+                        <div className="p-4 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30 rounded-xl mb-6">
+                            <div className="flex gap-3">
+                                <span className="material-icons text-orange-500 shrink-0">warning</span>
+                                <p className="text-sm text-orange-800 dark:text-orange-200 leading-relaxed">
+                                    <strong>Atenção:</strong> Ao transferir a liderança, você perderá seus privilégios de administrador do projeto (como excluir o projeto ou transferir a liderança novamente). Esta ação é permanente.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Selecione o novo líder
+                            </label>
+                            <MemberSelect
+                                members={project?.members?.filter((m: any) => m.user?.id !== user?.id) || []}
+                                selectedId={selectedNewLeaderId}
+                                onChange={(id) => setSelectedNewLeaderId(id)}
+                                placeholder="Escolha um membro..."
+                            />
+                        </div>
+
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setIsTransferModalOpen(false)}
+                                className="px-4 py-2 text-gray-600 dark:text-gray-300 font-medium hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleTransferLeadership}
+                                disabled={!selectedNewLeaderId}
+                                className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-95"
+                            >
+                                Confirmar Transferência
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
+
 };
 
 export default ProjectDetailsScreen;

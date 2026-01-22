@@ -82,14 +82,14 @@ export const findTasksByProjectId = async (projectId: string): Promise<Task[]> =
   });
 };
 
-export const findUserTasks = async (userId: string, status?: TaskStatus): Promise<Task[]> => {
+export const findUserTasks = async (userId: string, additionalWhere?: Prisma.TaskWhereInput): Promise<Task[]> => {
   return prisma.task.findMany({
     where: {
       OR: [
         { assignedToId: userId },
         { assignees: { some: { userId } } },
       ],
-      ...(status && { status }),
+      ...additionalWhere,
     },
     include: {
       project: { select: { id: true, title: true } },

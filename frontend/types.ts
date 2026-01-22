@@ -5,6 +5,7 @@ export interface Project {
   title: string;
   description: string;
   category: string;
+  type?: string;
   coverUrl?: string;
   progress: number;
   xpReward: number;

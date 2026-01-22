@@ -351,5 +351,5 @@ export const getKanbanBoardForProject = async (projectId: string) => {
 };
 
 export const getMyNextTasks = async (userId: string) => {
-  return findUserTasks(userId, undefined);
+  return findUserTasks(userId, { completedAt: null });
 };

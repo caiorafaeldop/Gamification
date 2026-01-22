@@ -10,6 +10,7 @@ const NewProjectScreen = () => {
       name: '',
       description: '',
       category: 'Desenvolvimento',
+      type: 'Interno',
       tags: '',
       maxMembers: 4,
       rewardPoints: 1500,
@@ -139,6 +140,24 @@ const NewProjectScreen = () => {
                     <option>Pesquisa Acadêmica</option>
                     <option>Data Science</option>
                     <option>Marketing</option>
+                  </select>
+                </div>
+
+                 {/* Type */}
+               <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                    <Target size={16} className="text-primary" /> Tipo
+                  </label>
+                  <select 
+                    name="type"
+                    value={formData.type}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none">
+                    <option>Interno</option>
+                    <option>Extensão</option>
+                    <option>Pesquisa</option>
+                    <option>Empresa</option>
+                    <option>Outro</option>
                   </select>
                 </div>
 

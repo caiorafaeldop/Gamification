@@ -258,8 +258,8 @@ const ActivitiesScreen = () => {
               ) : (
                 events.map((event) => {
                   const eventDate = new Date(event.date);
-                  const day = eventDate.getDate();
-                  const month = eventDate.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+                  const day = eventDate.getUTCDate();
+                  const month = eventDate.toLocaleDateString('pt-BR', { month: 'short', timeZone: 'UTC' }).replace('.', '');
                   const isParticipating = event.participants?.some(p => p.userId === user?.id) || false;
                   const participantCount = event.participants?.length || 0;
 

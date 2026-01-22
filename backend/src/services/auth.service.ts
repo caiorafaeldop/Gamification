@@ -7,7 +7,8 @@ import { findTierByPoints, findAllTiers } from '../repositories/tier.repository'
 import prisma from '../utils/prisma';
 
 export const registerUser = async (data: RegisterInput) => {
-  const existingUser = await findUserByEmail(data.email);
+  const email = data.email.toLowerCase();
+  const existingUser = await findUserByEmail(email);
   if (existingUser) {
     throw { statusCode: 409, message: 'User with this email already exists.' };
   }
@@ -22,7 +23,7 @@ export const registerUser = async (data: RegisterInput) => {
 
   const user = await createUser({
     name: data.name,
-    email: data.email,
+    email: email,
     passwordHash: hashedPassword,
     role: data.role,
     connectaPoints: 0,

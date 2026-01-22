@@ -2,7 +2,14 @@ import prisma from '../utils/prisma';
 import { Prisma, User, Role } from '@prisma/client';
 
 export const findUserByEmail = async (email: string): Promise<User | null> => {
-  return prisma.user.findUnique({ where: { email } });
+  return prisma.user.findFirst({
+    where: {
+      email: {
+        equals: email,
+        mode: 'insensitive',
+      },
+    },
+  });
 };
 
 export const findUserByName = async (name: string): Promise<User | null> => {

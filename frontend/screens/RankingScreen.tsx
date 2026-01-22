@@ -152,7 +152,7 @@ const RankingScreen = () => {
                     <div className="mt-3 text-center">
                       <h3 className="text-xs sm:text-sm font-display font-bold text-secondary dark:text-white truncate max-w-[80px] sm:max-w-[120px]">{top3[1].name}</h3>
                       <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-white/10 px-2 sm:px-3 py-0.5 rounded-full mt-1">
-                        <span className="text-[10px] sm:text-xs font-bold text-primary">{top3[1].connectaPoints || top3[1].points}</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-primary">{Math.max(0, top3[1].connectaPoints || top3[1].points || 0)}</span>
                       </div>
                     </div>
                   </div>
@@ -177,7 +177,7 @@ const RankingScreen = () => {
                     <div className="mt-4 text-center">
                       <h3 className="text-sm sm:text-base font-display font-bold text-secondary dark:text-white truncate max-w-[100px] sm:max-w-[150px]">{top3[0].name}</h3>
                       <div className="inline-flex items-center gap-1 bg-yellow-400/10 border border-yellow-400/20 px-3 sm:px-4 py-1 rounded-full mt-1">
-                        <span className="text-xs sm:text-sm font-bold text-yellow-600 dark:text-yellow-400">{top3[0].connectaPoints || top3[0].points}</span>
+                        <span className="text-xs sm:text-sm font-bold text-yellow-600 dark:text-yellow-400">{Math.max(0, top3[0].connectaPoints || top3[0].points || 0)}</span>
                       </div>
                     </div>
                   </div>
@@ -201,7 +201,7 @@ const RankingScreen = () => {
                     <div className="mt-3 text-center">
                       <h3 className="text-xs sm:text-sm font-display font-bold text-secondary dark:text-white truncate max-w-[80px] sm:max-w-[120px]">{top3[2].name}</h3>
                       <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-white/10 px-2 sm:px-3 py-0.5 rounded-full mt-1">
-                        <span className="text-[10px] sm:text-xs font-bold text-primary">{top3[2].connectaPoints || top3[2].points}</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-primary">{Math.max(0, top3[2].connectaPoints || top3[2].points || 0)}</span>
                       </div>
                     </div>
                   </div>
@@ -251,7 +251,7 @@ const RankingScreen = () => {
                         {student.tier?.name || 'Iniciante'}
                       </div>
                       <div className="col-span-3 sm:col-span-2 text-right">
-                        <span className="font-black text-primary text-sm sm:text-base">{student.connectaPoints || student.points}</span>
+                        <span className="font-black text-primary text-sm sm:text-base">{Math.max(0, student.connectaPoints || student.points || 0)}</span>
                         <span className="block text-[8px] font-bold text-gray-400 sm:hidden">🪙</span>
                       </div>
                     </div>
@@ -275,7 +275,7 @@ const RankingScreen = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] font-bold uppercase tracking-wider opacity-80">Minha Pontuação</p>
-                    <p className="text-xl font-black">{currentUserRankData.connectaPoints || currentUserRankData.points} 🪙</p>
+                    <p className="text-xl font-black">{Math.max(0, currentUserRankData.connectaPoints || currentUserRankData.points || 0)} 🪙</p>
                   </div>
                 </div>
               </div>
