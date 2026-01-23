@@ -117,8 +117,8 @@ const ProjectListScreen = () => {
               Encontre o projeto ideal para desenvolver suas habilidades, ganhar 🪙 e conectar-se com outros estudantes.
             </p>
           </div>
-          <div className="flex flex-wrap md:flex-nowrap gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64 min-w-[200px]">
+          <div className="flex flex-wrap md:flex-nowrap gap-3 w-full md:w-auto items-stretch">
+            <div className="relative w-full md:w-64">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3">
                 <Search className="text-gray-400" size={20} />
               </span>
@@ -131,76 +131,78 @@ const ProjectListScreen = () => {
               />
             </div>
 
-            <div className="relative" ref={filterRef}>
-              <button
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className="h-full bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center gap-2"
-              >
-                <Filter size={16} />
-                <span>Filtrar</span>
-                <ChevronDown size={14} className={`transform transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
+            <div className="flex gap-3 flex-1 md:flex-none">
+              <div className="relative flex-1 md:w-auto" ref={filterRef}>
+                <button
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  className="w-full h-full bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Filter size={16} />
+                  <span>Filtrar</span>
+                  <ChevronDown size={14} className={`transform transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isFilterOpen && (
+                  <div className="absolute left-0 md:left-auto md:right-0 mt-2 w-56 bg-white dark:bg-surface-dark rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-[100] py-2 animate-in fade-in zoom-in duration-200 overflow-y-auto max-h-[60vh] md:max-h-none">
+                    <div className="px-3 py-1 mb-1">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status de Participação</span>
+                    </div>
+                    <button
+                      onClick={() => { setFilterStatus('all'); setIsFilterOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${filterStatus === 'all' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                    >
+                      Todos os projetos
+                      {filterStatus === 'all' && <Check size={14} />}
+                    </button>
+                    <button
+                      onClick={() => { setFilterStatus('joined'); setIsFilterOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${filterStatus === 'joined' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                    >
+                      Já participo
+                      {filterStatus === 'joined' && <Check size={14} />}
+                    </button>
+                    <button
+                      onClick={() => { setFilterStatus('notJoined'); setIsFilterOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${filterStatus === 'notJoined' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                    >
+                      Não participo
+                      {filterStatus === 'notJoined' && <Check size={14} />}
+                    </button>
+
+                    <div className="h-px bg-gray-100 dark:bg-gray-700 my-2"></div>
+
+                    <div className="px-3 py-1 mb-1">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ordenação</span>
+                    </div>
+                    <button
+                      onClick={() => { setSortOrder('alpha'); setIsFilterOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${sortOrder === 'alpha' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                    >
+                      Ordem Alfabética
+                      {sortOrder === 'alpha' && <Check size={14} />}
+                    </button>
+                    <button
+                      onClick={() => { setSortOrder('newest'); setIsFilterOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${sortOrder === 'newest' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                    >
+                      Mais recentes
+                      {sortOrder === 'newest' && <Check size={14} />}
+                    </button>
+                    <button
+                      onClick={() => { setSortOrder('oldest'); setIsFilterOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${sortOrder === 'oldest' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                    >
+                      Mais antigos
+                      {sortOrder === 'oldest' && <Check size={14} />}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <button onClick={() => navigate('/new-project')} className="flex-1 md:flex-none justify-center bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:bg-sky-500 transition-colors flex items-center gap-2 whitespace-nowrap">
+                <Plus size={16} /> Novo
               </button>
-
-              {isFilterOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-surface-dark rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-[100] py-2 animate-in fade-in zoom-in duration-200">
-                  <div className="px-3 py-1 mb-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status de Participação</span>
-                  </div>
-                  <button
-                    onClick={() => { setFilterStatus('all'); setIsFilterOpen(false); }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${filterStatus === 'all' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                  >
-                    Todos os projetos
-                    {filterStatus === 'all' && <Check size={14} />}
-                  </button>
-                  <button
-                    onClick={() => { setFilterStatus('joined'); setIsFilterOpen(false); }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${filterStatus === 'joined' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                  >
-                    Já participo
-                    {filterStatus === 'joined' && <Check size={14} />}
-                  </button>
-                  <button
-                    onClick={() => { setFilterStatus('notJoined'); setIsFilterOpen(false); }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${filterStatus === 'notJoined' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                  >
-                    Não participo
-                    {filterStatus === 'notJoined' && <Check size={14} />}
-                  </button>
-
-                  <div className="h-px bg-gray-100 dark:bg-gray-700 my-2"></div>
-
-                  <div className="px-3 py-1 mb-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ordenação</span>
-                  </div>
-                  <button
-                    onClick={() => { setSortOrder('alpha'); setIsFilterOpen(false); }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${sortOrder === 'alpha' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                  >
-                    Ordem Alfabética
-                    {sortOrder === 'alpha' && <Check size={14} />}
-                  </button>
-                  <button
-                    onClick={() => { setSortOrder('newest'); setIsFilterOpen(false); }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${sortOrder === 'newest' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                  >
-                    Mais recentes
-                    {sortOrder === 'newest' && <Check size={14} />}
-                  </button>
-                  <button
-                    onClick={() => { setSortOrder('oldest'); setIsFilterOpen(false); }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${sortOrder === 'oldest' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                  >
-                    Mais antigos
-                    {sortOrder === 'oldest' && <Check size={14} />}
-                  </button>
-                </div>
-              )}
             </div>
-
-            <button onClick={() => navigate('/new-project')} className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:bg-sky-500 transition-colors flex items-center gap-2 whitespace-nowrap">
-              <Plus size={16} /> Novo
-            </button>
           </div>
         </div>
       </div>
@@ -226,7 +228,7 @@ const ProjectListScreen = () => {
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                  <div className="absolute bottom-3 left-4 z-20">
+                  <div className="absolute bottom-3 left-4 z-10">
                     <span className="bg-primary text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">{project.category || 'Geral'}</span>
                     {project.type && <span className="ml-2 bg-purple-500 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">{project.type}</span>}
                   </div>
