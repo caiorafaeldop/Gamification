@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProjectKanban } from '../hooks/useProjectKanban';
 import { Skeleton } from '../components/Skeleton';
-import TaskModal from '../components/TaskModal';
+import MobileNewTaskModal from '../components/MobileNewTaskModal';
 import TaskDetailModal from '../components/TaskDetailModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { COLUMN_COLORS } from '../constants';
@@ -282,12 +282,10 @@ const ProjectDetailsScreenMobile = () => {
             </button>
 
             {/* Modals */}
-            <TaskModal
+            <MobileNewTaskModal
                 isOpen={isNewTaskModalOpen}
                 onClose={() => setIsNewTaskModalOpen(false)}
                 projectId={id}
-                initialColumnId={initialColumnId}
-                projectMembers={project?.members}
                 onSuccess={() => {
                     refetchKanban();
                     window.dispatchEvent(new Event('pointsUpdated'));

@@ -102,9 +102,14 @@ export const MobileTaskDetailModal: React.FC<MobileTaskDetailModalProps> = ({
             )}
           </div>
         </div>
-        <button className="p-2 -mr-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-          <MoreVertical size={24} />
-        </button>
+        <div className="flex items-center gap-1 -mr-2">
+            <button onClick={onClose} className="p-2 text-primary hover:bg-primary/10 rounded-full transition-colors">
+                <Check size={24} />
+            </button>
+            <button className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                <MoreVertical size={24} />
+            </button>
+        </div>
       </header>
 
       {/* Scrollable Content */}

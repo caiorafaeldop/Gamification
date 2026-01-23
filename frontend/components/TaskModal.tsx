@@ -7,6 +7,7 @@ import { useProjects } from '../hooks/useProjects';
 import { getAllUsers, getProfile } from '../services/user.service';
 import MemberSelect from './MemberSelect';
 import toast from 'react-hot-toast';
+import MobileNewTaskScreen from './MobileNewTaskScreen';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -286,248 +287,47 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
   if (!isOpen) return null;
 
   if (isMobile) {
+    const mobileProps = {
+        navigate: (to: any) => { if (to === -1) onClose(); },
+        location: { state: { projectId: defaultProjectId } }, // Mock location for project check
+        user: currentUser,
+        projects,
+        loadingProjects,
+        users,
+        loadingUsers,
+        taskLevel,
+        points: taskLevel === 'basic' ? 50 : taskLevel === 'medium' ? 100 : 200, // Derived
+        title,
+        description,
+        projectId,
+        assignedToId,
+        estimatedTime,
+        deadline,
+        startDate: '', 
+        submitting,
+        error: null,
+        showQuickActions,
+        showDescription,
+        selectedProject: projects.find((p: any) => p.id === projectId),
+        setTaskLevel,
+        setPoints: () => {}, 
+        setTitle,
+        setDescription,
+        setProjectId,
+        setAssignedToId,
+        setEstimatedTime,
+        setDeadline,
+        setStartDate: () => {}, 
+        setShowQuickActions,
+        setShowDescription,
+        handleSubmit,
+        handleKeyDown
+    };
+
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-background-dark overflow-hidden">
-        {/* Mobile Header */}
-        <header className="sticky top-0 z-50 bg-background-dark border-b border-gray-800 px-4 py-3 flex items-center justify-between">
-          <button
-            onClick={onClose}
-            className="p-2 -ml-2 text-gray-400 hover:text-white transition-colors"
-          >
-            <X size={24} />
-          </button>
-          <h1 className="text-lg font-bold text-white flex-1 text-center truncate px-4">
-            {isEditMode ? title || 'Editar Tarefa' : 'Nova Tarefa'}
-          </h1>
-          <button className="p-2 -mr-2 text-gray-400 hover:text-white transition-colors">
-            <MoreVertical size={24} />
-          </button>
-        </header>
-
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto pb-32">
-          {/* Cover Placeholder */}
-          <div className="relative h-32 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-            <ImageIcon size={32} className="text-gray-700" />
-            <button className="absolute bottom-3 left-3 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-lg text-xs text-white border border-white/10 flex items-center gap-2">
-              <ImageIcon size={14} /> Capa
-            </button>
-          </div>
-
-          {/* Title Input */}
-          <div className="px-4 py-4 border-b border-gray-850">
-            <div className="flex items-start gap-3">
-              <div className={`w-6 h-6 rounded-full border-2 flex-shrink-0 mt-1 ${isEditMode ? 'border-primary bg-primary/10' : 'border-gray-600'}`} />
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Título da tarefa..."
-                className="flex-1 bg-transparent text-xl font-bold text-white placeholder-gray-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Project Info */}
-          <div className="px-4 py-3 border-b border-gray-850 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Folder size={16} className="text-primary" />
-              </div>
-              <div>
-                <p className="text-white font-medium text-sm">
-                  {projects.find((p: any) => p.id === projectId)?.title || 'Selecionar Projeto'}
-                </p>
-                <p className="text-gray-500 text-xs">Projeto Principal</p>
-              </div>
-            </div>
-            {!isEditMode && !defaultProjectId && (
-              <select
-                value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
-                className="bg-transparent text-primary text-sm font-bold appearance-none px-2 focus:outline-none"
-              >
-                <option value="" disabled>Trocar</option>
-                {projects.map((p: any) => (
-                  <option key={p.id} value={p.id} className="bg-gray-900">{p.title}</option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="border-b border-gray-850">
-            <button
-              onClick={() => setShowQuickActions(!showQuickActions)}
-              className="w-full px-4 py-3 flex items-center justify-between text-gray-500"
-            >
-              <span className="text-xs font-bold uppercase tracking-wider">Ações rápidas</span>
-              {showQuickActions ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-            
-            {showQuickActions && (
-              <div className="px-4 pb-4 grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowDescription(!showDescription)}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl font-medium text-sm transition-colors ${showDescription ? 'bg-primary/20 text-primary' : 'bg-gray-800 text-gray-400'}`}
-                >
-                  <AlignLeft size={16} /> Descrição
-                </button>
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-3 py-2.5 bg-gray-800 text-gray-400 rounded-xl font-medium text-sm">
-                  <Paperclip size={16} /> Anexo
-                </button>
-                <button type="button" className="flex items-center gap-2 px-3 py-2.5 bg-gray-800 text-gray-400 rounded-xl font-medium text-sm">
-                  <Users size={16} /> Membros
-                </button>
-                <button type="button" className="flex items-center gap-2 px-3 py-2.5 bg-gray-800 text-gray-400 rounded-xl font-medium text-sm">
-                  <CheckSquare size={16} /> Checklist
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Description */}
-          {showDescription && (
-            <div className="px-4 py-4 border-b border-gray-850">
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Descrição</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                onKeyDown={handleKeyDown}
-                rows={3}
-                placeholder="Adicionar detalhes..."
-                className="w-full bg-gray-800/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-primary/50 text-sm resize-none"
-              />
-              {uploading && <p className="text-[10px] text-primary mt-1 animate-pulse">Enviando imagem...</p>}
-            </div>
-          )}
-
-          {/* Fields List */}
-          <div className="divide-y divide-gray-800/50">
-            {/* Responsável */}
-            <div className="px-4 py-4">
-              <div className="flex items-center gap-4 mb-3">
-                <User size={18} className="text-gray-500" />
-                <span className="text-sm text-gray-300 font-medium">Responsável</span>
-              </div>
-              <div className="ml-8">
-                <MemberSelect
-                  members={users}
-                  selectedId={assignedToId}
-                  onChange={setAssignedToId}
-                  loading={loadingUsers}
-                  placeholder="Atribuir a..."
-                  allowUnassigned={true}
-                />
-              </div>
-            </div>
-
-            {/* Datas */}
-            <div className="px-4 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Calendar size={18} className="text-gray-500" />
-                <span className="text-sm text-gray-300 font-medium">Prazo</span>
-              </div>
-              <input
-                type="date"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                className="bg-transparent text-primary text-sm font-bold focus:outline-none"
-              />
-            </div>
-
-            {/* Estimativa */}
-            <div className="px-4 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Clock size={18} className="text-gray-500" />
-                <span className="text-sm text-gray-300 font-medium">Estimativa (h)</span>
-              </div>
-              <input
-                type="number"
-                value={estimatedTime}
-                onChange={(e) => setEstimatedTime(e.target.value)}
-                placeholder="0h"
-                className="bg-transparent text-primary text-sm font-bold w-12 text-right focus:outline-none"
-              />
-            </div>
-
-            {/* Nível */}
-            <div className="px-4 py-4">
-              <div className="flex items-center gap-4 mb-3">
-                <BarChart3 size={18} className="text-gray-500" />
-                <span className="text-sm text-gray-300 font-medium">Dificuldade</span>
-              </div>
-              <div className="grid grid-cols-3 gap-2 ml-8">
-                {['basic', 'medium', 'large'].map((level) => (
-                  <button
-                    key={level}
-                    type="button"
-                    onClick={() => setTaskLevel(level as any)}
-                    className={`py-2 rounded-lg text-xs font-bold transition-all ${
-                      taskLevel === level ? 'bg-primary text-white' : 'bg-gray-800 text-gray-500'
-                    }`}
-                  >
-                    {level === 'basic' ? 'Fácil' : level === 'medium' ? 'Médio' : 'Difícil'}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Comments Section (Mobile) */}
-          {isEditMode && (
-            <div className="mt-4 px-4 pb-12">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Atividade</h3>
-                <span className="text-xs text-gray-600">{comments.length} comentários</span>
-              </div>
-              
-              <div className="space-y-6">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-3">
-                    <img
-                      src={comment.user?.avatarUrl || `https://ui-avatars.com/api/?name=${comment.user?.name}`}
-                      className="w-8 h-8 rounded-full border border-gray-800"
-                      alt=""
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-white">{comment.user?.name}</span>
-                        <span className="text-[10px] text-gray-600">{new Date(comment.createdAt).toLocaleDateString()}</span>
-                      </div>
-                      <div className="text-sm text-gray-400 bg-gray-850 p-3 rounded-2xl rounded-tl-none inline-block">
-                        {renderContentWithImages(comment.content)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+        <div className="fixed inset-0 z-50 bg-background-dark">
+             <MobileNewTaskScreen {...mobileProps} />
         </div>
-
-        {/* Bottom Bar */}
-        <div className="fixed bottom-0 left-0 right-0 bg-background-dark border-t border-gray-800 p-4 flex items-center gap-3 safe-bottom">
-          <div className="flex-1 bg-gray-850 rounded-2xl px-4 py-3 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">
-              {currentUser?.name?.[0] || 'U'}
-            </div>
-            <span className="text-gray-500 text-sm">Adicionar comentário...</span>
-          </div>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting || !title || !projectId}
-            className={`w-12 h-12 flex items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20 transition-all ${submitting ? 'animate-pulse' : ''}`}
-          >
-            {submitting ? <Clock size={20} className="animate-spin" /> : <Check size={24} />}
-          </button>
-        </div>
-
-        {/* Hidden inputs */}
-        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'description')} />
-        <input type="file" ref={commentFileInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'comment')} />
-      </div>
     );
   }
 
