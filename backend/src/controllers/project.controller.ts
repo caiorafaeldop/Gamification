@@ -33,13 +33,14 @@ export const getProjects = async (req: Request, res: Response, next: NextFunctio
 export const createProject = async (req: Request, res: Response, next: NextFunction) => {
     try {
         console.log('[CONTROLLER] createProject hit');
-        const { name, description, category, coverUrl } = req.body;
+        const { name, description, category, type, coverUrl } = req.body;
         const userId = req.user!.userId;
 
         const project = await createNewProject({
             title: name,
             description,
             category,
+            type,
             coverUrl,
             leaderId: userId,
             memberIds: [userId]
