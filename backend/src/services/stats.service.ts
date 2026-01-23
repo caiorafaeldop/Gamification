@@ -6,7 +6,7 @@ export const getSystemOverview = async () => {
         orderBy: { name: 'asc' }
     });
     const projects = await prisma.project.findMany({
-        select: { id: true, title: true, description: true, status: true, coverUrl: true, leader: { select: { name: true } } },
+        select: { id: true, title: true, description: true, status: true, type: true, coverUrl: true, leader: { select: { name: true } } },
         orderBy: { title: 'asc' }
     });
     const events = await prisma.event.findMany({
