@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../utils/prisma';
 import { Role, TaskStatus } from '@prisma/client';
 
-import { createNewProject, addMemberToProject, leaveProject as leaveProjectService } from '../services/project.service';
+import { createNewProject, addMemberToProject, leaveProject as leaveProjectService, transferProjectOwnership } from '../services/project.service';
 
 export const getProjects = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -153,3 +153,18 @@ export const leaveProject = async (req: Request, res: Response, next: NextFuncti
         next(error);
     }
 };
+
+export const transferOwnership = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const { newLeaderId } = req.body;
+        const userId = req.user!.userId;
+
+        const updatedProject = await transferProjectOwnership(id, newLeaderId, userId);
+
+        res.json(updatedProject);
+    } catch (error) {
+        next(error);
+    }
+};
+

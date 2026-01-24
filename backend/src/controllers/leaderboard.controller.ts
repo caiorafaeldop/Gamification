@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import { getGlobalLeaderboard as getGlobalLeaderboardService, getProjectLeaderboard as getProjectLeaderboardService, getWeeklyLeaderboard as getWeeklyLeaderboardService } from '../services/leaderboard.service';
+import { getLeaderboard as getGlobalLeaderboardService, getProjectLeaderboard as getProjectLeaderboardService } from '../services/leaderboard.service';
 
-export const getGlobalLeaderboard = async (req: Request, res: Response, next: NextFunction) => {
+export const getLeaderboard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    const result = await getGlobalLeaderboardService(page, limit);
+    const period = (req.query.period as string) || 'all';
+    const result = await getGlobalLeaderboardService(period, page, limit); // Note: Service import name might need adjustment
     res.status(200).json(result);
   } catch (error: unknown) {
     next(error);
@@ -18,17 +19,6 @@ export const getProjectLeaderboard = async (req: Request<{ projectId: string }>,
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const result = await getProjectLeaderboardService(projectId, page, limit);
-    res.status(200).json(result);
-  } catch (error: unknown) {
-    next(error);
-  }
-};
-
-export const getWeeklyLeaderboard = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const result = await getWeeklyLeaderboardService(page, limit);
     res.status(200).json(result);
   } catch (error: unknown) {
     next(error);

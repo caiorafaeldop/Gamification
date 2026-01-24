@@ -43,7 +43,7 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
             data: {
                 title,
                 type: type as EventType,
-                date: new Date(date),
+                date: new Date(date + 'T12:00:00Z'),
                 time,
                 location,
                 description,
@@ -120,7 +120,7 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
             data: {
                 ...(title && { title }),
                 ...(type && { type: type as EventType }),
-                ...(date && { date: new Date(date) }),
+                ...(date && { date: new Date(date + 'T15:00:00Z') }),
                 ...(time && { time }),
                 ...(location !== undefined && { location }),
                 ...(description !== undefined && { description }),

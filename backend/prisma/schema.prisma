@@ -24,8 +24,8 @@ model User {
   tierId              String
   avatarColor         String?
   course              String?
-  avatarUrl           String?
   bio                 String?
+  avatarUrl           String?
   skills              String[]           @default([])
   activityLogs        ActivityLog[]
   comments            Comment[]
@@ -47,6 +47,7 @@ model Project {
   title                  String          @unique
   description            String?
   category               String?
+  type                   String?         @default("Interno")
   leaderId               String
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
@@ -55,8 +56,8 @@ model Project {
   xpReward               Int             @default(100)
   color                  String?
   coverUrl               String?
-  pointsPerOpenTask      Int?            @default(50)
   pointsPerCompletedTask Int?            @default(50)
+  pointsPerOpenTask      Int?            @default(50)
   KanbanColumn           KanbanColumn[]
   leader                 User            @relation("ProjectLeader", fields: [leaderId], references: [id], onDelete: Cascade)
   members                ProjectMember[]
@@ -191,6 +192,7 @@ model KanbanColumn {
   updatedAt          DateTime   @updatedAt
   status             TaskStatus @default(todo)
   isCompletionColumn Boolean    @default(false)
+  color              String?
   Project            Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   Task               Task[]
 }
@@ -233,14 +235,21 @@ model Comment {
 }
 
 model TaskAssignee {
-  id         String   @id @default(uuid())
+  id         String       @id @default(uuid())
   taskId     String
   userId     String
-  assignedAt DateTime @default(now())
-  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user       User     @relation("TaskAssignees", fields: [userId], references: [id], onDelete: Cascade)
+  assignedAt DateTime     @default(now())
+  type       AssigneeType
+  task       Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user       User         @relation("TaskAssignees", fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([taskId, userId])
+  @@unique([taskId, userId, type])
+}
+
+enum AssigneeType {
+  CREATOR
+  IMPLEMENTER
+  REVIEWER
 }
 
 enum Role {

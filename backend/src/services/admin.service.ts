@@ -97,3 +97,60 @@ export const adminResetDailyStreaks = async (adminId: string) => {
     description: `Admin (${adminId}) manually initiated daily streak check and reset.`,
   });
 };
+
+export const getSystemOverview = async () => {
+  const [totalUsers, totalProjects, totalTasks, activeUsers] = await Promise.all([
+    prisma.user.count(),
+    prisma.project.count(),
+    prisma.task.count(),
+    prisma.user.count({ where: { isActive: true } }),
+  ]);
+
+  return {
+    totalUsers,
+    activeUsers,
+    totalProjects,
+    totalTasks,
+  };
+};
+
+export const getAllUsersService = async () => {
+    return prisma.user.findMany({
+        orderBy: { createdAt: 'desc' }
+    });
+};
+
+export const getAllProjectsService = async () => {
+    return prisma.project.findMany({
+        include: {
+            leader: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            },
+            _count: {
+                select: { tasks: true }
+            }
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+};
+
+export const getAdminLogsService = async () => {
+    return prisma.activityLog.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 100, // Limite inicial de 100 logs
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true
+                }
+            }
+        }
+    });
+};

@@ -23,6 +23,7 @@ export const createNewProject = async (data: CreateProjectInput, creatorId: stri
       title: data.title,
       description: data.description,
       category: data.category,
+      type: data.type,
       color: data.color,
       status: data.status,
       xpReward: data.xpReward,
@@ -235,20 +236,23 @@ export const removeMemberFromProject = async (projectId: string, userId: string,
   });
 };
 
+// Exporting leaveProject safely
 export const leaveProject = async (projectId: string, userId: string) => {
+  console.log('[SERVICE] leaveProject called');
   const project = await findProjectById(projectId);
   if (!project) {
     throw { statusCode: 404, message: 'Project not found.' };
   }
 
-  // Leader cannot leave the project
-  if (project.leaderId === userId) {
-    throw { statusCode: 403, message: 'O líder não pode sair do projeto. Transfira a liderança primeiro.' };
-  }
-
+  // Ensure user is actually a member
   const isMember = await isUserProjectMember(projectId, userId);
   if (!isMember) {
-    throw { statusCode: 400, message: 'Você não é membro deste projeto.' };
+    throw { statusCode: 400, message: 'You are not a member of this project.' };
+  }
+
+  // Prevent leader from leaving without transferring ownership
+  if (project.leaderId === userId) {
+    throw { statusCode: 403, message: 'Project leaders cannot leave the project without transferring ownership first.' };
   }
 
   return prisma.$transaction(async (tx) => {
@@ -259,5 +263,71 @@ export const leaveProject = async (projectId: string, userId: string) => {
       description: `Left project "${project.title}".`,
     }, tx);
     return projectMember;
+  });
+};
+
+
+
+export const transferProjectOwnership = async (projectId: string, newLeaderId: string, requestingUserId: string) => {
+  const project = await findProjectById(projectId);
+  if (!project) {
+    throw { statusCode: 404, message: 'Project not found.' };
+  }
+
+  // Only current leader can transfer ownership
+  if (project.leaderId !== requestingUserId) {
+    throw { statusCode: 403, message: 'Only the project leader can transfer ownership.' };
+  }
+
+  // Cannot transfer to self
+  if (newLeaderId === requestingUserId) {
+    throw { statusCode: 400, message: 'You are already the leader of this project.' };
+  }
+
+  const newLeader = await findUserById(newLeaderId);
+  if (!newLeader) {
+    throw { statusCode: 404, message: 'New leader not found.' };
+  }
+
+  // Ensure new leader is a member of the project
+  const isMember = await isUserProjectMember(projectId, newLeaderId);
+  if (!isMember) {
+    throw { statusCode: 400, message: 'The new leader must be a member of the project.' };
+  }
+
+  return prisma.$transaction(async (tx) => {
+    // Update project leader
+    const updatedProject = await tx.project.update({
+      where: { id: projectId },
+      data: { leaderId: newLeaderId }
+    });
+
+    // If new leader was just a MEMBER, upgrade role to LEADER (optional depending on system design rules, 
+    // assuming here that 'Role.LEADER' is a global role or just meaningful contextually. 
+    // In this schema User.role seems global. If we want to keep it simple, we might just leave role as is 
+    // or upgrade if they are simple MEMBER. 
+    // Re-reading logic in createNewProject: "if (leader.role === Role.MEMBER) { await updateUser(leader.id, { role: Role.LEADER }); }"
+    // So we should probably do the same here.
+    if (newLeader.role === Role.MEMBER) {
+      await tx.user.update({
+        where: { id: newLeaderId },
+        data: { role: Role.LEADER }
+      });
+    }
+
+    // Log activity
+    await createActivityLog({
+      user: { connect: { id: requestingUserId } },
+      type: ActivityType.ROLE_CHANGED,
+      description: `Transferred leadership of project "${project.title}" to ${newLeader.name}.`,
+    }, tx);
+
+    await createActivityLog({
+      user: { connect: { id: newLeaderId } },
+      type: ActivityType.ROLE_CHANGED,
+      description: `Became leader of project "${project.title}".`,
+    }, tx);
+
+    return updatedProject;
   });
 };

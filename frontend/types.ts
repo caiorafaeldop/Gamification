@@ -1,12 +1,15 @@
+export type ProjectStatus = 'active' | 'completed' | 'archived';
+
 export interface Project {
   id: string;
   title: string;
   description: string;
   category: string;
+  type?: string;
   coverUrl?: string;
   progress: number;
   xpReward: number;
-  status: 'active' | 'planning' | 'completed';
+  status: ProjectStatus;
   members: number;
   color: string;
   leaderId?: string;
@@ -14,10 +17,24 @@ export interface Project {
   updatedAt?: string;
 }
 
-export interface User {
+export const statusStyles: Record<ProjectStatus, string> = {
+  active: 'bg-green-100 text-green-700',
+  completed: 'bg-blue-100 text-blue-700',
+  archived: 'bg-gray-200 text-gray-600'
+};
+
+export const statusLabels: Record<ProjectStatus, string> = {
+  active: 'Ativo',
+  completed: 'Concluído',
+  archived: 'Arquivado'
+};
+
+
+export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  avatarUrl?: string;
   role: 'ADMIN' | 'LEADER' | 'MEMBER';
   connectaPoints: number;
   tierId: string;
@@ -93,3 +110,23 @@ export interface Notification {
   type: 'info' | 'success' | 'warning' | 'error';
   createdAt: string;
 }
+
+export enum AssigneeType {
+  IMPLEMENTER = 'IMPLEMENTER',
+  REVIEWER = 'REVIEWER',
+  CREATOR = 'CREATOR'
+}
+export type GetAdminLogsParams = {
+  page?: number;
+  limit?: number;
+  date?: string;
+  search?: string;
+  all?: boolean;
+};
+
+export type GetAdminUsersParams = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  all?: boolean;
+};

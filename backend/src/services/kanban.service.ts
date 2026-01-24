@@ -1,5 +1,6 @@
-import { TaskStatus } from '@prisma/client';
+import { TaskStatus, Role } from '@prisma/client';
 import prisma from '../utils/prisma';
+import { isUserProjectMember, findProjectById } from '../repositories/project.repository';
 
 export const getProjectBoard = async (projectId: string) => {
     let columns = await prisma.kanbanColumn.findMany({
@@ -55,13 +56,24 @@ const createDefaultColumns = async (projectId: string) => {
     });
 };
 
-export const createColumnService = async (projectId: string, title: string, order: number) => {
+export const createColumnService = async (projectId: string, title: string, order: number, userId: string, userRole: Role, color?: string) => {
+    const project = await findProjectById(projectId);
+    if (!project) throw { statusCode: 404, message: 'Project not found' };
+
+    const isMember = await isUserProjectMember(projectId, userId);
+    const isLeader = project.leaderId === userId;
+    const isAdmin = userRole === Role.ADMIN;
+
+    if (!isMember && !isLeader && !isAdmin) {
+        throw { statusCode: 403, message: 'Only project members can create columns.' };
+    }
+
     return prisma.kanbanColumn.create({
-        data: { projectId, title, order, status: TaskStatus.todo }
+        data: { projectId, title, order, color, status: TaskStatus.todo }
     });
 };
 
-export const updateColumnService = async (columnId: string, data: any) => {
+export const updateColumnService = async (columnId: string, data: any, userId: string, userRole: Role) => {
     const column = await prisma.kanbanColumn.findUnique({ where: { id: columnId } });
     if (!column) {
         throw { statusCode: 404, message: 'Column not found.' };
@@ -72,13 +84,24 @@ export const updateColumnService = async (columnId: string, data: any) => {
         throw { statusCode: 400, message: 'O nome da coluna de conclusão não pode ser alterado.' };
     }
 
+    const project = await findProjectById(column.projectId);
+    if (project) {
+        const isMember = await isUserProjectMember(column.projectId, userId);
+        const isLeader = project.leaderId === userId;
+        const isAdmin = userRole === Role.ADMIN;
+
+        if (!isMember && !isLeader && !isAdmin) {
+            throw { statusCode: 403, message: 'Only project members can update columns.' };
+        }
+    }
+
     return prisma.kanbanColumn.update({
         where: { id: columnId },
         data
     });
 };
 
-export const deleteColumnService = async (columnId: string) => {
+export const deleteColumnService = async (columnId: string, userId: string, userRole: Role) => {
     const column = await prisma.kanbanColumn.findUnique({ where: { id: columnId } });
     if (!column) {
         throw { statusCode: 404, message: 'Column not found.' };
@@ -87,6 +110,17 @@ export const deleteColumnService = async (columnId: string) => {
     // Bloquear exclusão da coluna de conclusão
     if (column.isCompletionColumn) {
         throw { statusCode: 400, message: 'A coluna de conclusão não pode ser excluída.' };
+    }
+
+    const project = await findProjectById(column.projectId);
+    if (project) {
+        const isMember = await isUserProjectMember(column.projectId, userId);
+        const isLeader = project.leaderId === userId;
+        const isAdmin = userRole === Role.ADMIN;
+
+        if (!isMember && !isLeader && !isAdmin) {
+            throw { statusCode: 403, message: 'Only project members can delete columns.' };
+        }
     }
 
     const tasksCount = await prisma.task.count({ where: { columnId } });
@@ -168,10 +202,23 @@ export const moveTaskService = async (taskId: string, columnId: string, userId: 
         }
 
         return updatedTask;
+    }, {
+        maxWait: 5000, // default: 2000
+        timeout: 20000 // default: 5000
     });
 };
 
-export const reorderColumnsService = async (projectId: string, columnIds: string[]) => {
+export const reorderColumnsService = async (projectId: string, columnIds: string[], userId: string, userRole: Role) => {
+    const project = await findProjectById(projectId);
+    if (project) {
+        const isMember = await isUserProjectMember(projectId, userId);
+        const isLeader = project.leaderId === userId;
+        const isAdmin = userRole === Role.ADMIN;
+
+        if (!isMember && !isLeader && !isAdmin) {
+            throw { statusCode: 403, message: 'Only project members can reorder columns.' };
+        }
+    }
     return prisma.$transaction(
         columnIds.map((id, index) =>
             prisma.kanbanColumn.update({

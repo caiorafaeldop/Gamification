@@ -1,5 +1,5 @@
 import prisma from '../utils/prisma';
-import { Prisma, Task, TaskStatus } from '@prisma/client';
+import { Prisma, Task, TaskStatus, AssigneeType } from '@prisma/client';
 
 // Include padrão para tasks com assignees
 const taskInclude = {
@@ -30,11 +30,31 @@ export const findTaskById = async (id: string): Promise<Task | null> => {
   });
 };
 
-export const updateTask = async (id: string, data: Prisma.TaskUpdateInput, transaction?: Prisma.TransactionClient): Promise<Task> => {
+export const updateTask = async (id: string, data: any, transaction?: Prisma.TransactionClient): Promise<Task> => {
   const client = transaction || prisma;
+  const { assigneeIds, assignees, ...updateData } = data;
+
+  if (assigneeIds || assignees) {
+    // Se assigneeIds for passado (array de strings), converte para formato com tipo default
+    const assigneesToSync = assignees || (assigneeIds ? assigneeIds.map((userId: string) => ({ userId, type: AssigneeType.IMPLEMENTER })) : []);
+    
+    // Atualiza a task
+    const updatedTask = await client.task.update({
+      where: { id },
+      data: updateData,
+      include: taskInclude,
+    });
+
+    // Sincroniza assignees
+    await syncTaskAssignees(id, assigneesToSync, client);
+    
+    // Retorna task atualizada com os novos assignees
+    return findTaskById(id) as Promise<Task>;
+  }
+
   return client.task.update({
     where: { id },
-    data,
+    data: updateData,
     include: taskInclude,
   });
 };
@@ -49,7 +69,7 @@ export const findTasksByProjectId = async (projectId: string): Promise<Task[]> =
     where: { projectId },
     include: {
       assignedTo: { select: { id: true, name: true, avatarUrl: true } },
-      createdBy: { select: { id: true, name: true } },
+      createdBy: { select: { id: true, name: true, avatarUrl: true } },
       requiredTier: true,
       assignees: {
         include: {
@@ -62,14 +82,14 @@ export const findTasksByProjectId = async (projectId: string): Promise<Task[]> =
   });
 };
 
-export const findUserTasks = async (userId: string, status?: TaskStatus): Promise<Task[]> => {
+export const findUserTasks = async (userId: string, additionalWhere?: Prisma.TaskWhereInput): Promise<Task[]> => {
   return prisma.task.findMany({
     where: {
       OR: [
         { assignedToId: userId },
         { assignees: { some: { userId } } },
       ],
-      ...(status && { status }),
+      ...additionalWhere,
     },
     include: {
       project: { select: { id: true, title: true } },
@@ -85,34 +105,46 @@ export const findUserTasks = async (userId: string, status?: TaskStatus): Promis
 };
 
 // Funções para gerenciar múltiplos assignees
-export const addTaskAssignee = async (taskId: string, userId: string, transaction?: Prisma.TransactionClient) => {
+export const addTaskAssignee = async (taskId: string, userId: string, type: AssigneeType, transaction?: Prisma.TransactionClient) => {
   const client = transaction || prisma;
   return client.taskAssignee.upsert({
-    where: { taskId_userId: { taskId, userId } },
-    create: { taskId, userId },
-    update: {},
+    where: { 
+      taskId_userId_type: { taskId, userId, type } 
+    },
+    create: { taskId, userId, type },
+    update: { type },
     include: {
       user: { select: { id: true, name: true, email: true, avatarUrl: true } },
     },
   });
 };
 
-export const removeTaskAssignee = async (taskId: string, userId: string, transaction?: Prisma.TransactionClient) => {
+export const removeTaskAssignee = async (taskId: string, userId: string, type?: AssigneeType, transaction?: Prisma.TransactionClient) => {
   const client = transaction || prisma;
-  return client.taskAssignee.delete({
-    where: { taskId_userId: { taskId, userId } },
+  
+  if (type) {
+    return client.taskAssignee.delete({
+      where: { 
+        taskId_userId_type: { taskId, userId, type } 
+      },
+    });
+  }
+
+  // Se não especificar tipo, remove todos os convites desse usuário na task
+  return client.taskAssignee.deleteMany({
+    where: { taskId, userId },
   });
 };
 
-export const syncTaskAssignees = async (taskId: string, userIds: string[], transaction?: Prisma.TransactionClient) => {
+export const syncTaskAssignees = async (taskId: string, assignees: { userId: string, type: AssigneeType }[], transaction?: Prisma.TransactionClient) => {
   const client = transaction || prisma;
   
   // Remove todos e adiciona os novos
   await client.taskAssignee.deleteMany({ where: { taskId } });
   
-  if (userIds.length > 0) {
+  if (assignees.length > 0) {
     await client.taskAssignee.createMany({
-      data: userIds.map(userId => ({ taskId, userId })),
+      data: assignees.map(({ userId, type }) => ({ taskId, userId, type })),
     });
   }
 };

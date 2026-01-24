@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { uuidSchema, optionalUuidSchema } from '../utils/zod';
-import { TaskStatus } from '@prisma/client';
+import { TaskStatus, AssigneeType } from '@prisma/client';
 
 export const createTaskSchema = z.object({
   body: z.object({
@@ -19,7 +19,10 @@ export const createTaskSchema = z.object({
     startDate: z.string().datetime().optional().nullable(),
     durationMinutes: z.coerce.number().int().min(1).optional().nullable(),
     attachmentUrl: z.string().optional().nullable(), // Aceita qualquer string como link
-    assigneeIds: z.array(uuidSchema).optional(),
+    assignees: z.array(z.object({
+      userId: uuidSchema,
+      type: z.nativeEnum(AssigneeType),
+    })).optional(),
   }),
 });
 
@@ -49,7 +52,10 @@ export const updateTaskSchema = z.object({
     startDate: z.string().datetime().optional().nullable(),
     durationMinutes: z.coerce.number().int().min(1).optional().nullable(),
     attachmentUrl: z.string().optional().nullable(), // Aceita qualquer string como link
-    assigneeIds: z.array(uuidSchema).optional(),
+    assignees: z.array(z.object({
+      userId: uuidSchema,
+      type: z.nativeEnum(AssigneeType),
+    })).optional(),
   }).partial(),
 });
 

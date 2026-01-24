@@ -1,10 +1,10 @@
-import { Prisma, Task, TaskStatus, Role, ActivityType } from '@prisma/client';
+import { Prisma, Task, TaskStatus, Role, ActivityType, AssigneeType } from '@prisma/client';
 import { createTask, findTaskById, updateTask, deleteTask, findTasksByProjectId, findUserTasks, syncTaskAssignees } from '../repositories/task.repository';
 import { findUserById } from '../repositories/user.repository';
 import { findProjectById, isUserProjectMember } from '../repositories/project.repository';
 import { createActivityLog } from '../repositories/activityLog.repository';
 import { CreateTaskInput, UpdateTaskInput, MoveTaskInput } from '../schemas/task.schema';
-import { addPointsForTaskCompletion, updateStreakForUser } from './gamification.service';
+import { addPointsForTaskCompletion, updateStreakForUser, removePointsForTaskUncompletion, removePointsForTaskDeletion } from './gamification.service';
 import { checkAndAwardAchievements } from './achievement.service';
 import prisma from '../utils/prisma';
 
@@ -63,9 +63,18 @@ export const createNewTask = async (data: CreateTaskInput, createdById: string) 
       requiredTier: data.requiredTierId ? { connect: { id: data.requiredTierId } } : undefined,
     } as any, tx);
 
-    // Sincronizar múltiplos assignees se fornecidos
-    if (data.assigneeIds && data.assigneeIds.length > 0) {
-      await syncTaskAssignees(task.id, data.assigneeIds, tx);
+    // Sincronizar múltiplos assignees se fornecidos, adicionando o criador
+    let assigneesToSync = data.assignees || [];
+    
+    // Verificar se o criador já está na lista
+    const isCreatorInList = assigneesToSync.some(a => a.userId === createdById);
+    
+    if (!isCreatorInList) {
+      assigneesToSync = [...assigneesToSync, { userId: createdById, type: AssigneeType.CREATOR }];
+    }
+
+    if (assigneesToSync.length > 0) {
+      await syncTaskAssignees(task.id, assigneesToSync, tx);
     }
 
     await createActivityLog({
@@ -128,8 +137,14 @@ export const updateTaskDetails = async (id: string, data: UpdateTaskInput, reque
     }
   }
 
-  // Extrair assigneeIds do data antes de passar para o Prisma
-  const { assigneeIds, ...taskData } = data as any;
+  // Extrair assignees e assigneeIds do data antes de passar para o Prisma
+  const { assignees, assigneeIds, ...taskData } = data as any;
+
+  // Normalizar assignees
+  let assigneesToProcess = assignees;
+  if (!assigneesToProcess && assigneeIds) {
+    assigneesToProcess = assigneeIds.map((userId: string) => ({ userId, type: AssigneeType.IMPLEMENTER }));
+  }
 
   return prisma.$transaction(async (tx) => {
     const updateData: any = { ...taskData };
@@ -156,14 +171,14 @@ export const updateTaskDetails = async (id: string, data: UpdateTaskInput, reque
     const updatedTask = await updateTask(id, updateData, tx);
 
     // Sincronizar múltiplos assignees se fornecidos
-    if (assigneeIds !== undefined) {
+    if (assigneesToProcess !== undefined) {
       // PONTUAÇÃO RETROATIVA: Se a task está concluída, dar/remover pontos
       const isCompleted = task.completedAt !== null;
       
       if (isCompleted) {
         const pointsForCompletion = (project as any).pointsPerCompletedTask ?? 100;
         const currentAssigneeIds = (task as any).assignees?.map((a: any) => a.user?.id || a.userId) || [];
-        const newAssigneeIds = assigneeIds || [];
+        const newAssigneeIds = assigneesToProcess.map((a: any) => a.userId) as string[];
         
         // Quem foi ADICIONADO ganha pontos
         const addedAssignees = newAssigneeIds.filter((id: string) => !currentAssigneeIds.includes(id));
@@ -174,14 +189,13 @@ export const updateTaskDetails = async (id: string, data: UpdateTaskInput, reque
         
         // Quem foi REMOVIDO perde pontos
         const removedAssignees = currentAssigneeIds.filter((id: string) => !newAssigneeIds.includes(id));
-        const { removePointsForTaskUncompletion } = await import('./gamification.service');
         for (const userId of removedAssignees) {
           await removePointsForTaskUncompletion(userId, pointsForCompletion, task.id, tx);
           console.log(`[RETROACTIVE] Removed ${pointsForCompletion} points from user ${userId} for being removed from completed task`);
         }
       }
       
-      await syncTaskAssignees(id, assigneeIds || [], tx);
+      await syncTaskAssignees(id, assigneesToProcess || [], tx);
     }
 
     if (data.assignedToId && data.assignedToId !== task.assignedToId) {
@@ -264,19 +278,50 @@ export const deleteTaskById = async (id: string, requestingUserId: string, reque
   }
 
   const isMember = await isUserProjectMember(task.projectId, requestingUserId);
-  console.log(`[DELETE TASK CHECK] Leader: ${project.leaderId}, Requester: ${requestingUserId}, IsMember: ${isMember}`);
+  console.log(`[DELETE TASK CHECK] Leader: ${project.leaderId}, Requester: ${requestingUserId}, IsMember: ${isMember}, Creator: ${task.createdById}`);
 
-  const isAuthorized = requestingUserRole === Role.ADMIN || project.leaderId === requestingUserId || isMember;
+  const isCreator = task.createdById === requestingUserId;
+  const isAuthorized = requestingUserRole === Role.ADMIN || project.leaderId === requestingUserId || isMember || isCreator;
+  
   if (!isAuthorized) {
     throw { statusCode: 403, message: 'You are not authorized to delete this task.' };
   }
 
   return prisma.$transaction(async (tx) => {
-    await deleteTask(id);
+    // 1. Remover pontos de criação do criador
+    const pointsForCreation = (project as any).pointsPerOpenTask ?? 50;
+    if (pointsForCreation > 0) {
+      await removePointsForTaskDeletion(task.createdById, pointsForCreation, task.id, tx);
+      console.log(`[DELETE TASK] Removed ${pointsForCreation} points from creator ${task.createdById}`);
+    }
+
+    // 2. Se a task estava concluída, remover pontos de conclusão de todos os assignees
+    if (task.status === TaskStatus.done) {
+      const pointsForCompletion = (project as any).pointsPerCompletedTask ?? 100;
+      
+      // AssignedToId principal
+      if (task.assignedToId) {
+        await removePointsForTaskUncompletion(task.assignedToId, pointsForCompletion, task.id, tx);
+        console.log(`[DELETE TASK] Removed ${pointsForCompletion} completion points from main assignee ${task.assignedToId}`);
+      }
+
+      // Múltiplos assignees
+      const assignees = (task as any).assignees || [];
+      for (const assignment of assignees) {
+        const userId = assignment.userId || assignment.user?.id;
+        // Evitar remover duas vezes se for o mesmo user
+        if (userId && userId !== task.assignedToId) {
+          await removePointsForTaskUncompletion(userId, pointsForCompletion, task.id, tx);
+          console.log(`[DELETE TASK] Removed ${pointsForCompletion} completion points from secondary assignee ${userId}`);
+        }
+      }
+    }
+
+    await deleteTask(id, tx);
     await createActivityLog({
       user: { connect: { id: requestingUserId } },
       type: ActivityType.TASK_DELETED,
-      description: `Deleted task "${task.title}".`,
+      description: `Deleted task "${task.title}". Points revoked.`,
     }, tx);
     return task;
   });
@@ -306,5 +351,5 @@ export const getKanbanBoardForProject = async (projectId: string) => {
 };
 
 export const getMyNextTasks = async (userId: string) => {
-  return findUserTasks(userId, undefined);
+  return findUserTasks(userId, { completedAt: null });
 };

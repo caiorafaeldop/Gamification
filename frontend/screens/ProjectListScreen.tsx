@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Star, LogIn, Loader, Check } from 'lucide-react';
+import { Plus, Search, Star, LogIn, Loader, Check, Filter, ChevronDown } from 'lucide-react';
 import { useProjects } from '../hooks/useProjects';
 import { useAuth } from '../hooks/useAuth';
 import { joinProject } from '../services/project.service';
@@ -13,6 +13,21 @@ const ProjectListScreen = () => {
   const { user } = useAuth();
   const { projects, loading, error, refetch } = useProjects();
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleJoin = async (projectId: string) => {
     try {
@@ -24,10 +39,31 @@ const ProjectListScreen = () => {
     }
   };
 
-  const filteredProjects = projects.filter((p: any) =>
-    p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProjects = projects
+    .filter((p: any) => {
+      const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.description?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      if (!matchesSearch) return false;
+
+      if (filterStatus === 'joined') {
+        return p.members?.some((m: any) => m.userId === user?.id);
+      }
+      if (filterStatus === 'notJoined') {
+        return !p.members?.some((m: any) => m.userId === user?.id);
+      }
+      return true;
+    })
+    .sort((a: any, b: any) => {
+      if (sortOrder === 'alpha') {
+        return a.title.localeCompare(b.title);
+      }
+      if (sortOrder === 'oldest') {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      // Default: Newest first
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
   if (loading) return (
     <div className="min-h-full">
@@ -69,8 +105,8 @@ const ProjectListScreen = () => {
 
   return (
     <div className="min-h-full">
-      <div className="relative pt-12 pb-12 px-4 sm:px-6 lg:px-8 bg-surface-light dark:bg-surface-dark overflow-hidden rounded-3xl mx-4 sm:mx-8 mt-4 shadow-sm border border-gray-100 dark:border-gray-800">
-        <div className="absolute inset-0 z-0 bg-network-pattern opacity-100 dark:opacity-30"></div>
+      <div className="relative z-30 pt-12 pb-12 px-4 sm:px-6 lg:px-8 bg-surface-light dark:bg-surface-dark rounded-3xl mx-4 sm:mx-8 mt-4 shadow-sm border border-gray-100 dark:border-gray-800">
+        <div className="absolute inset-0 z-0 bg-network-pattern opacity-100 dark:opacity-30 overflow-hidden rounded-3xl"></div>
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-end gap-6">
           <div>
             <span className="inline-block py-1 px-3 rounded-full bg-primary/10 dark:bg-primary/20 text-primary font-bold text-xs mb-4 uppercase tracking-wider border border-primary/20">Explore & Colabore</span>
@@ -81,8 +117,8 @@ const ProjectListScreen = () => {
               Encontre o projeto ideal para desenvolver suas habilidades, ganhar 🪙 e conectar-se com outros estudantes.
             </p>
           </div>
-          <div className="flex gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
+          <div className="flex flex-wrap md:flex-nowrap gap-3 w-full md:w-auto items-stretch">
+            <div className="relative w-full md:w-64">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3">
                 <Search className="text-gray-400" size={20} />
               </span>
@@ -94,9 +130,79 @@ const ProjectListScreen = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button onClick={() => navigate('/new-project')} className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:bg-sky-500 transition-colors flex items-center gap-2 whitespace-nowrap">
-              <Plus size={16} /> Novo
-            </button>
+
+            <div className="flex gap-3 flex-1 md:flex-none">
+              <div className="relative flex-1 md:w-auto" ref={filterRef}>
+                <button
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  className="w-full h-full bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Filter size={16} />
+                  <span>Filtrar</span>
+                  <ChevronDown size={14} className={`transform transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isFilterOpen && (
+                  <div className="absolute left-0 md:left-auto md:right-0 mt-2 w-56 bg-white dark:bg-surface-dark rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-[100] py-2 animate-in fade-in zoom-in duration-200 overflow-y-auto max-h-[60vh] md:max-h-none">
+                    <div className="px-3 py-1 mb-1">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status de Participação</span>
+                    </div>
+                    <button
+                      onClick={() => { setFilterStatus('all'); setIsFilterOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${filterStatus === 'all' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                    >
+                      Todos os projetos
+                      {filterStatus === 'all' && <Check size={14} />}
+                    </button>
+                    <button
+                      onClick={() => { setFilterStatus('joined'); setIsFilterOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${filterStatus === 'joined' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                    >
+                      Já participo
+                      {filterStatus === 'joined' && <Check size={14} />}
+                    </button>
+                    <button
+                      onClick={() => { setFilterStatus('notJoined'); setIsFilterOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${filterStatus === 'notJoined' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                    >
+                      Não participo
+                      {filterStatus === 'notJoined' && <Check size={14} />}
+                    </button>
+
+                    <div className="h-px bg-gray-100 dark:bg-gray-700 my-2"></div>
+
+                    <div className="px-3 py-1 mb-1">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ordenação</span>
+                    </div>
+                    <button
+                      onClick={() => { setSortOrder('alpha'); setIsFilterOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${sortOrder === 'alpha' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                    >
+                      Ordem Alfabética
+                      {sortOrder === 'alpha' && <Check size={14} />}
+                    </button>
+                    <button
+                      onClick={() => { setSortOrder('newest'); setIsFilterOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${sortOrder === 'newest' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                    >
+                      Mais recentes
+                      {sortOrder === 'newest' && <Check size={14} />}
+                    </button>
+                    <button
+                      onClick={() => { setSortOrder('oldest'); setIsFilterOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${sortOrder === 'oldest' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
+                    >
+                      Mais antigos
+                      {sortOrder === 'oldest' && <Check size={14} />}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <button onClick={() => navigate('/new-project')} className="flex-1 md:flex-none justify-center bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:bg-sky-500 transition-colors flex items-center gap-2 whitespace-nowrap">
+                <Plus size={16} /> Novo
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -122,8 +228,9 @@ const ProjectListScreen = () => {
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                  <div className="absolute bottom-3 left-4 z-20">
+                  <div className="absolute bottom-3 left-4 z-10">
                     <span className="bg-primary text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">{project.category || 'Geral'}</span>
+                    {project.type && <span className="ml-2 bg-purple-500 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">{project.type}</span>}
                   </div>
                 </div>
                 <div className="p-5 flex-1 flex flex-col">

@@ -13,12 +13,10 @@ export interface LeaderboardEntry {
 }
 
 export const getLeaderboard = async (period: string = 'all', limit: number = 100) => {
-  let url = '/leaderboard/global';
-  if (period === 'weekly') {
-    url = '/leaderboard/weekly';
-  }
-
-  const response = await api.get(`${url}?limit=${limit}`);
+  // Map 'week' (from UI filter) to 'weekly' (backend expectation)
+  const backendPeriod = period === 'week' ? 'weekly' : period;
+  
+  const response = await api.get(`/leaderboard?period=${backendPeriod}&limit=${limit}`);
   return response.data.users ? response.data.users : response.data;
 };
 

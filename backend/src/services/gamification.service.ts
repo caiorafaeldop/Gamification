@@ -47,6 +47,29 @@ export const removePointsForTaskUncompletion = async (userId: string, points: nu
   return updatedUser;
 };
 
+export const removePointsForTaskDeletion = async (userId: string, points: number, taskId: string, transaction: Prisma.TransactionClient) => {
+  // Subtrair pontos (não pode ficar negativo)
+  const user = await transaction.user.findUnique({ where: { id: userId } });
+  if (!user) return;
+
+  const newPoints = Math.max(0, user.connectaPoints - points);
+  const updatedUser = await transaction.user.update({
+    where: { id: userId },
+    data: { connectaPoints: newPoints }
+  });
+
+  await createActivityLog({
+    user: { connect: { id: userId } },
+    type: ActivityType.TASK_DELETED,
+    description: `Task deleted. Lost ${points} Connecta Points gained from creation.`,
+    pointsChange: -points,
+  }, transaction);
+
+  await recalcUserTier(userId, transaction);
+  
+  return updatedUser;
+};
+
 export const recalcUserTier = async (userId: string, transaction: Prisma.TransactionClient) => {
   const user = await transaction.user.findUnique({
     where: { id: userId },
