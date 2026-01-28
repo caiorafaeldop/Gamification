@@ -1,6 +1,6 @@
-# Connecta CI Backend
+# FAMENE Backend
 
-Backend for Connecta CI, a gamified team-management system.
+Backend for FAMENE, a gamified study system.
 
 ## Prerequisites
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Connecta CI - Setup Script
+# FAMENE ENAMED - Setup Script
 
-echo "Starting setup for Connecta CI..."
+echo "Starting setup for FAMENE ENAMED..."
 
 # Backend Setup
 echo "-----------------------------------"

@@ -4,9 +4,9 @@ import { config } from '../config';
 const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
-    title: 'Connecta CI API',
+    title: 'FAMENE ENAMED API',
     version: '1.0.0',
-    description: 'API Documentation for Connecta CI Backend',
+    description: 'API Documentation for FAMENE ENAMED Backend',
   },
   servers: [
     {
@@ -16,16 +16,16 @@ const swaggerDefinition = {
   ],
   components: {
     securitySchemes: {
-        bearerAuth: {
-            type: 'http',
-            scheme: 'bearer',
-            bearerFormat: 'JWT',
-        },
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
     },
   },
   security: [
     {
-        bearerAuth: [],
+      bearerAuth: [],
     },
   ],
 };
@@ -36,3 +36,4 @@ const options = {
 };
 
 export const swaggerSpec = swaggerJSDoc(options);
+

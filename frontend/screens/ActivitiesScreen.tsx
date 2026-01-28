@@ -167,7 +167,7 @@ const ActivitiesScreen = () => {
             Atividades & Agenda
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Acompanhe seus prazos iminentes e os próximos eventos da comunidade Connecta.
+            Acompanhe seus prazos iminentes e os próximos eventos da comunidade Famene.
           </p>
         </header>
 
@@ -229,13 +229,13 @@ const ActivitiesScreen = () => {
             </div>
           </div>
 
-          {/* Section: Agenda Connecta (Using Dynamic Events from HEAD) */}
+          {/* Section: Agenda Famene (Using Dynamic Events from HEAD) */}
           <div className="space-y-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="bg-primary/10 p-2 rounded-lg text-primary">
                 <Calendar size={20} />
               </div>
-              <h2 className="text-xl font-bold text-secondary dark:text-white">Agenda Connecta</h2>
+              <h2 className="text-xl font-bold text-secondary dark:text-white">Agenda Famene</h2>
             </div>
 
             <div className="space-y-4">

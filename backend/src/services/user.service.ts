@@ -1,5 +1,5 @@
 import { Prisma, User, Role, ActivityType, TaskStatus } from '@prisma/client';
-import { findUserById, findUsers, updateUser, updateConnectaPoints, updateManyUsers } from '../repositories/user.repository';
+import { findUserById, findUsers, updateUser, updateFamenePoints, updateManyUsers } from '../repositories/user.repository';
 import { findActivityLogsByUserId, createActivityLog } from '../repositories/activityLog.repository';
 import { hashPassword } from '../utils/bcrypt';
 import { UpdateUserInput, UpdateUserPointsInput } from '../schemas/user.schema';
@@ -145,7 +145,7 @@ export const adjustUserPoints = async (userId: string, data: UpdateUserPointsInp
       throw { statusCode: 404, message: 'User not found.' };
     }
 
-    const updatedUser = await updateConnectaPoints(userId, data.points, tx);
+    const updatedUser = await updateFamenePoints(userId, data.points, tx);
 
     await createActivityLog({
       user: { connect: { id: userId } }, // Corrigido: usar 'user' com 'connect'
@@ -172,7 +172,7 @@ export const getAllUsers = async (page: number, limit: number) => {
   const users = await findUsers({
     skip,
     take: limit,
-    orderBy: { connectaPoints: 'desc' },
+    orderBy: { famenePoints: 'desc' },
   });
   const total = await prisma.user.count();
   return { users: users.map(({ passwordHash, ...user }) => user), total, page, limit };

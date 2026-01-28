@@ -148,7 +148,7 @@ export const checkAndAwardAchievements = async (userId: string, transaction?: Pr
       // Handle total points criteria like "points >= 100" or similar
       const match = achievement.criteria.match(/points\s*>=\s*(\d+)/);
       const pointsThreshold = match ? parseInt(match[1]) : parseInt(achievement.criteria.split(' ')[1]);
-      if (!isNaN(pointsThreshold) && user.connectaPoints >= pointsThreshold) {
+      if (!isNaN(pointsThreshold) && user.famenePoints >= pointsThreshold) {
         isEarned = true;
       }
     } else if (achievement.criteria.includes('tasks completed')) {
@@ -203,3 +203,4 @@ export const checkAndAwardAchievements = async (userId: string, transaction?: Pr
     }
   }
 };
+

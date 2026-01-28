@@ -26,14 +26,14 @@ export const registerUser = async (data: RegisterInput) => {
     email: email,
     passwordHash: hashedPassword,
     role: data.role,
-    connectaPoints: 0,
+    famenePoints: 0,
     tier: { connect: { id: initialTier.id } },
   });
 
   const accessToken = generateAccessToken(user.id, user.role);
   const refreshToken = generateRefreshToken(user.id, user.role);
 
-  return { user: { id: user.id, name: user.name, email: user.email, role: user.role, connectaPoints: user.connectaPoints, tier: initialTier.name, course: user.course, avatarColor: user.avatarColor }, accessToken, refreshToken };
+  return { user: { id: user.id, name: user.name, email: user.email, role: user.role, famenePoints: user.famenePoints, tier: initialTier.name, course: user.course, avatarColor: user.avatarColor }, accessToken, refreshToken };
 };
 
 export const loginUser = async (data: LoginInput) => {
@@ -60,7 +60,7 @@ export const loginUser = async (data: LoginInput) => {
     include: { tier: true },
   });
 
-  return { user: { id: user.id, name: user.name, email: user.email, role: user.role, connectaPoints: user.connectaPoints, tier: userWithTier?.tier.name, course: user.course, avatarColor: user.avatarColor }, accessToken, refreshToken };
+  return { user: { id: user.id, name: user.name, email: user.email, role: user.role, famenePoints: user.famenePoints, tier: userWithTier?.tier.name, course: user.course, avatarColor: user.avatarColor }, accessToken, refreshToken };
 };
 
 export const refreshAuthToken = async (refreshToken: string) => {
@@ -100,3 +100,4 @@ export const resetPassword = async (email: string, newPassword: string, secretWo
 
   return { message: 'Password reset successfully.' };
 };
+

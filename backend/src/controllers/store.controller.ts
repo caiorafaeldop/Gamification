@@ -39,14 +39,14 @@ export const purchaseItem = async (req: Request, res: Response) => {
         throw { status: 404, message: 'User not found' };
       }
 
-      if (user.connectaPoints < item.cost) {
+      if (user.famenePoints < item.cost) {
         throw { status: 400, message: 'Insufficient points' };
       }
 
       // Deduct points
       await tx.user.update({
         where: { id: userId },
-        data: { connectaPoints: { decrement: item.cost } },
+        data: { famenePoints: { decrement: item.cost } },
       });
 
       // Create order
@@ -76,3 +76,4 @@ export const purchaseItem = async (req: Request, res: Response) => {
     return res.status(status).json({ message: error.message || 'Error processing purchase' });
   }
 };
+

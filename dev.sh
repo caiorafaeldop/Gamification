@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Connecta CI - Development Script
+# FAMENE ENAMED - Development Script
 
-echo "Starting Connecta CI in development mode..."
+echo "Starting FAMENE ENAMED in development mode..."
 
 # Function to handle script termination
 cleanup() {

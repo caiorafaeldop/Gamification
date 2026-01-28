@@ -1,10 +1,10 @@
-# Estrutura do Projeto Gamification (Connecta CI)
+# Estrutura do Projeto Gamification (FAMENE ENAMED)
 
 Este documento serve como guia para entender a organização do código, a arquitetura e as tecnologias utilizadas no projeto.
 
 ## 1. Visão Geral
 
-O projeto é um sistema de gamificação para gestão de times (Connecta CI), composto por duas partes principais:
+O projeto é um sistema de gamificação para gestão acadêmica (FAMENE ENAMED), composto por duas partes principais:
 - **Backend**: API RESTful construída com Node.js, Express e PostgreSQL (via Prisma ORM).
 - **Frontend**: Single-Page Application (SPA) construída com React, Vite e TypeScript.
 

@@ -14,6 +14,7 @@ import { Camera, Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { COLUMN_COLORS } from '../constants';
+import { statusLabels, statusStyles } from '../types';
 import ProjectDetailsScreenMobile from './ProjectDetailsScreenMobile';
 
 const ProjectDetailsScreen = () => {
@@ -46,7 +47,7 @@ const ProjectDetailsScreen = () => {
     const [isDragging, setIsDragging] = useState(false);
 
     const [pickingColorColumnId, setPickingColorColumnId] = useState<string | null>(null);
-    
+
     // Inline card creation state (Trello-style)
     const [inlineCreatingColumnId, setInlineCreatingColumnId] = useState<string | null>(null);
     const [inlineTaskTitle, setInlineTaskTitle] = useState('');
@@ -495,26 +496,26 @@ const ProjectDetailsScreen = () => {
         }
     };
     const handleUpdateColumnColor = async (colorKey: string) => {
-    if (!pickingColorColumnId) return;
+        if (!pickingColorColumnId) return;
 
-    const newColumns = columns.map((col: any) => 
-        col.id === pickingColorColumnId ? { ...col, color: colorKey } : col
-    );
-    setColumns(newColumns);
-    
-    const idToUpdate = pickingColorColumnId;
-    setPickingColorColumnId(null); 
+        const newColumns = columns.map((col: any) =>
+            col.id === pickingColorColumnId ? { ...col, color: colorKey } : col
+        );
+        setColumns(newColumns);
 
-    try {
+        const idToUpdate = pickingColorColumnId;
+        setPickingColorColumnId(null);
 
-        await updateColumn(idToUpdate, { color: colorKey });
-        toast.success("Cor da coluna atualizada!");
-    } catch (err: any) {
-        console.error("Failed to update column color", err);
-        toast.error(err.response?.data?.message || "Erro ao salvar cor");
-        fetchKanban(); 
-    }
-};
+        try {
+
+            await updateColumn(idToUpdate, { color: colorKey });
+            toast.success("Cor da coluna atualizada!");
+        } catch (err: any) {
+            console.error("Failed to update column color", err);
+            toast.error(err.response?.data?.message || "Erro ao salvar cor");
+            fetchKanban();
+        }
+    };
     const toggleMemberFilter = (memberId: string) => {
         setSelectedMemberFilters(prev =>
             prev.includes(memberId)
@@ -579,14 +580,14 @@ const ProjectDetailsScreen = () => {
             };
         }
         if (column.color && COLUMN_COLORS[column.color as keyof typeof COLUMN_COLORS]) {
-        const theme = COLUMN_COLORS[column.color as keyof typeof COLUMN_COLORS];
-        return {
-            container: `${theme.bg} ${theme.border} ${theme.decoration}`,
-            headerIcon: <span className={`w-3 h-3 rounded-full ${theme.bg.replace('/80', '').replace('/10', '-400')}`}></span>, // Exemplo simples de icone
-            titleColor: theme.text,
-            badge: theme.badge
-        };
-    }
+            const theme = COLUMN_COLORS[column.color as keyof typeof COLUMN_COLORS];
+            return {
+                container: `${theme.bg} ${theme.border} ${theme.decoration}`,
+                headerIcon: <span className={`w-3 h-3 rounded-full ${theme.bg.replace('/80', '').replace('/10', '-400')}`}></span>, // Exemplo simples de icone
+                titleColor: theme.text,
+                badge: theme.badge
+            };
+        }
         const config = [
             {
                 keywords: ['fazer', 'todo', 'backlog'],
@@ -600,10 +601,10 @@ const ProjectDetailsScreen = () => {
             {
                 keywords: ['progresso', 'fazendo', 'doing', 'progress'],
                 styles: {
-                    container: "bg-primary/5 dark:bg-surface-dark/60 border-t-4 border-t-primary border-x border-b border-gray-200/50 dark:border-gray-800/50",
+                    container: "bg-primary/10 dark:bg-primary/20 border-t-4 border-t-primary border-x border-b border-primary/20 dark:border-gray-800/50",
                     headerIcon: <span className="material-icons text-primary animate-spin text-sm" style={{ animationDuration: '3s' }}>sync</span>,
-                    titleColor: "text-gray-700 dark:text-gray-200",
-                    badge: "bg-primary/20 text-primary"
+                    titleColor: "text-secondary dark:text-gray-100",
+                    badge: "bg-primary/20 text-secondary font-bold"
                 }
             },
             {
@@ -629,7 +630,7 @@ const ProjectDetailsScreen = () => {
     const getPriorityBadge = (priority: string) => {
         if (!priority || priority === 'Geral') return null;
         return (
-            <span className="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+            <span className="bg-secondary/10 text-secondary dark:bg-secondary/30 dark:text-primary text-[10px] font-bold px-2 py-0.5 rounded uppercase">
                 {priority}
             </span>
         );
@@ -702,12 +703,12 @@ const ProjectDetailsScreen = () => {
             toast.success('Liderança transferida com sucesso!');
             setIsTransferModalOpen(false);
             // Reload to reflect changes (permissions, etc)
-            window.location.reload(); 
+            window.location.reload();
         } catch (err: any) {
-             toast.error(err.response?.data?.message || 'Erro ao transferir liderança.');
+            toast.error(err.response?.data?.message || 'Erro ao transferir liderança.');
         }
     };
-    
+
     return (
         <div className="flex-1 flex flex-col relative h-full">
             <div className="absolute inset-0 z-0 bg-network-pattern opacity-30 pointer-events-none"></div>
@@ -739,12 +740,12 @@ const ProjectDetailsScreen = () => {
                             <div className="flex items-center gap-2">
                                 <h1 className={`${isHeaderMinimized ? 'text-base truncate max-w-[200px]' : 'text-xl'} transition-all duration-300 font-display font-extrabold text-secondary dark:text-white lg:max-w-none`}>{project.title}</h1>
                                 {!isHeaderMinimized && (
-                                    <span className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-green-200 dark:border-green-800">
-                                        {project.status}
+                                    <span className={`${statusStyles[project.status as keyof typeof statusStyles] || 'bg-gray-100 text-gray-700'} px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-black/5 dark:border-white/5`}>
+                                        {statusLabels[project.status as keyof typeof statusLabels] || project.status}
                                     </span>
                                 )}
                                 {project.type && !isHeaderMinimized && (
-                                     <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-purple-200 dark:border-purple-800">
+                                    <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-purple-200 dark:border-purple-800">
                                         {project.type}
                                     </span>
                                 )}
@@ -880,7 +881,7 @@ const ProjectDetailsScreen = () => {
                                 )}
                             </>
                         )}
-                        
+
                         {/* Transfer Leadership - Only for Leader */}
                         {(user && (project?.leaderId === user.id || project?.leader?.id === user.id)) && (
                             <button
@@ -1056,7 +1057,7 @@ const ProjectDetailsScreen = () => {
                                 ref={provided.innerRef}
                                 className="h-full flex gap-6 min-w-max"
                             >
-                            {/* columns list */}
+                                {/* columns list */}
                                 {displayedColumns && displayedColumns.map((column: any, index: number) => {
                                     const styles = getColumnStyles(column);
                                     return (
@@ -1142,12 +1143,12 @@ const ProjectDetailsScreen = () => {
                                                                             ))}
                                                                         </div>
                                                                     )}
-                                                                    
+
                                                                     {/* Overlay transparente para fechar ao clicar fora (opcional, mas recomendado) */}
                                                                     {pickingColorColumnId === column.id && (
-                                                                        <div 
-                                                                            className="fixed inset-0 z-40 bg-transparent" 
-                                                                            onClick={(e) => { e.stopPropagation(); setPickingColorColumnId(null); }} 
+                                                                        <div
+                                                                            className="fixed inset-0 z-40 bg-transparent"
+                                                                            onClick={(e) => { e.stopPropagation(); setPickingColorColumnId(null); }}
                                                                         />
                                                                     )}
                                                                 </div>
@@ -1178,20 +1179,20 @@ const ProjectDetailsScreen = () => {
                                                                                 }}
                                                                             >
                                                                                 <div className="flex items-center gap-2 mb-2 justify-between">
-                                                    {task.createdBy && (
-                                                        <div className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity" title={`Criado por: ${task.createdBy.name}`}>
-                                                            <img 
-                                                                src={task.createdBy.avatarUrl || `https://ui-avatars.com/api/?name=${task.createdBy.name}&background=random`} 
-                                                                alt={task.createdBy.name}
-                                                                className="w-4 h-4 rounded-full"
-                                                            />
-                                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium hidden group-hover:block transition-all">Criado por: {task.createdBy.name}</span>
-                                                        </div>
-                                                    )}
-                                                    <div className="flex items-center gap-2">
-                                                        {getPriorityBadge(task.priority)}
-                                                    </div>
-                                                </div>
+                                                                                    {task.createdBy && (
+                                                                                        <div className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity" title={`Criado por: ${task.createdBy.name}`}>
+                                                                                            <img
+                                                                                                src={task.createdBy.avatarUrl || `https://ui-avatars.com/api/?name=${task.createdBy.name}&background=random`}
+                                                                                                alt={task.createdBy.name}
+                                                                                                className="w-4 h-4 rounded-full"
+                                                                                            />
+                                                                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium hidden group-hover:block transition-all">Criado por: {task.createdBy.name}</span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        {getPriorityBadge(task.priority)}
+                                                                                    </div>
+                                                                                </div>
                                                                                 <h4 className={`font-bold text-secondary dark:text-gray-100 text-sm mb-3 ${column.status === 'done' ? 'line-through text-gray-400 dark:text-gray-500' : ''}`}>
                                                                                     {task.title}
                                                                                 </h4>
@@ -1291,12 +1292,12 @@ const ProjectDetailsScreen = () => {
                                                                     </div>
                                                                 ) : (
                                                                     isProjectMember && (
-                                                                    <button
-                                                                        onClick={() => handleStartInlineCreate(column.id)}
-                                                                        className="w-full py-2 text-sm text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center gap-1 font-medium border border-dashed border-gray-300 dark:border-gray-700"
-                                                                    >
-                                                                        <span className="material-icons text-sm">add</span> Adicionar cartão
-                                                                    </button>
+                                                                        <button
+                                                                            onClick={() => handleStartInlineCreate(column.id)}
+                                                                            className="w-full py-2 text-sm text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center gap-1 font-medium border border-dashed border-gray-300 dark:border-gray-700"
+                                                                        >
+                                                                            <span className="material-icons text-sm">add</span> Adicionar cartão
+                                                                        </button>
                                                                     )
                                                                 )}
                                                             </div>
@@ -1313,15 +1314,15 @@ const ProjectDetailsScreen = () => {
 
                                 {/* Add Column Button - Only for members */}
                                 {isProjectMember && (
-                                <div className="w-[320px] flex-shrink-0 flex items-start">
-                                    <button
-                                        onClick={handleAddColumn}
-                                        className="w-full py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl flex items-center justify-center gap-2 text-gray-500 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all font-bold"
-                                    >
-                                        <span className="material-icons">add</span>
-                                        Nova Coluna
-                                    </button>
-                                </div>
+                                    <div className="w-[320px] flex-shrink-0 flex items-start">
+                                        <button
+                                            onClick={handleAddColumn}
+                                            className="w-full py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl flex items-center justify-center gap-2 text-gray-500 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all font-bold"
+                                        >
+                                            <span className="material-icons">add</span>
+                                            Nova Coluna
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -1392,23 +1393,23 @@ const ProjectDetailsScreen = () => {
                 cancelText="Cancelar"
                 type="danger"
             />
-            
+
             {/* Modal Transferência de Liderança */}
-             {isTransferModalOpen && (
+            {isTransferModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
                     <div className="bg-white dark:bg-surface-dark w-full max-w-md rounded-2xl p-6 shadow-2xl border border-gray-100 dark:border-gray-800 animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
                                 Transferir Liderança
                             </h2>
-                            <button 
+                            <button
                                 onClick={() => setIsTransferModalOpen(false)}
                                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                             >
                                 <span className="material-icons">close</span>
                             </button>
                         </div>
-                        
+
                         <div className="p-4 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30 rounded-xl mb-6">
                             <div className="flex gap-3">
                                 <span className="material-icons text-orange-500 shrink-0">warning</span>

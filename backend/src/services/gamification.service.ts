@@ -1,5 +1,5 @@
 import { Prisma, User, Tier, ActivityType, TaskStatus } from '@prisma/client';
-import { updateConnectaPoints, updateUserTier, updateStreak, updateLastActivity } from '../repositories/user.repository';
+import { updateFamenePoints, updateUserTier, updateStreak, updateLastActivity } from '../repositories/user.repository';
 import { createActivityLog } from '../repositories/activityLog.repository';
 import { findTierByPoints, findAllTiers } from '../repositories/tier.repository';
 import { checkAndAwardAchievements } from './achievement.service'; // Import the new service
@@ -8,19 +8,19 @@ import prisma from '../utils/prisma';
 // Points per task difficulty are defined in task.service.ts, but can be centralized here if needed.
 
 export const addPointsForTaskCompletion = async (userId: string, points: number, taskId: string, transaction: Prisma.TransactionClient) => {
-  const updatedUser = await updateConnectaPoints(userId, points, transaction);
+  const updatedUser = await updateFamenePoints(userId, points, transaction);
   await createActivityLog({
     user: { connect: { id: userId } },
     type: ActivityType.TASK_COMPLETED,
-    description: `Completed a task and earned ${points} Connecta Points.`,
+    description: `Completed a task and earned ${points} Famene Points.`,
     pointsChange: points,
   }, transaction);
   await recalcUserTier(userId, transaction);
-  
+
   // Non-blocking achievement check
   console.log(`[TRIGGER] Points added for task, checking achievements for ${userId} (Async)`);
   checkAndAwardAchievements(userId).catch(err => console.error(err));
-  
+
   return updatedUser;
 };
 
@@ -29,21 +29,21 @@ export const removePointsForTaskUncompletion = async (userId: string, points: nu
   const user = await transaction.user.findUnique({ where: { id: userId } });
   if (!user) return;
 
-  const newPoints = Math.max(0, user.connectaPoints - points);
+  const newPoints = Math.max(0, user.famenePoints - points);
   const updatedUser = await transaction.user.update({
     where: { id: userId },
-    data: { connectaPoints: newPoints }
+    data: { famenePoints: newPoints }
   });
 
   await createActivityLog({
     user: { connect: { id: userId } },
     type: ActivityType.TASK_COMPLETED, // Reusing same type, description explains
-    description: `Task moved from completion column. Lost ${points} Connecta Points.`,
+    description: `Task moved from completion column. Lost ${points} Famene Points.`,
     pointsChange: -points,
   }, transaction);
 
   await recalcUserTier(userId, transaction);
-  
+
   return updatedUser;
 };
 
@@ -52,21 +52,21 @@ export const removePointsForTaskDeletion = async (userId: string, points: number
   const user = await transaction.user.findUnique({ where: { id: userId } });
   if (!user) return;
 
-  const newPoints = Math.max(0, user.connectaPoints - points);
+  const newPoints = Math.max(0, user.famenePoints - points);
   const updatedUser = await transaction.user.update({
     where: { id: userId },
-    data: { connectaPoints: newPoints }
+    data: { famenePoints: newPoints }
   });
 
   await createActivityLog({
     user: { connect: { id: userId } },
     type: ActivityType.TASK_DELETED,
-    description: `Task deleted. Lost ${points} Connecta Points gained from creation.`,
+    description: `Task deleted. Lost ${points} Famene Points gained from creation.`,
     pointsChange: -points,
   }, transaction);
 
   await recalcUserTier(userId, transaction);
-  
+
   return updatedUser;
 };
 
@@ -81,7 +81,7 @@ export const recalcUserTier = async (userId: string, transaction: Prisma.Transac
   }
 
   const currentTier = user.tier;
-  const newTier = await findTierByPoints(user.connectaPoints);
+  const newTier = await findTierByPoints(user.famenePoints);
 
   if (newTier && newTier.id !== currentTier.id) {
     await updateUserTier(userId, newTier.id, transaction);
@@ -90,10 +90,10 @@ export const recalcUserTier = async (userId: string, transaction: Prisma.Transac
       type: ActivityType.TIER_ACHIEVED,
       description: `Achieved new tier: ${newTier.name}!`,
     }, transaction);
-    
+
     // Non-blocking achievement check
     checkAndAwardAchievements(userId).catch(err => console.error(err));
-    
+
     return newTier;
   }
   return currentTier;
@@ -142,7 +142,7 @@ export const updateStreakForUser = async (userId: string, transaction: Prisma.Tr
     description: `Streak updated: Current ${newStreakCurrent}, Best ${newStreakBest}.`,
   }, transaction);
   await updateLastActivity(userId, transaction);
-  
+
   // Non-blocking achievement check
   checkAndAwardAchievements(userId).catch(err => console.error(err));
 };

@@ -108,7 +108,7 @@ const DashboardScreen = () => {
                 <span>Nível: <span className="text-secondary dark:text-white">{user.tier}</span></span>
               </div>
               <div className="h-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-primary to-sky-500 rounded-full shadow-[0_0_10px_rgba(29,78,216,0.5)]" style={{ width: `${user.tierProgress}%` }}></div>
+                <div className="h-full bg-gradient-to-r from-primary to-yellow-600 rounded-full shadow-[0_0_10px_rgba(250,204,21,0.5)]" style={{ width: `${user.tierProgress}%` }}></div>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 text-right mt-1">Faltam {user.nextTierPoints} 🪙 para o próximo nível</p>
             </div>
@@ -125,8 +125,8 @@ const DashboardScreen = () => {
                 <Folder className="text-primary" size={24} />
                 Projetos que você participa
               </h2>
-              <Link 
-                to="/projects" 
+              <Link
+                to="/projects"
                 className="hidden sm:inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary/10 text-primary border border-primary/20 rounded-xl text-sm font-bold hover:bg-primary hover:text-white transition-all duration-300 group shadow-sm active:scale-95 min-w-[120px]"
               >
                 Ver todos
@@ -175,7 +175,7 @@ const DashboardScreen = () => {
                       )}
                       <span className="text-[11px] text-gray-500 dark:text-gray-400">Líder: <span className="font-semibold text-gray-700 dark:text-gray-200">{project.leader?.name || 'Desconhecido'}</span></span>
                     </div>
-                    
+
                     <div className="mt-auto pt-2 border-t border-gray-100 dark:border-gray-700">
                       <button
                         onClick={(e) => { e.stopPropagation(); navigate(`/project-details/${project.id}`); }}
@@ -190,8 +190,8 @@ const DashboardScreen = () => {
             </div>
             {/* Mobile View All Button */}
             <div className="mt-6 sm:hidden">
-              <Link 
-                to="/projects" 
+              <Link
+                to="/projects"
                 className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-primary/10 text-primary border border-primary/20 rounded-xl text-sm font-bold hover:bg-primary hover:text-white transition-all duration-300 group shadow-sm active:scale-95"
               >
                 Ver todos
@@ -214,11 +214,11 @@ const DashboardScreen = () => {
                       {(() => {
                         const desc = activity.description;
                         const achievementMatch = desc.match(/^Earned achievement: "(.*)"!$/);
-                        
+
                         if (achievementMatch) {
                           return (
                             <span>
-                              Você ganhou a conquista <span className="font-bold text-blue-600 dark:text-blue-400">"{achievementMatch[1]}"</span> 🏆
+                              Você ganhou a conquista <span className="font-bold text-primary dark:text-primary">"{achievementMatch[1]}"</span> 🏆
                             </span>
                           );
                         }
@@ -238,21 +238,21 @@ const DashboardScreen = () => {
                         if (joinedProjectMatch) {
                           return `Entrou no projeto "${joinedProjectMatch[1]}".`;
                         }
-                        
+
                         if (desc.startsWith('Completed a task and earned')) {
-                           const points = desc.match(/earned (\d+)/)?.[1];
-                           return `Concluiu uma tarefa e ganhou ${points || ''} pontos.`;
+                          const points = desc.match(/earned (\d+)/)?.[1];
+                          return `Concluiu uma tarefa e ganhou ${points || ''} pontos.`;
                         }
-                        
+
                         if (desc.startsWith('Achieved new tier:')) {
-                           const tier = desc.match(/tier: (.*)!/)?.[1];
-                           return `Alcançou o nível ${tier || ''}! 🎉`;
+                          const tier = desc.match(/tier: (.*)!/)?.[1];
+                          return `Alcançou o nível ${tier || ''}! 🎉`;
                         }
-                        
+
                         if (desc.startsWith('Streak updated:')) {
-                           return 'Sequência diária atualizada!';
+                          return 'Sequência diária atualizada!';
                         }
-                        
+
                         return desc;
                       })()}
                     </p>
@@ -263,7 +263,7 @@ const DashboardScreen = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-primary to-sky-500 rounded-2xl p-6 text-center text-white shadow-lg shadow-primary/30">
+          <div className="bg-gradient-to-r from-primary to-yellow-600 rounded-2xl p-6 text-center text-white shadow-lg shadow-primary/30">
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
               <Store className="text-white" size={24} />
             </div>

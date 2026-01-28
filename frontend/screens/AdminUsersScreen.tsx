@@ -75,7 +75,7 @@ const AdminUsersScreen = () => {
     // Edit
     const handleEditPoints = (user: any) => {
         setEditingUser(user);
-        setNewPoints(user.connectaPoints);
+        setNewPoints(user.FamenePoints);
     };
 
     const handleSavePoints = async () => {
@@ -170,7 +170,7 @@ const AdminUsersScreen = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 font-mono font-bold">
-                                            {user.connectaPoints}
+                                            {user.FamenePoints}
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <button
@@ -293,7 +293,7 @@ const AdminUsersScreen = () => {
 
                         <div className="mb-6">
                             <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Usuário: <span className="font-bold text-gray-900 dark:text-white">{editingUser.name}</span></p>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total de Pontos (Connecta Points)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total de Pontos (Famene Points)</label>
                             <input
                                 type="number"
                                 value={newPoints}

@@ -29,7 +29,7 @@ export const getDashboardStats = async (userId: string) => {
   if (!user) throw { statusCode: 404, message: 'User not found' };
 
   // Calculate some stats
-  const totalXP = user.connectaPoints;
+  const totalXP = user.famenePoints;
   const currentLevel = user.tier.name;
   const nextTier = await prisma.tier.findFirst({
         where: { minPoints: { gt: user.tier.minPoints } },
@@ -89,3 +89,4 @@ export const getDashboardStats = async (userId: string) => {
     recentActivity
   };
 };
+

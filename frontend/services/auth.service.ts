@@ -6,7 +6,7 @@ export interface LoginResponse {
     name: string;
     email: string;
     role: string;
-    connectaPoints: number;
+    famenePoints: number;
     tier?: string;
     avatarColor?: string;
     course?: string;

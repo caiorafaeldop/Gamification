@@ -216,7 +216,7 @@ const NewProjectScreen = () => {
                   className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary text-secondary dark:text-white font-bold"
                   placeholder="1000"
                 />
-                <p className="text-xs text-gray-400 mt-1">Connecta Points (🪙) distribuídos à equipe ao finalizar o projeto.</p>
+                <p className="text-xs text-gray-400 mt-1">Famene Points (🪙) distribuídos à equipe ao finalizar o projeto.</p>
               </div>
 
               <div>

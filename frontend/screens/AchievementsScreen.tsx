@@ -182,8 +182,8 @@ const AchievementsScreen = () => {
                 <Flame size={24} />
               </div>
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Connecta Points</p>
-                <p className="text-2xl font-bold text-secondary dark:text-white">{user?.connectaPoints || 0} 🪙</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Famene Points</p>
+                <p className="text-2xl font-bold text-secondary dark:text-white">{user?.FamenePoints || 0} 🪙</p>
               </div>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Você está no top <strong className="text-green-500">5%</strong> dos alunos esta semana! Continue assim.</p>

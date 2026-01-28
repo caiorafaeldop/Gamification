@@ -92,6 +92,7 @@ const AdminProjectsScreen = () => {
                     <option value="active">Ativos</option>
                     <option value="completed">Concluídos</option>
                     <option value="archived">Arquivados</option>
+                    <option value="planning">Planejamento</option>
                 </select>
             </div>
 
@@ -177,6 +178,7 @@ const AdminProjectsScreen = () => {
                                     <option value="active">Ativo</option>
                                     <option value="archived">Arquivado</option>
                                     <option value="completed">Concluído</option>
+                                    <option value="planning">Planejamento</option>
                                 </select>
                             </div>
 

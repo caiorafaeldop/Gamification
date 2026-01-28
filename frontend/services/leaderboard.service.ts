@@ -5,7 +5,7 @@ export interface LeaderboardEntry {
   name: string;
   avatarColor?: string;
   avatarUrl?: string;
-  connectaPoints: number;
+  famenePoints: number;
   rank?: number;
   tier?: {
     name: string;
@@ -15,7 +15,7 @@ export interface LeaderboardEntry {
 export const getLeaderboard = async (period: string = 'all', limit: number = 100) => {
   // Map 'week' (from UI filter) to 'weekly' (backend expectation)
   const backendPeriod = period === 'week' ? 'weekly' : period;
-  
+
   const response = await api.get(`/leaderboard?period=${backendPeriod}&limit=${limit}`);
   return response.data.users ? response.data.users : response.data;
 };

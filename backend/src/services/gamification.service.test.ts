@@ -50,17 +50,17 @@ describe('Gamification Service', () => {
     it('should add points, log activity, and recalculate tier', async () => {
       const initialUser = {
         id: userId,
-        connectaPoints: 50,
+        famenePoints: 50,
         tierId: noviceTierId,
         tier: { id: noviceTierId, name: 'Novice', minPoints: 0, order: 1, icon: '👋' },
       };
       const updatedUser = {
         ...initialUser,
-        connectaPoints: 70,
+        famenePoints: 70,
       };
 
       mockPrisma.user.findUnique.mockResolvedValueOnce(initialUser); // For recalcUserTier initial fetch
-      mockPrisma.user.update.mockResolvedValueOnce(updatedUser); // For updateConnectaPoints
+      mockPrisma.user.update.mockResolvedValueOnce(updatedUser); // For updatefamenePoints
       mockPrisma.user.findUnique.mockResolvedValueOnce(updatedUser); // For recalcUserTier after points update
       mockPrisma.user.update.mockResolvedValueOnce(updatedUser); // For updateUserTier (if tier changes)
 
@@ -68,13 +68,13 @@ describe('Gamification Service', () => {
 
       expect(mockPrisma.user.update).toHaveBeenCalledWith({
         where: { id: userId },
-        data: { connectaPoints: { increment: 20 } },
+        data: { famenePoints: { increment: 20 } },
       });
       expect(mockPrisma.activityLog.create).toHaveBeenCalledWith({
         data: {
           userId: userId,
           type: ActivityType.TASK_COMPLETED,
-          description: 'Completed a task and earned 20 Connecta Points.',
+          description: 'Completed a task and earned 20 FAMENE Points.',
           pointsChange: 20,
         },
       });
@@ -88,20 +88,20 @@ describe('Gamification Service', () => {
     it('should update tier if points cross a threshold', async () => {
       const initialUser = {
         id: userId,
-        connectaPoints: 90,
+        famenePoints: 90,
         tierId: noviceTierId,
         tier: { id: noviceTierId, name: 'Novice', minPoints: 0, order: 1, icon: '👋' },
       };
       const updatedUser = {
         ...initialUser,
-        connectaPoints: 110,
+        famenePoints: 110,
         tierId: aspirantTierId,
         tier: { id: aspirantTierId, name: 'Aspirant', minPoints: 100, order: 2, icon: '🌱' },
       };
 
       mockPrisma.user.findUnique.mockResolvedValueOnce(initialUser); // For recalcUserTier initial fetch
-      mockPrisma.user.update.mockResolvedValueOnce({ ...initialUser, connectaPoints: 110 }); // For updateConnectaPoints
-      mockPrisma.user.findUnique.mockResolvedValueOnce({ ...initialUser, connectaPoints: 110 }); // For recalcUserTier after points update
+      mockPrisma.user.update.mockResolvedValueOnce({ ...initialUser, famenePoints: 110 }); // For updatefamenePoints
+      mockPrisma.user.findUnique.mockResolvedValueOnce({ ...initialUser, famenePoints: 110 }); // For recalcUserTier after points update
       mockPrisma.user.update.mockResolvedValueOnce(updatedUser); // For updateUserTier
       mockPrisma.tier.findMany.mockResolvedValue([
         { id: noviceTierId, name: 'Novice', minPoints: 0, order: 1, icon: '👋' },
@@ -128,7 +128,7 @@ describe('Gamification Service', () => {
     it('should update user tier if points exceed current tier minPoints', async () => {
       const user = {
         id: userId,
-        connectaPoints: 150,
+        famenePoints: 150,
         tierId: noviceTierId,
         tier: { id: noviceTierId, name: 'Novice', minPoints: 0, order: 1, icon: '👋' },
       };
@@ -158,7 +158,7 @@ describe('Gamification Service', () => {
     it('should not update tier if points are within current tier range', async () => {
       const user = {
         id: userId,
-        connectaPoints: 50,
+        famenePoints: 50,
         tierId: noviceTierId,
         tier: { id: noviceTierId, name: 'Novice', minPoints: 0, order: 1, icon: '👋' },
       };
@@ -292,3 +292,5 @@ describe('Gamification Service', () => {
     });
   });
 });
+
+

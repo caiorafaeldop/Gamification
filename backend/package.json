@@ -1,7 +1,7 @@
 {
-  "name": "connecta-ci-backend",
+  "name": "famene-enamed-backend",
   "version": "1.0.0",
-  "description": "Backend for Connecta CI, a gamified team-management system.",
+  "description": "Backend for FAMENE ENAMED, a gamified academic platform.",
   "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",

@@ -118,7 +118,7 @@ const NewEventScreen = () => {
                         <p className="text-gray-600 dark:text-gray-300">
                             {isEditing
                                 ? 'Atualize as informações do evento.'
-                                : 'Organize reuniões, workshops e eventos para a comunidade Connecta.'
+                                : 'Organize reuniões, workshops e eventos para a comunidade Famene.'
                             }
                         </p>
                     </header>
@@ -264,7 +264,7 @@ const NewEventScreen = () => {
                             <Calendar size={18} /> Sobre Eventos
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
-                            Eventos aparecem na Agenda Connecta e são visíveis para toda a comunidade.
+                            Eventos aparecem na Agenda Famene e são visíveis para toda a comunidade.
                         </p>
                         <div className="h-px bg-primary/10 my-4"></div>
                         <div className="space-y-2">

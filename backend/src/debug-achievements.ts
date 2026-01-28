@@ -18,7 +18,7 @@ async function main() {
     for (const user of users as any[]) {
         console.log(`User: ${user.name} (${user.id})`);
         console.log(`  - Role: ${user.role}`);
-        console.log(`  - Points: ${user.connectaPoints}`);
+        console.log(`  - Points: ${user.famenePoints}`);
         console.log(`  - Unlocked Achievements (${user.userAchievements.length}):`);
         user.userAchievements.forEach((ua: any) => {
             console.log(`    * [${ua.achievement.id}] ${ua.achievement.name} (Earned: ${ua.earnedAt})`);
@@ -40,3 +40,4 @@ main()
     .finally(async () => {
         await prisma.$disconnect();
     });
+

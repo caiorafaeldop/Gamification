@@ -277,7 +277,7 @@ const NewEventModal = ({ isOpen, onClose, eventId, onSuccess }: NewEventModalPro
                                     <Calendar size={18} /> Sobre Eventos
                                 </h3>
                                 <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
-                                    Eventos aparecem na Agenda Connecta e são visíveis para toda a comunidade.
+                                    Eventos aparecem na Agenda Famene e são visíveis para toda a comunidade.
                                 </p>
                                 <div className="h-px bg-primary/10 my-4"></div>
                                 <div className="space-y-2">

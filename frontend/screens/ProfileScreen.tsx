@@ -244,12 +244,12 @@ const ProfileScreen = () => {
                         <div className="mt-1 mb-4 max-w-sm mx-auto md:mx-0">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[12px] font-bold uppercase tracking-wider text-slate-400 mb-1 gap-1 sm:gap-0">
                                 <span>Progresso para Nível{' '}{(user?.level || 1) + 1}:</span>
-                                <span className="text-primary text-xs">{user?.connectaPoints || 0} / {((user?.level || 1) * 1000)} 🪙</span>
+                                <span className="text-primary text-xs">{user?.FamenePoints || 0} / {((user?.level || 1) * 1000)} 🪙</span>
                             </div>
                             <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50 shadow-inner">
                                 <div
-                                    className="bg-gradient-to-r from-primary to-sky-400 h-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(59,130,246,0.3)]"
-                                    style={{ width: `${Math.min(((user?.connectaPoints || 0) / ((user?.level || 1) * 1000)) * 100, 100)}%` }}
+                                    className="bg-gradient-to-r from-primary to-yellow-600 h-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(59,130,246,0.3)]"
+                                    style={{ width: `${Math.min(((user?.FamenePoints || 0) / ((user?.level || 1) * 1000)) * 100, 100)}%` }}
                                 ></div>
                             </div>
                         </div>
@@ -276,7 +276,7 @@ const ProfileScreen = () => {
                     <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
                         <button
                             onClick={() => setIsEditing(!isEditing)}
-                            className="bg-primary hover:bg-sky-600 text-white px-5 py-2.5 rounded-lg shadow-lg shadow-primary/30 flex items-center justify-center gap-2 font-bold transition-all transform hover:-translate-y-0.5"
+                            className="bg-primary hover:bg-secondary text-white px-5 py-2.5 rounded-lg shadow-lg shadow-primary/30 flex items-center justify-center gap-2 font-bold transition-all transform hover:-translate-y-0.5"
                         >
                             {isEditing ? <X size={18} /> : <Edit3 size={18} />}
                             {isEditing ? 'Cancelar' : 'Editar Perfil'}
@@ -410,7 +410,7 @@ const ProfileScreen = () => {
                             </div>
                             <div>
                                 <p className="text-sm text-slate-500 dark:text-slate-400">🪙 Atual</p>
-                                <p className="text-xl font-bold text-slate-900 dark:text-white">{user?.connectaPoints || 0} 🪙</p>
+                                <p className="text-xl font-bold text-slate-900 dark:text-white">{user?.FamenePoints || 0} 🪙</p>
                             </div>
                         </div>
 
@@ -460,7 +460,7 @@ const ProfileScreen = () => {
                                                     {membership.project.description || 'Nenhuma descrição fornecida.'}
                                                 </p>
                                                 <div className="mt-auto">
-                                                    <button className="w-full py-2.5 px-4 rounded-lg bg-sky-50 dark:bg-slate-900 text-primary dark:text-primary font-bold text-sm hover:bg-sky-100 dark:hover:bg-slate-950 transition-colors border border-transparent dark:border-slate-800">
+                                                    <button className="w-full py-2.5 px-4 rounded-lg bg-secondary/10 dark:bg-secondary/40 text-secondary dark:text-primary hover:bg-secondary/20 dark:hover:bg-slate-950 transition-colors border border-transparent dark:border-slate-800">
                                                         Continuar
                                                     </button>
                                                 </div>

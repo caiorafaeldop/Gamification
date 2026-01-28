@@ -132,7 +132,7 @@ export const updateProjectDetails = async (id: string, data: UpdateProjectInput,
           // Ajustar pontuação do usuário diretamente
           await tx.user.update({
             where: { id: userId },
-            data: { connectaPoints: { increment: pointsDifference } }
+            data: { famenePoints: { increment: pointsDifference } }
           });
           console.log(`[RETROACTIVE] Adjusted ${pointsDifference} points for user ${userId} (task ${task.id})`);
         }
@@ -331,3 +331,4 @@ export const transferProjectOwnership = async (projectId: string, newLeaderId: s
     return updatedProject;
   });
 };
+

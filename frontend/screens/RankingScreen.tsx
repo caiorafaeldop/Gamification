@@ -152,7 +152,7 @@ const RankingScreen = () => {
                     <div className="mt-3 text-center">
                       <h3 className="text-xs sm:text-sm font-display font-bold text-secondary dark:text-white truncate max-w-[80px] sm:max-w-[120px]">{top3[1].name}</h3>
                       <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-white/10 px-2 sm:px-3 py-0.5 rounded-full mt-1">
-                        <span className="text-[10px] sm:text-xs font-bold text-primary">{Math.max(0, top3[1].connectaPoints || top3[1].points || 0)}</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-primary">{Math.max(0, top3[1].FamenePoints || top3[1].points || 0)}</span>
                       </div>
                     </div>
                   </div>
@@ -177,7 +177,7 @@ const RankingScreen = () => {
                     <div className="mt-4 text-center">
                       <h3 className="text-sm sm:text-base font-display font-bold text-secondary dark:text-white truncate max-w-[100px] sm:max-w-[150px]">{top3[0].name}</h3>
                       <div className="inline-flex items-center gap-1 bg-yellow-400/10 border border-yellow-400/20 px-3 sm:px-4 py-1 rounded-full mt-1">
-                        <span className="text-xs sm:text-sm font-bold text-yellow-600 dark:text-yellow-400">{Math.max(0, top3[0].connectaPoints || top3[0].points || 0)}</span>
+                        <span className="text-xs sm:text-sm font-bold text-yellow-600 dark:text-yellow-400">{Math.max(0, top3[0].FamenePoints || top3[0].points || 0)}</span>
                       </div>
                     </div>
                   </div>
@@ -187,21 +187,21 @@ const RankingScreen = () => {
                 {top3[2] && (
                   <div className="flex flex-col items-center flex-1">
                     <div className="relative">
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-sky-300 p-0.5 bg-surface-light dark:bg-surface-dark shadow-xl overflow-hidden flex items-center justify-center">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-secondary/30 p-0.5 bg-surface-light dark:bg-surface-dark shadow-xl overflow-hidden flex items-center justify-center">
                         {top3[2].avatarUrl ? (
                           <img src={top3[2].avatarUrl} alt={top3[2].name} className="w-full h-full object-cover rounded-full" />
                         ) : (
-                          <div className="w-full h-full rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sky-400">
+                          <div className="w-full h-full rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-secondary">
                             <Trophy size={24} className="sm:size-32" />
                           </div>
                         )}
                       </div>
-                      <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-sky-300 text-sky-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md border border-white">#3</div>
+                      <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-secondary text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md border border-white">#3</div>
                     </div>
                     <div className="mt-3 text-center">
                       <h3 className="text-xs sm:text-sm font-display font-bold text-secondary dark:text-white truncate max-w-[80px] sm:max-w-[120px]">{top3[2].name}</h3>
                       <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-white/10 px-2 sm:px-3 py-0.5 rounded-full mt-1">
-                        <span className="text-[10px] sm:text-xs font-bold text-primary">{Math.max(0, top3[2].connectaPoints || top3[2].points || 0)}</span>
+                        <span className="text-[10px] sm:text-xs font-bold text-primary">{Math.max(0, top3[2].FamenePoints || top3[2].points || 0)}</span>
                       </div>
                     </div>
                   </div>
@@ -251,7 +251,7 @@ const RankingScreen = () => {
                         {student.tier?.name || 'Iniciante'}
                       </div>
                       <div className="col-span-3 sm:col-span-2 text-right">
-                        <span className="font-black text-primary text-sm sm:text-base">{Math.max(0, student.connectaPoints || student.points || 0)}</span>
+                        <span className="font-black text-primary text-sm sm:text-base">{Math.max(0, student.FamenePoints || student.points || 0)}</span>
                         <span className="block text-[8px] font-bold text-gray-400 sm:hidden">🪙</span>
                       </div>
                     </div>
@@ -275,7 +275,7 @@ const RankingScreen = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] font-bold uppercase tracking-wider opacity-80">Minha Pontuação</p>
-                    <p className="text-xl font-black">{Math.max(0, currentUserRankData.connectaPoints || currentUserRankData.points || 0)} 🪙</p>
+                    <p className="text-xl font-black">{Math.max(0, currentUserRankData.FamenePoints || currentUserRankData.points || 0)} 🪙</p>
                   </div>
                 </div>
               </div>

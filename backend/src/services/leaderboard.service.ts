@@ -85,7 +85,7 @@ export const getLeaderboard = async (period: string = 'all', page: number, limit
       email: true,
       avatarColor: true,
       avatarUrl: true,
-      // connectaPoints: true, // This is TOTAL points. We want PERIOD points.
+      // famenePoints: true, // This is TOTAL points. We want PERIOD points.
       streakCurrent: true,
       streakBest: true,
       tier: { select: { name: true, icon: true } },
@@ -99,7 +99,7 @@ export const getLeaderboard = async (period: string = 'all', page: number, limit
     return {
       ...user,
       points: Math.max(0, rank._sum.pointsChange || 0), // Explicitly return period points
-      connectaPoints: Math.max(0, rank._sum.pointsChange || 0), // Override for UI compatibility if needed, or better use 'points'
+      famenePoints: Math.max(0, rank._sum.pointsChange || 0), // Override for UI compatibility if needed, or better use 'points'
     };
   }).filter(u => u !== null)
   .sort((a, b) => (b!.points || 0) - (a!.points || 0));
@@ -113,7 +113,7 @@ const getGlobalLeaderboard = async (page: number, limit: number) => {
     skip,
     take: limit,
     orderBy: [
-      { connectaPoints: 'desc' },
+      { famenePoints: 'desc' },
       { name: 'asc' }
     ],
     where: { isActive: true },
@@ -123,7 +123,7 @@ const getGlobalLeaderboard = async (page: number, limit: number) => {
       email: true,
       avatarColor: true,
       avatarUrl: true,
-      connectaPoints: true,
+      famenePoints: true,
       streakCurrent: true,
       streakBest: true,
       tier: { select: { name: true, icon: true } },
@@ -141,7 +141,7 @@ export const getProjectLeaderboard = async (projectId: string, page: number, lim
       members: {
         skip,
         take: limit,
-        orderBy: { user: { connectaPoints: 'desc' } },
+        orderBy: { user: { famenePoints: 'desc' } },
         where: { user: { isActive: true } },
         include: {
           user: {
@@ -151,7 +151,7 @@ export const getProjectLeaderboard = async (projectId: string, page: number, lim
               email: true,
               avatarColor: true,
               avatarUrl: true,
-              connectaPoints: true,
+              famenePoints: true,
               streakCurrent: true,
               streakBest: true,
               tier: { select: { name: true, icon: true } },
@@ -171,3 +171,4 @@ export const getProjectLeaderboard = async (projectId: string, page: number, lim
 
   return { projectName: project.title, members, total: totalMembers, page, limit };
 };
+

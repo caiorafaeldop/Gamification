@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 const ProjectDetailsScreenMobile = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { 
+    const {
         project, loadingProject, loadingKanban, columns, user,
         isNewTaskModalOpen, setIsNewTaskModalOpen,
         selectedTask, setSelectedTask, isTaskDetailsOpen, setIsTaskDetailsOpen,
@@ -25,7 +25,7 @@ const ProjectDetailsScreenMobile = () => {
 
     const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    
+
     const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
     const longPressTimer = useRef<any>(null);
 
@@ -47,9 +47,9 @@ const ProjectDetailsScreenMobile = () => {
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-           if (activeDropdownId && !(event.target as Element).closest('.task-dropdown-trigger') && !(event.target as Element).closest('.task-dropdown-menu')) {
-               setActiveDropdownId(null);
-           }
+            if (activeDropdownId && !(event.target as Element).closest('.task-dropdown-trigger') && !(event.target as Element).closest('.task-dropdown-menu')) {
+                setActiveDropdownId(null);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -67,10 +67,10 @@ const ProjectDetailsScreenMobile = () => {
             const theme = COLUMN_COLORS[column.color as keyof typeof COLUMN_COLORS];
             return { color: theme.text, bg: theme.bg.split(' ')[0], border: theme.border.split(' ')[0] };
         }
-        
+
         const config = [
             { keywords: ['fazer', 'todo', 'backlog'], styles: { color: "text-gray-600", bg: "bg-gray-50", border: "border-gray-200" } },
-            { keywords: ['progresso', 'fazendo', 'doing'], styles: { color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" } },
+            { keywords: ['progresso', 'fazendo', 'doing'], styles: { color: "text-secondary", bg: "bg-primary/10", border: "border-primary/20" } },
             { keywords: ['concluido', 'feito', 'done'], styles: { color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" } }
         ];
 
@@ -78,9 +78,9 @@ const ProjectDetailsScreenMobile = () => {
     };
 
     const getPriorityBadge = (priority: string) => {
-         if (!priority || priority === 'Geral') return null;
-         const map: any = { 'Baixa': 'bg-slate-100 text-slate-600', 'Média': 'bg-orange-100 text-orange-600', 'Alta': 'bg-red-100 text-red-600', 'Urgente': 'bg-red-600 text-white' };
-         return <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${map[priority] || 'bg-gray-100'}`}>{priority}</span>;
+        if (!priority || priority === 'Geral') return null;
+        const map: any = { 'Baixa': 'bg-slate-100 text-slate-600', 'Média': 'bg-orange-100 text-orange-600', 'Alta': 'bg-red-100 text-red-600', 'Urgente': 'bg-red-600 text-white' };
+        return <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${map[priority] || 'bg-gray-100'}`}>{priority}</span>;
     };
 
     if (loadingProject || loadingKanban) return (
@@ -112,9 +112,9 @@ const ProjectDetailsScreenMobile = () => {
                     <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500">
                         <Search size={20} />
                     </button>
-                    <button 
-                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                         className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500"
+                    <button
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500"
                     >
                         <MoreVertical size={20} />
                     </button>
@@ -160,8 +160,8 @@ const ProjectDetailsScreenMobile = () => {
                     </div>
                 ) : (
                     activeColumn?.tasks?.map((task: any) => (
-                        <div 
-                            key={task.id} 
+                        <div
+                            key={task.id}
                             onClick={(e) => {
                                 // Prevent opening modal if clicking dropdown or trigger
                                 if ((e.target as Element).closest('.task-dropdown-trigger') || (e.target as Element).closest('.task-dropdown-menu')) return;
@@ -174,8 +174,8 @@ const ProjectDetailsScreenMobile = () => {
                         >
                             <div className="flex justify-between items-start mb-2 relative">
                                 {getPriorityBadge(task.priority)}
-                                
-                                <button 
+
+                                <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setActiveDropdownId(activeDropdownId === task.id ? null : task.id);
@@ -199,7 +199,7 @@ const ProjectDetailsScreenMobile = () => {
                                         >
                                             <Edit size={16} /> Editar
                                         </button>
-                                        
+
                                         <div className="border-t border-gray-100 dark:border-gray-800 my-1">
                                             <div className="px-4 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Mover para</div>
                                             {columns?.filter((col: any) => col.id !== activeColumnId && col.title !== 'Arquivado').map((col: any) => (
@@ -233,7 +233,7 @@ const ProjectDetailsScreenMobile = () => {
                                     </div>
                                 )}
                             </div>
-                            
+
                             {task.pointsReward > 0 && (
                                 <div className="absolute top-4 right-12 z-0">
                                     <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
@@ -259,9 +259,9 @@ const ProjectDetailsScreenMobile = () => {
                                     )}
                                 </div>
                                 {(task.dueDate) && (
-                                     <div className="flex items-center gap-1 text-gray-400">
+                                    <div className="flex items-center gap-1 text-gray-400">
                                         <Calendar size={14} />
-                                        <span>{new Date(task.dueDate).toLocaleDateString('pt-BR', {day: '2-digit', month: 'short'})}</span>
+                                        <span>{new Date(task.dueDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                                     </div>
                                 )}
                             </div>
@@ -291,7 +291,7 @@ const ProjectDetailsScreenMobile = () => {
                     window.dispatchEvent(new Event('pointsUpdated'));
                 }}
             />
-             <TaskDetailModal
+            <TaskDetailModal
                 isOpen={isTaskDetailsOpen}
                 onClose={() => { setIsTaskDetailsOpen(false); setSelectedTask(null); }}
                 onSuccess={() => {
@@ -305,7 +305,7 @@ const ProjectDetailsScreenMobile = () => {
 
             {/* Task Action Bottom Sheet */}
 
-            
+
             <ConfirmationModal
                 isOpen={!!taskToDelete}
                 onClose={() => setTaskToDelete(null)}

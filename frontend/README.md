@@ -1,6 +1,6 @@
-# Connecta CI Frontend
+# FAMENE ENAMED Frontend
 
-Frontend for Connecta CI, a gamified team-management system.
+Frontend for FAMENE ENAMED, a gamified academic platform.
 
 ## Prerequisites
 

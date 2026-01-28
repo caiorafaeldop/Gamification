@@ -72,18 +72,18 @@ export const adminToggleUserActiveStatus = async (userId: string, isActive: bool
   });
 };
 
-export const adminOverwriteConnectaPoints = async (userId: string, points: number, reason: string, adminId: string) => {
+export const adminOverwritefamenePoints = async (userId: string, points: number, reason: string, adminId: string) => {
   return prisma.$transaction(async (tx) => {
     const user = await findUserById(userId);
     if (!user) {
       throw { statusCode: 404, message: 'User not found.' };
     }
-    const updatedUser = await updateUser(userId, { connectaPoints: points }, tx);
+    const updatedUser = await updateUser(userId, { famenePoints: points }, tx);
     await createActivityLog({
       user: { connect: { id: userId } }, // Corrigido: usar 'user' com 'connect'
       type: ActivityType.POINTS_ADJUSTED,
-      description: `Connecta Points overwritten to ${points} by admin (${adminId}) for "${reason}".`,
-      pointsChange: points - user.connectaPoints, // Log the change amount
+      description: `FAMENE Points overwritten to ${points} by admin (${adminId}) for "${reason}".`,
+      pointsChange: points - user.famenePoints, // Log the change amount
     }, tx);
     return updatedUser;
   });
@@ -154,3 +154,5 @@ export const getAdminLogsService = async () => {
         }
     });
 };
+
+

@@ -26,7 +26,7 @@ async function main() {
         name: 'Test K-P User',
         email: `kp-test-${Date.now()}@example.com`,
         passwordHash: 'hashedpassword',
-        connectaPoints: 500,
+        famenePoints: 500,
         tierId: tier.id,
       },
     });
@@ -81,13 +81,13 @@ async function main() {
     const [updatedUser, order] = await prisma.$transaction([
         prisma.user.update({
             where: { id: user.id },
-            data: { connectaPoints: { decrement: item.cost } }
+            data: { famenePoints: { decrement: item.cost } }
         }),
         prisma.order.create({
             data: { userId: user.id, itemId: item.id, cost: item.cost }
         })
     ]);
-    console.log('Item purchased. New balance:', updatedUser.connectaPoints);
+    console.log('Item purchased. New balance:', updatedUser.famenePoints);
 
     // 6. Test Notifications
     const notification = await prisma.notification.create({
@@ -111,3 +111,4 @@ async function main() {
 }
 
 main();
+

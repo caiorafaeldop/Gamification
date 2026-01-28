@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
-import { getSystemOverview as getSystemOverviewService, adminUpdateProject, adminOverwriteConnectaPoints } from '../services/admin.service';
+import { getSystemOverview as getSystemOverviewService, adminUpdateProject, adminOverwritefamenePoints } from '../services/admin.service';
 import { getAllProjects as getAllProjectsService } from '../services/project.service';
 import { findUsers, countUsers } from '../repositories/user.repository';
 import prisma from '../utils/prisma';
@@ -91,7 +91,7 @@ export const updateUserPoints = async (req: Request, res: Response, next: NextFu
         const { points, reason } = req.body;
         const adminId = (req as any).user.id;
 
-        const updatedUser = await adminOverwriteConnectaPoints(userId, points, reason, adminId);
+        const updatedUser = await adminOverwritefamenePoints(userId, points, reason, adminId);
         res.status(200).json(updatedUser);
     } catch (error) {
         next(error);
@@ -184,3 +184,4 @@ export const getAdminLogs = async (req: Request, res: Response, next: NextFuncti
         next(error);
     }
 };
+

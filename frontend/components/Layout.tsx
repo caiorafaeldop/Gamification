@@ -16,7 +16,8 @@ import {
     LogOut,
     User
 } from 'lucide-react';
-import logo from '../assets/logo.webp';
+import logoLight from '../assets/logo - escuro.png';
+import logoDark from '../assets/logo.png';
 import { getProfile } from '../services/user.service';
 import { Skeleton } from './Skeleton';
 
@@ -126,10 +127,10 @@ const Layout = () => {
 
             {/* Sidebar - Desktop Only */}
             <aside className="hidden md:flex w-64 bg-surface-light dark:bg-surface-dark border-r border-gray-200 dark:border-gray-800 flex-col sticky top-0 h-screen">
-                <div className="h-16 flex items-center px-6 border-b border-gray-100 dark:border-gray-800/50">
-                    <div className="flex items-center gap-2 cursor-pointer p-2 rounded-md bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 shadow-sm shadow-primary/5 hover:shadow-md hover:shadow-primary/10 transition-all duration-300" onClick={() => navigate('/dashboard')}>
-                        <img src={logo} alt="ConnectaCI Logo" className="h-7 w-auto rounded-xl shadow-sm" />
-                        <span className="font-display font-bold text-lg text-secondary dark:text-white tracking-tight">Connecta<span className="text-primary">CI</span></span>
+                <div className="h-20 flex items-center px-4 border-b border-gray-100 dark:border-gray-800/50">
+                    <div className="flex items-center justify-center w-full cursor-pointer p-2 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/5 shadow-sm hover:shadow-md transition-all duration-300" onClick={() => navigate('/dashboard')}>
+                        <img src={logoLight} alt="FACENE/FAMENE Logo" className="h-12 w-auto object-contain dark:hidden" />
+                        <img src={logoDark} alt="FACENE/FAMENE Logo" className="h-12 w-auto object-contain hidden dark:block" />
                     </div>
                 </div>
 
@@ -152,7 +153,7 @@ const Layout = () => {
                 </nav>
 
                 <div className="p-4 border-t border-gray-100 dark:border-gray-800">
-                    <button 
+                    <button
                         onClick={() => navigate('/profile')}
                         className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group text-left"
                     >
@@ -177,7 +178,7 @@ const Layout = () => {
                                 <>
                                     <p className="text-sm font-bold text-secondary dark:text-white truncate">{user?.name || 'Visitante'}</p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                        {typeof user?.tier === 'object' ? user.tier.name : (user?.tier || 'Iniciante')} • {user?.connectaPoints || 0} 🪙
+                                        {typeof user?.tier === 'object' ? user.tier.name : (user?.tier || 'Iniciante')} • {user?.FamenePoints || 0} 🪙
                                     </p>
                                 </>
                             )}
@@ -202,9 +203,9 @@ const Layout = () => {
             <div className="flex-1 flex flex-col min-w-0 relative h-screen">
                 <header className="h-16 flex items-center justify-between px-4 sm:px-6 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
                     <div className="flex items-center gap-4">
-                        <div className="md:hidden flex items-center gap-2 cursor-pointer" onClick={() => navigate('/dashboard')}>
-                            <img src={logo} alt="Logo" className="h-7 w-auto rounded-xl" />
-                            <span className="font-display font-bold text-lg text-secondary dark:text-white">Connecta<span className="text-primary">CI</span></span>
+                        <div className="md:hidden flex items-center cursor-pointer" onClick={() => navigate('/dashboard')}>
+                            <img src={logoLight} alt="FACENE/FAMENE Logo" className="h-10 w-auto object-contain dark:hidden" />
+                            <img src={logoDark} alt="FACENE/FAMENE Logo" className="h-10 w-auto object-contain hidden dark:block" />
                         </div>
 
                         {!loading && user && (

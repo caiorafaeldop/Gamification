@@ -1,4 +1,4 @@
-export type ProjectStatus = 'active' | 'completed' | 'archived';
+export type ProjectStatus = 'active' | 'completed' | 'archived' | 'planning';
 
 export interface Project {
   id: string;
@@ -20,13 +20,15 @@ export interface Project {
 export const statusStyles: Record<ProjectStatus, string> = {
   active: 'bg-green-100 text-green-700',
   completed: 'bg-blue-100 text-blue-700',
-  archived: 'bg-gray-200 text-gray-600'
+  archived: 'bg-gray-200 text-gray-600',
+  planning: 'bg-amber-100 text-amber-700'
 };
 
 export const statusLabels: Record<ProjectStatus, string> = {
   active: 'Ativo',
   completed: 'Concluído',
-  archived: 'Arquivado'
+  archived: 'Arquivado',
+  planning: 'Planejamento'
 };
 
 
@@ -36,7 +38,7 @@ export interface UserProfile {
   email: string;
   avatarUrl?: string;
   role: 'ADMIN' | 'LEADER' | 'MEMBER';
-  connectaPoints: number;
+  FamenePoints: number;
   tierId: string;
   avatarColor?: string;
   course?: string;

@@ -1,5 +1,5 @@
-Connecta CI
-Connecta CI is a gamified team-management system designed to boost engagement and productivity.
+FACENE/FAMENE
+This is a gamified study system designed to boost engagement and productivity of medical students. 
 
 Project Structure
 This repository is organized into two main parts:

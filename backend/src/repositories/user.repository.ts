@@ -55,11 +55,11 @@ export const countUsers = async (where?: Prisma.UserWhereInput): Promise<number>
   return prisma.user.count({ where });
 };
 
-export const updateConnectaPoints = async (userId: string, points: number, transaction?: Prisma.TransactionClient): Promise<User> => {
+export const updateFamenePoints = async (userId: string, points: number, transaction?: Prisma.TransactionClient): Promise<User> => {
   const client = transaction || prisma;
   return client.user.update({
     where: { id: userId },
-    data: { connectaPoints: { increment: points } },
+    data: { famenePoints: { increment: points } },
   });
 };
 
