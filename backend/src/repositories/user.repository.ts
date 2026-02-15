@@ -94,3 +94,8 @@ export const updateLastActivity = async (userId: string, transaction?: Prisma.Tr
 export const updateManyUsers = async (where: Prisma.UserWhereInput, data: Prisma.UserUpdateInput) => {
   return prisma.user.updateMany({ where, data });
 };
+
+export const deleteUser = async (id: string, transaction?: Prisma.TransactionClient): Promise<User> => {
+  const client = transaction || prisma;
+  return client.user.delete({ where: { id } });
+};

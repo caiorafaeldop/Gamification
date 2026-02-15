@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import { getSystemOverview as getSystemOverviewService, adminUpdateProject, adminOverwriteConnectaPoints } from '../services/admin.service';
+import { deleteUserProfile as deleteUserProfileService } from '../services/user.service';
 import { getAllProjects as getAllProjectsService } from '../services/project.service';
 import { findUsers, countUsers } from '../repositories/user.repository';
 import prisma from '../utils/prisma';
@@ -180,6 +181,18 @@ export const getAdminLogs = async (req: Request, res: Response, next: NextFuncti
         ]);
 
         res.status(200).json({ logs, total, page, limit });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { userId } = req.params;
+        const adminId = (req as any).user.id;
+
+        const deletedUser = await deleteUserProfileService(userId, adminId);
+        res.status(200).json(deletedUser);
     } catch (error) {
         next(error);
     }

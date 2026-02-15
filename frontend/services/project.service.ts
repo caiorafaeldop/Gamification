@@ -56,6 +56,11 @@ export const leaveProject = async (projectId: string) => {
   return response.data;
 };
 
+export const deleteProject = async (projectId: string) => {
+  const response = await api.delete(`/projects/${projectId}`);
+  return response.data;
+};
+
 export const transferProjectOwnership = async (projectId: string, newLeaderId: string) => {
   const response = await api.put(`/projects/${projectId}/transfer-ownership`, { newLeaderId });
   return response.data;

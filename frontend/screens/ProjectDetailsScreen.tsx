@@ -4,7 +4,7 @@ import { DragDropContext, Draggable } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '../components/StrictModeDroppable';
 import { deleteTask, getProjectKanban, updateTaskStatus, createColumn, updateColumn, deleteColumn, reorderColumns, createQuickTask } from '../services/task.service';
 import { getProfile } from '../services/user.service';
-import { uploadProjectCover, updateProject, leaveProject, transferProjectOwnership } from '../services/project.service';
+import { uploadProjectCover, updateProject, leaveProject, transferProjectOwnership, deleteProject } from '../services/project.service';
 import { useProjectDetails } from '../hooks/useProjects';
 import { Skeleton } from '../components/Skeleton';
 import TaskModal from '../components/TaskModal';
@@ -164,11 +164,12 @@ const ProjectDetailsScreen = () => {
         fetchUser();
     }, []);
 
-    const isLeaderOrAdmin = user && (
+    const isLeader = user && (
         project?.leaderId === user.id ||
-        project?.leader?.id === user.id ||
-        user.role === 'ADMIN'
+        project?.leader?.id === user.id
     );
+
+    const isLeaderOrAdmin = isLeader || (user && user.role === 'ADMIN');
 
     const isProjectMember = user && project?.members?.some((m: any) => m.user?.id === user.id);
 
@@ -187,6 +188,10 @@ const ProjectDetailsScreen = () => {
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
     const [selectedNewLeaderId, setSelectedNewLeaderId] = useState<string>('');
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+
+    // Project Deletion State
+    const [isDeleteProjectModalOpen, setIsDeleteProjectModalOpen] = useState(false);
+    const [isDeletingProject, setIsDeletingProject] = useState(false);
 
     useEffect(() => {
         if (id) fetchKanban();
@@ -682,19 +687,34 @@ const ProjectDetailsScreen = () => {
     );
     if (!project) return <div className="p-8 text-center">Projeto não encontrado</div>;
 
-    const handleTransferLeadership = async () => {
-        if (!selectedNewLeaderId) {
+    const handleTransferLeadership = async (newId?: string) => {
+        const idToTransfer = newId || selectedNewLeaderId;
+        if (!idToTransfer) {
             toast.error('Selecione um membro para ser o novo líder.');
             return;
         }
         try {
-            await transferProjectOwnership(id!, selectedNewLeaderId);
+            await transferProjectOwnership(id!, idToTransfer);
             toast.success('Liderança transferida com sucesso!');
             setIsTransferModalOpen(false);
             // Reload to reflect changes (permissions, etc)
             window.location.reload();
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Erro ao transferir liderança.');
+        }
+    };
+
+    const handleDeleteProject = async () => {
+        setIsDeletingProject(true);
+        try {
+            await deleteProject(id!);
+            toast.success('Projeto excluído com sucesso.');
+            navigate('/projects');
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Erro ao excluir projeto.');
+        } finally {
+            setIsDeletingProject(false);
+            setIsDeleteProjectModalOpen(false);
         }
     };
 
@@ -881,32 +901,49 @@ const ProjectDetailsScreen = () => {
                         )}
 
                         {/* Transfer Leadership - Only for Leader */}
-                        {(user && (project?.leaderId === user.id || project?.leader?.id === user.id)) && (
-                            <button
-                                onClick={() => setIsTransferModalOpen(true)}
-                                className="flex items-center gap-1.5 px-2 py-1 text-xs text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors cursor-pointer"
-                            >
-                                <span className="material-icons text-sm">manage_accounts</span>
-                                <span>Transferir Liderança</span>
-                            </button>
+                        {isLeader && (
+                            <div className="flex gap-1">
+                                <button
+                                    onClick={() => setIsTransferModalOpen(true)}
+                                    className="flex items-center gap-1.5 px-2 py-1 text-xs text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors cursor-pointer"
+                                >
+                                    <span className="material-icons text-sm">manage_accounts</span>
+                                    <span>Transferir Liderança</span>
+                                </button>
+                                <button
+                                    onClick={() => setIsDeleteProjectModalOpen(true)}
+                                    className="flex items-center gap-1.5 px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
+                                    title="Excluir Projeto"
+                                >
+                                    <span className="material-icons text-sm">delete_forever</span>
+                                    <span>Excluir</span>
+                                </button>
+                            </div>
                         )}
 
-                        {/* Leave Project Button - Only for members who are not the leader */}
-                        {user && project?.members?.some((m: any) => m.user?.id === user.id) &&
-                            project?.leaderId !== user.id && project?.leader?.id !== user.id && (
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
+                        {/* Leave Project Button */}
+                        {user && project?.members?.some((m: any) => m.user?.id === user.id) && (
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (isLeader) {
+                                        toast.error('Líderes de projeto não podem sair sem antes transferir a liderança.');
+                                    } else {
                                         setIsLeaveProjectModalOpen(true);
-                                    }}
-                                    className="flex items-center gap-1.5 px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer z-10 relative"
-                                >
-                                    <span className="material-icons text-sm">logout</span>
-                                    <span>Sair do Projeto</span>
-                                </button>
-                            )}
+                                    }
+                                }}
+                                title={isLeader ? "Líderes não podem sair sem transferir a liderança" : "Sair do Projeto"}
+                                className={`flex items-center gap-1.5 px-2 py-1 text-xs rounded-lg transition-colors cursor-pointer z-10 relative ${isLeader
+                                    ? 'text-gray-400 bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60'
+                                    : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                                    }`}
+                            >
+                                <span className="material-icons text-sm">logout</span>
+                                <span>Sair do Projeto</span>
+                            </button>
+                        )}
 
                     </div>
                     <div className="flex items-center gap-2">
@@ -1033,6 +1070,28 @@ const ProjectDetailsScreen = () => {
                         )}
                     </div>
                 </div>
+
+                {/* Leaderless Warning Alert */}
+                {(!project?.leaderId && !loadingProject) && (
+                    <div className="mx-4 lg:mx-6 mt-4 p-4 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-3 animate-pulse">
+                        <span className="material-icons text-red-500">warning</span>
+                        <div className="flex-1">
+                            <h4 className="text-sm font-bold text-red-800 dark:text-red-300">Projeto sem Líder</h4>
+                            <p className="text-xs text-red-700 dark:text-red-400">Este projeto está atualmente sem um líder responsável. Algumas funções administrativas podem estar indisponíveis.</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Memberless Warning (if only 1 or 0 members and no leader) */}
+                {(project?.members?.length <= 1 && !loadingProject) && (
+                    <div className="mx-4 lg:mx-6 mt-4 p-4 bg-amber-100 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center gap-3">
+                        <span className="material-icons text-amber-500">info</span>
+                        <div className="flex-1">
+                            <h4 className="text-sm font-bold text-amber-800 dark:text-amber-300">Projeto sem Membros</h4>
+                            <p className="text-xs text-amber-700 dark:text-amber-400">Este projeto tem poucos ou nenhum membro. Convide colegas para começar a colaborar!</p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Pull Handle (Mobile Only) */}
                 <div className="lg:hidden flex justify-center mt-1 -mb-1">
@@ -1259,10 +1318,10 @@ const ProjectDetailsScreen = () => {
                                                                 ))}
                                                                 {/* Skeleton Placeholder Animation */}
                                                                 {provided.placeholder && React.isValidElement(provided.placeholder) ? (
-                                                                    React.cloneElement(provided.placeholder as React.ReactElement, {
+                                                                    React.cloneElement(provided.placeholder as any, {
                                                                         className: "bg-gray-200 dark:bg-gray-700 border-2 border-dashed border-gray-400 dark:border-gray-500 rounded-xl animate-pulse opacity-80",
                                                                         style: {
-                                                                            ...((provided.placeholder as React.ReactElement).props.style || {}),
+                                                                            ...(provided.placeholder as any).props.style,
                                                                             visibility: 'visible',
                                                                         }
                                                                     })
@@ -1433,7 +1492,7 @@ const ProjectDetailsScreen = () => {
                                 Selecione o novo líder
                             </label>
                             <MemberSelect
-                                members={project?.members?.filter((m: any) => m.user?.id !== user?.id) || []}
+                                members={project?.members?.map((m: any) => m.user).filter((u: any) => u.id !== user?.id) || []}
                                 selectedId={selectedNewLeaderId}
                                 onChange={(id) => setSelectedNewLeaderId(id)}
                                 placeholder="Escolha um membro..."
@@ -1448,7 +1507,7 @@ const ProjectDetailsScreen = () => {
                                 Cancelar
                             </button>
                             <button
-                                onClick={handleTransferLeadership}
+                                onClick={() => handleTransferLeadership()}
                                 disabled={!selectedNewLeaderId}
                                 className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-95"
                             >
@@ -1464,6 +1523,20 @@ const ProjectDetailsScreen = () => {
                 onClose={() => setIsMembersModalOpen(false)}
                 members={project?.members}
                 leaderId={project?.leaderId || project?.leader?.id}
+                currentUserId={user?.id}
+                onTransfer={(newLeaderId) => {
+                    handleTransferLeadership(newLeaderId);
+                }}
+            />
+
+            <ConfirmationModal
+                isOpen={isDeleteProjectModalOpen}
+                onClose={() => setIsDeleteProjectModalOpen(false)}
+                onConfirm={handleDeleteProject}
+                title="Excluir Projeto"
+                message={`Tem certeza que deseja excluir permanentemente o projeto "${project.title}"? Esta ação não pode ser desfeita e todos os dados relacionados (tarefas, comentários, etc.) serão perdidos.`}
+                confirmText={isDeletingProject ? "Excluindo..." : "Excluir Permanentemente"}
+                type="danger"
             />
         </div>
     );
