@@ -51,7 +51,7 @@ model Project {
   leaderId               String
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
-  status                 String?         @default("active")
+  status                 ProjectStatus   @default(active)
   progress               Int             @default(0)
   xpReward               Int             @default(100)
   color                  String?
@@ -256,6 +256,12 @@ enum Role {
   ADMIN
   LEADER
   MEMBER
+}
+
+enum ProjectStatus {
+  active
+  inactive
+  archived
 }
 
 enum TaskStatus {
