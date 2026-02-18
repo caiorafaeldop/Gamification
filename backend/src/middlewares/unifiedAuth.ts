@@ -12,7 +12,7 @@ import prisma from '../utils/prisma';
 // But for now, let's implement the UnifiedAuth which tries Clerk first, then Legacy.
 
 // Initialize Clerk Middleware (loose mode to not block immediately)
-const clerkMiddleware = ClerkExpressWithAuth({ loose: true });
+const clerkMiddleware = ClerkExpressWithAuth();
 
 // Extend Express Request to include user and auth
 declare global {

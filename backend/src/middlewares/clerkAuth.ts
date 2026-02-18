@@ -17,7 +17,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: any;
-      auth: {
+      auth?: {
         userId: string;
         sessionId: string;
         getToken: () => Promise<string>;
