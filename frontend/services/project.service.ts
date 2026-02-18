@@ -15,6 +15,9 @@ export interface Project {
   progress: number;
   pointsPerOpenTask?: number;
   pointsPerCompletedTask?: number;
+  tags?: string;
+  maxMembers?: number;
+  rewardPoints?: number;
 }
 
 export const getProjects = async () => {

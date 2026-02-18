@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { getNotifications, markAsRead } from '../controllers/notification.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { unifiedAuth } from '../middlewares/unifiedAuth';
 
 const router = Router();
 
-router.use(authenticate);
+router.use(unifiedAuth);
 
 router.get('/', getNotifications);
 router.post('/:id/read', markAsRead);

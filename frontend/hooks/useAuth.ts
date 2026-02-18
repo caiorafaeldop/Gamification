@@ -1,31 +1,13 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useUser, useClerk } from '@clerk/clerk-react';
 
 export const useAuth = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [user, setUser] = useState<any>(null);
-  const navigate = useNavigate();
+  const { isSignedIn, user, isLoaded } = useUser();
+  const { signOut } = useClerk();
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    
-    if (token && storedUser) {
-      setIsAuthenticated(true);
-      setUser(JSON.parse(storedUser));
-    } else {
-      setIsAuthenticated(false);
-      setUser(null);
-    }
-  }, []);
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setIsAuthenticated(false);
-    setUser(null);
-    navigate('/');
+  return {
+    isAuthenticated: !!isSignedIn,
+    user: user,
+    logout: () => signOut(),
+    isLoaded
   };
-
-  return { isAuthenticated, user, logout };
 };

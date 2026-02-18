@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { createTier, getTier, getTiers, updateTier, deleteTier } from '../controllers/tier.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { unifiedAuth } from '../middlewares/unifiedAuth';
 import { authorize } from '../middlewares/role.middleware';
 import { validate } from '../middlewares/validation.middleware';
 import { uuidSchema } from '../utils/zod';
@@ -9,7 +9,7 @@ import { z } from 'zod';
 
 const router = Router();
 
-router.use(authenticate); // All tier routes require authentication
+router.use(unifiedAuth); // All tier routes require authentication
 
 // Admin-only routes for creating, updating, deleting tiers
 router.post('/', authorize([Role.ADMIN]), validate(z.object({ body: z.object({ name: z.string(), minPoints: z.number().int(), order: z.number().int(), icon: z.string().optional() }) })), createTier);

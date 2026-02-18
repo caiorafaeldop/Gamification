@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../utils/jwt';
 import prisma from '../utils/prisma';
 
-export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
+export const authenticateLegacy = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -24,6 +24,10 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     return res.status(401).json({ message: 'User not found or inactive.' });
   }
 
-  req.user = { userId: user.id, role: user.role };
+  req.user = { 
+    ...user,
+    userId: user.id, 
+    role: user.role 
+  };
   next();
 };

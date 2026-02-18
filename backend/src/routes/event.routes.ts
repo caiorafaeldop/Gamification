@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { getEvents, createEvent, getEventById, updateEvent, deleteEvent, joinEvent, leaveEvent } from '../controllers/event.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { unifiedAuth } from '../middlewares/unifiedAuth';
 
 const router = Router();
 
-router.use(authenticate);
+router.use(unifiedAuth);
 
 router.get('/', getEvents);
 router.post('/', createEvent);

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getMyProfile, getUserProfile, updateUserDetails, adjustUserPoints, getUserActivity, getAllUsers, promoteUserRole, toggleUserActiveStatus, uploadAvatar } from '../controllers/user.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { unifiedAuth } from '../middlewares/unifiedAuth';
 import upload from '../middlewares/upload.middleware';
 import { authorize } from '../middlewares/role.middleware';
 import { validate } from '../middlewares/validation.middleware';
@@ -10,7 +10,7 @@ import { paginationSchema } from '../utils/zod';
 
 const router = Router();
 
-router.use(authenticate); // All user routes require authentication
+router.use(unifiedAuth); // All user routes require authentication
 
 /**
  * @swagger

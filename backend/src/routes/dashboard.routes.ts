@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import { getDashboard } from '../controllers/dashboard.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { unifiedAuth } from '../middlewares/unifiedAuth';
 
 const router = Router();
 
-router.get('/', authenticate, getDashboard);
+router.get('/', unifiedAuth, getDashboard);
 
 export default router;

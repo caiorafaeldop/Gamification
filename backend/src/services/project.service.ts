@@ -25,7 +25,7 @@ export const createNewProject = async (data: CreateProjectInput, creatorId: stri
       category: data.category,
       type: data.type,
       color: data.color,
-      status: data.status,
+      status: data.status as any,
       xpReward: data.xpReward,
       progress: data.progress || 0,
       coverUrl: data.coverUrl,
@@ -139,7 +139,7 @@ export const updateProjectDetails = async (id: string, data: UpdateProjectInput,
       }
     }
 
-    const updatedProject = await updateProject(id, data, tx);
+    const updatedProject = await updateProject(id, data as any, tx);
     return updatedProject;
   });
 

@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { createProject, getProjectDetails, getProjects, joinProject, uploadProjectCover, updateProject, leaveProject, transferOwnership, deleteProject } from '../controllers/project.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { unifiedAuth } from '../middlewares/unifiedAuth';
 import upload from '../middlewares/upload.middleware';
 
 const router = Router();
 
-router.use(authenticate);
+router.use(unifiedAuth);
 
 // Public (authenticated) routes
 router.post('/upload-cover', upload.single('image'), uploadProjectCover);

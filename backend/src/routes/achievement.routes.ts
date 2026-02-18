@@ -8,7 +8,7 @@ import {
   getMyAchievements,
   getUserAchievementsById,
 } from '../controllers/achievement.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { unifiedAuth } from '../middlewares/unifiedAuth';
 import { authorize } from '../middlewares/role.middleware';
 import { validate } from '../middlewares/validation.middleware';
 import {
@@ -22,7 +22,7 @@ import { paginationSchema } from '../utils/zod';
 
 const router = Router();
 
-router.use(authenticate); // All achievement routes require authentication
+router.use(unifiedAuth); // All achievement routes require authentication
 
 // Admin-only routes for managing achievements
 router.post('/', authorize([Role.ADMIN]), validate(createAchievementSchema), createAchievement);

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../middlewares/auth.middleware';
+import { unifiedAuth } from '../middlewares/unifiedAuth';
 import { authorize } from '../middlewares/role.middleware';
 import { Role } from '@prisma/client';
 import * as adminController from '../controllers/admin.controller';
@@ -7,7 +7,7 @@ import * as adminController from '../controllers/admin.controller';
 const router = Router();
 
 // Apply authentication and admin authorization to ALL admin routes
-router.use(authenticate, authorize([Role.ADMIN]));
+router.use(unifiedAuth, authorize([Role.ADMIN]));
 
 // Projects
 router.get('/projects', adminController.getAllProjects);

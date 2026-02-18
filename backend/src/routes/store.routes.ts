@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { getStoreItems, purchaseItem } from '../controllers/store.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { unifiedAuth } from '../middlewares/unifiedAuth';
 
 const router = Router();
 
-router.use(authenticate);
+router.use(unifiedAuth);
 
 router.get('/items', getStoreItems);
 router.post('/buy', purchaseItem);

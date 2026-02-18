@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 
 const NewProjectScreen = () => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState({
@@ -36,7 +36,8 @@ const NewProjectScreen = () => {
           name: project.title || '',
           description: project.description || '',
           category: project.category || 'Desenvolvimento',
-          tags: project.tags || '',
+          type: (project as any).type || 'Interno',
+          tags: (project as any).tags || '',
           maxMembers: project.maxMembers || 4,
           rewardPoints: project.rewardPoints || 1500,
           coverUrl: project.coverUrl || ''
@@ -68,7 +69,16 @@ const NewProjectScreen = () => {
         navigate(`/project-details/${id}`);
       } else {
         // Criar novo projeto
-        await createProject(formData);
+        await createProject({
+          title: formData.name,
+          description: formData.description,
+          category: formData.category,
+          type: formData.type,
+          tags: formData.tags,
+          maxMembers: Number(formData.maxMembers),
+          rewardPoints: Number(formData.rewardPoints),
+          coverUrl: formData.coverUrl
+        });
         toast.success('Projeto criado com sucesso! 🚀');
         navigate('/projects');
       }

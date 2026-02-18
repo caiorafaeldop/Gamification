@@ -15,6 +15,7 @@ import NewEventScreen from './screens/NewEventScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import AdminUsersScreen from './screens/AdminUsersScreen';
 import AdminProjectsScreen from './screens/AdminProjectsScreen';
+import SignUpScreen from './screens/SignUpScreen';
 
 import { Toaster } from 'react-hot-toast';
 
@@ -34,6 +35,7 @@ const App = () => {
       />
       <Routes>
         <Route path="/" element={<LoginScreen />} />
+        <Route path="/sign-up" element={<SignUpScreen />} />
 
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<DashboardScreen />} />

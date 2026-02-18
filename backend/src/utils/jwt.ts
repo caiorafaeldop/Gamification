@@ -1,23 +1,28 @@
-import jwt, { SignOptions } from 'jsonwebtoken';
+
+import jwt from 'jsonwebtoken';
 import { config } from '../config';
-import { Role } from '@prisma/client';
 
-interface JwtPayload {
-  userId: string;
-  role: Role;
-}
-
-export const generateAccessToken = (userId: string, role: Role): string => {
-  return jwt.sign({ userId, role }, config.jwtSecret, { expiresIn: config.jwtAccessExpiration } as SignOptions);
+/**
+ * Generates a short-lived access token.
+ */
+export const generateAccessToken = (userId: string, role: string): string => {
+  return jwt.sign({ userId, role }, config.jwtSecret, { expiresIn: config.jwtAccessExpiration as any });
 };
 
-export const generateRefreshToken = (userId: string, role: Role): string => {
-  return jwt.sign({ userId, role }, config.jwtSecret, { expiresIn: config.jwtRefreshExpiration } as SignOptions);
+/**
+ * Generates a long-lived refresh token.
+ */
+export const generateRefreshToken = (userId: string, role: string): string => {
+  return jwt.sign({ userId, role }, config.jwtSecret, { expiresIn: config.jwtRefreshExpiration as any });
 };
 
-export const verifyToken = (token: string): JwtPayload | null => {
+/**
+ * Verifies a token and returns the decoded payload.
+ * Returns null if the token is invalid or expired.
+ */
+export const verifyToken = (token: string): any => {
   try {
-    return jwt.verify(token, config.jwtSecret) as JwtPayload;
+    return jwt.verify(token, config.jwtSecret);
   } catch (error) {
     return null;
   }

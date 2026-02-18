@@ -93,7 +93,11 @@ export const clerkAuth = [
       }
 
       // 3. Attach local user to request
-      req.user = localUser;
+      req.user = {
+        ...localUser,
+        userId: localUser.id,
+        role: localUser.role,
+      };
       next();
     } catch (error: any) {
       console.error('[clerkAuth] GENERAL ERROR:', error?.message || error);

@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { getProjectKanban, moveTask, createColumn, updateColumn, deleteColumn, reorderColumns } from '../controllers/kanban.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { unifiedAuth } from '../middlewares/unifiedAuth';
 
 const router = Router();
 
-router.use(authenticate);
+router.use(unifiedAuth);
 
 // Get Kanban board for a project
 router.get('/projects/:projectId', getProjectKanban);
