@@ -4,16 +4,18 @@ import { DragDropContext, Draggable } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '../components/StrictModeDroppable';
 import { deleteTask, getProjectKanban, updateTaskStatus, createColumn, updateColumn, deleteColumn, reorderColumns, createQuickTask } from '../services/task.service';
 import { getProfile } from '../services/user.service';
-import { uploadProjectCover, updateProject, leaveProject, transferProjectOwnership } from '../services/project.service';
+import { uploadProjectCover, updateProject, leaveProject, transferProjectOwnership, deleteProject } from '../services/project.service';
 import { useProjectDetails } from '../hooks/useProjects';
 import { Skeleton } from '../components/Skeleton';
 import TaskModal from '../components/TaskModal';
 import TaskDetailModal from '../components/TaskDetailModal';
 import MemberSelect from '../components/MemberSelect';
-import { Camera, Loader } from 'lucide-react';
+import { Camera, Loader, Edit } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../components/ConfirmationModal';
+import MembersListModal from '../components/MembersListModal';
 import { COLUMN_COLORS } from '../constants';
+import { ProjectStatus, statusLabels, statusStyles } from '../types';
 import ProjectDetailsScreenMobile from './ProjectDetailsScreenMobile';
 
 const ProjectDetailsScreen = () => {
@@ -46,7 +48,7 @@ const ProjectDetailsScreen = () => {
     const [isDragging, setIsDragging] = useState(false);
 
     const [pickingColorColumnId, setPickingColorColumnId] = useState<string | null>(null);
-    
+
     // Inline card creation state (Trello-style)
     const [inlineCreatingColumnId, setInlineCreatingColumnId] = useState<string | null>(null);
     const [inlineTaskTitle, setInlineTaskTitle] = useState('');
@@ -177,11 +179,12 @@ const ProjectDetailsScreen = () => {
         fetchUser();
     }, []);
 
-    const isLeaderOrAdmin = user && (
+    const isLeader = user && (
         project?.leaderId === user.id ||
-        project?.leader?.id === user.id ||
-        user.role === 'ADMIN'
+        project?.leader?.id === user.id
     );
+
+    const isLeaderOrAdmin = isLeader || (user && user.role === 'ADMIN');
 
     const isProjectMember = user && project?.members?.some((m: any) => m.user?.id === user.id);
 
@@ -199,6 +202,11 @@ const ProjectDetailsScreen = () => {
     // Transfer Leadership State
     const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
     const [selectedNewLeaderId, setSelectedNewLeaderId] = useState<string>('');
+    const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+
+    // Project Deletion State
+    const [isDeleteProjectModalOpen, setIsDeleteProjectModalOpen] = useState(false);
+    const [isDeletingProject, setIsDeletingProject] = useState(false);
 
     useEffect(() => {
         if (id) fetchKanban();
@@ -495,26 +503,26 @@ const ProjectDetailsScreen = () => {
         }
     };
     const handleUpdateColumnColor = async (colorKey: string) => {
-    if (!pickingColorColumnId) return;
+        if (!pickingColorColumnId) return;
 
-    const newColumns = columns.map((col: any) => 
-        col.id === pickingColorColumnId ? { ...col, color: colorKey } : col
-    );
-    setColumns(newColumns);
-    
-    const idToUpdate = pickingColorColumnId;
-    setPickingColorColumnId(null); 
+        const newColumns = columns.map((col: any) =>
+            col.id === pickingColorColumnId ? { ...col, color: colorKey } : col
+        );
+        setColumns(newColumns);
 
-    try {
+        const idToUpdate = pickingColorColumnId;
+        setPickingColorColumnId(null);
 
-        await updateColumn(idToUpdate, { color: colorKey });
-        toast.success("Cor da coluna atualizada!");
-    } catch (err: any) {
-        console.error("Failed to update column color", err);
-        toast.error(err.response?.data?.message || "Erro ao salvar cor");
-        fetchKanban(); 
-    }
-};
+        try {
+
+            await updateColumn(idToUpdate, { color: colorKey });
+            toast.success("Cor da coluna atualizada!");
+        } catch (err: any) {
+            console.error("Failed to update column color", err);
+            toast.error(err.response?.data?.message || "Erro ao salvar cor");
+            fetchKanban();
+        }
+    };
     const toggleMemberFilter = (memberId: string) => {
         setSelectedMemberFilters(prev =>
             prev.includes(memberId)
@@ -579,14 +587,14 @@ const ProjectDetailsScreen = () => {
             };
         }
         if (column.color && COLUMN_COLORS[column.color as keyof typeof COLUMN_COLORS]) {
-        const theme = COLUMN_COLORS[column.color as keyof typeof COLUMN_COLORS];
-        return {
-            container: `${theme.bg} ${theme.border} ${theme.decoration}`,
-            headerIcon: <span className={`w-3 h-3 rounded-full ${theme.bg.replace('/80', '').replace('/10', '-400')}`}></span>, // Exemplo simples de icone
-            titleColor: theme.text,
-            badge: theme.badge
-        };
-    }
+            const theme = COLUMN_COLORS[column.color as keyof typeof COLUMN_COLORS];
+            return {
+                container: `${theme.bg} ${theme.border} ${theme.decoration}`,
+                headerIcon: <span className={`w-3 h-3 rounded-full ${theme.bg.replace('/80', '').replace('/10', '-400')}`}></span>, // Exemplo simples de icone
+                titleColor: theme.text,
+                badge: theme.badge
+            };
+        }
         const config = [
             {
                 keywords: ['fazer', 'todo', 'backlog'],
@@ -692,22 +700,37 @@ const ProjectDetailsScreen = () => {
     );
     if (!project) return <div className="p-8 text-center">Projeto não encontrado</div>;
 
-    const handleTransferLeadership = async () => {
-        if (!selectedNewLeaderId) {
+    const handleTransferLeadership = async (newId?: string) => {
+        const idToTransfer = newId || selectedNewLeaderId;
+        if (!idToTransfer) {
             toast.error('Selecione um membro para ser o novo líder.');
             return;
         }
         try {
-            await transferProjectOwnership(id!, selectedNewLeaderId);
+            await transferProjectOwnership(id!, idToTransfer);
             toast.success('Liderança transferida com sucesso!');
             setIsTransferModalOpen(false);
             // Reload to reflect changes (permissions, etc)
-            window.location.reload(); 
+            window.location.reload();
         } catch (err: any) {
-             toast.error(err.response?.data?.message || 'Erro ao transferir liderança.');
+            toast.error(err.response?.data?.message || 'Erro ao transferir liderança.');
         }
     };
-    
+
+    const handleDeleteProject = async () => {
+        setIsDeletingProject(true);
+        try {
+            await deleteProject(id!);
+            toast.success('Projeto excluído com sucesso.');
+            navigate('/projects');
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Erro ao excluir projeto.');
+        } finally {
+            setIsDeletingProject(false);
+            setIsDeleteProjectModalOpen(false);
+        }
+    };
+
     return (
         <div className="flex-1 flex flex-col relative h-full">
             <div className="absolute inset-0 z-0 bg-network-pattern opacity-30 pointer-events-none"></div>
@@ -739,12 +762,33 @@ const ProjectDetailsScreen = () => {
                             <div className="flex items-center gap-2">
                                 <h1 className={`${isHeaderMinimized ? 'text-base truncate max-w-[200px]' : 'text-xl'} transition-all duration-300 font-display font-extrabold text-secondary dark:text-white lg:max-w-none`}>{project.title}</h1>
                                 {!isHeaderMinimized && (
-                                    <span className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-green-200 dark:border-green-800">
-                                        {project.status}
-                                    </span>
+                                    isLeaderOrAdmin ? (
+                                        <select
+                                            value={project.status}
+                                            onChange={async (e) => {
+                                                const newStatus = e.target.value as ProjectStatus;
+                                                try {
+                                                    await updateProject(id!, { status: newStatus });
+                                                    setProject({ ...project, status: newStatus });
+                                                    toast.success(`Status alterado para ${statusLabels[newStatus]}`);
+                                                } catch (err: any) {
+                                                    toast.error(err.response?.data?.message || 'Erro ao alterar status');
+                                                }
+                                            }}
+                                            className={`${statusStyles[project.status as ProjectStatus] || 'bg-gray-100 text-gray-700'} px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-current outline-none cursor-pointer focus:ring-1 focus:ring-primary h-6 text-center [text-align-last:center] flex items-center justify-center`}
+                                        >
+                                            <option value="active">Ativo</option>
+                                            <option value="inactive">Inativo</option>
+                                            <option value="archived">Arquivado</option>
+                                        </select>
+                                    ) : (
+                                        <span className={`${statusStyles[project.status as ProjectStatus] || 'bg-green-100 text-green-700'} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border border-current inline-flex items-center justify-center min-w-[80px]`}>
+                                            {statusLabels[project.status as ProjectStatus] || project.status}
+                                        </span>
+                                    )
                                 )}
                                 {project.type && !isHeaderMinimized && (
-                                     <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-purple-200 dark:border-purple-800">
+                                    <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-purple-200 dark:border-purple-800">
                                         {project.type}
                                     </span>
                                 )}
@@ -759,7 +803,11 @@ const ProjectDetailsScreen = () => {
                         <div className={`flex flex-col lg:flex-row items-end lg:items-center transition-all duration-300 ${isHeaderMinimized ? 'hidden lg:flex' : 'flex'
                             } gap-3`}>
                             <div className="flex items-center gap-3">
-                                <div className="flex -space-x-2">
+                                <div
+                                    className="flex -space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                                    onClick={() => setIsMembersModalOpen(true)}
+                                    title="Ver todos os membros"
+                                >
                                     {project.members?.slice(0, 4).map((m: any, idx: number) => (
                                         <img
                                             key={idx}
@@ -769,6 +817,11 @@ const ProjectDetailsScreen = () => {
                                             title={m.user?.name}
                                         />
                                     ))}
+                                    {project.members?.length > 4 && (
+                                        <div className="w-7 h-7 rounded-full border-2 border-white dark:border-secondary shadow-sm bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                                            +{project.members.length - 4}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex items-center gap-2 border-l border-gray-300 dark:border-gray-700 pl-3 h-7">
                                     <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-primary shrink-0 overflow-hidden">
@@ -880,34 +933,51 @@ const ProjectDetailsScreen = () => {
                                 )}
                             </>
                         )}
-                        
+
                         {/* Transfer Leadership - Only for Leader */}
-                        {(user && (project?.leaderId === user.id || project?.leader?.id === user.id)) && (
-                            <button
-                                onClick={() => setIsTransferModalOpen(true)}
-                                className="flex items-center gap-1.5 px-2 py-1 text-xs text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors cursor-pointer"
-                            >
-                                <span className="material-icons text-sm">manage_accounts</span>
-                                <span>Transferir Liderança</span>
-                            </button>
+                        {isLeader && (
+                            <div className="flex gap-1">
+                                <button
+                                    onClick={() => setIsTransferModalOpen(true)}
+                                    className="flex items-center gap-1.5 px-2 py-1 text-xs text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors cursor-pointer"
+                                >
+                                    <span className="material-icons text-sm">manage_accounts</span>
+                                    <span>Transferir Liderança</span>
+                                </button>
+                                <button
+                                    onClick={() => setIsDeleteProjectModalOpen(true)}
+                                    className="flex items-center gap-1.5 px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
+                                    title="Excluir Projeto"
+                                >
+                                    <span className="material-icons text-sm">delete_forever</span>
+                                    <span>Excluir</span>
+                                </button>
+                            </div>
                         )}
 
-                        {/* Leave Project Button - Only for members who are not the leader */}
-                        {user && project?.members?.some((m: any) => m.user?.id === user.id) &&
-                            project?.leaderId !== user.id && project?.leader?.id !== user.id && (
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
+                        {/* Leave Project Button */}
+                        {user && project?.members?.some((m: any) => m.user?.id === user.id) && (
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (isLeader) {
+                                        toast.error('Líderes de projeto não podem sair sem antes transferir a liderança.');
+                                    } else {
                                         setIsLeaveProjectModalOpen(true);
-                                    }}
-                                    className="flex items-center gap-1.5 px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer z-10 relative"
-                                >
-                                    <span className="material-icons text-sm">logout</span>
-                                    <span>Sair do Projeto</span>
-                                </button>
-                            )}
+                                    }
+                                }}
+                                title={isLeader ? "Líderes não podem sair sem transferir a liderança" : "Sair do Projeto"}
+                                className={`flex items-center gap-1.5 px-2 py-1 text-xs rounded-lg transition-colors cursor-pointer z-10 relative ${isLeader
+                                    ? 'text-gray-400 bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60'
+                                    : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                                    }`}
+                            >
+                                <span className="material-icons text-sm">logout</span>
+                                <span>Sair do Projeto</span>
+                            </button>
+                        )}
 
                     </div>
                     <div className="flex items-center gap-2">
@@ -1021,8 +1091,41 @@ const ProjectDetailsScreen = () => {
                                 )}
                             </label>
                         )}
+
+                        {/* Editar Projeto - Apenas para líder/admin */}
+                        {isLeaderOrAdmin && (
+                            <button
+                                onClick={() => navigate(`/edit-project/${id}`)}
+                                className="bg-primary hover:bg-blue-600 text-white px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors border border-primary relative z-20"
+                            >
+                                <Edit size={14} />
+                                <span className="text-xs font-medium hidden sm:inline">Editar</span>
+                            </button>
+                        )}
                     </div>
                 </div>
+
+                {/* Leaderless Warning Alert */}
+                {(!project?.leaderId && !loadingProject) && (
+                    <div className="mx-4 lg:mx-6 mt-4 p-4 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-3 animate-pulse">
+                        <span className="material-icons text-red-500">warning</span>
+                        <div className="flex-1">
+                            <h4 className="text-sm font-bold text-red-800 dark:text-red-300">Projeto sem Líder</h4>
+                            <p className="text-xs text-red-700 dark:text-red-400">Este projeto está atualmente sem um líder responsável. Algumas funções administrativas podem estar indisponíveis.</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Memberless Warning (if only 1 or 0 members and no leader) */}
+                {(project?.members?.length <= 1 && !loadingProject) && (
+                    <div className="mx-4 lg:mx-6 mt-4 p-4 bg-amber-100 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center gap-3">
+                        <span className="material-icons text-amber-500">info</span>
+                        <div className="flex-1">
+                            <h4 className="text-sm font-bold text-amber-800 dark:text-amber-300">Projeto sem Membros</h4>
+                            <p className="text-xs text-amber-700 dark:text-amber-400">Este projeto tem poucos ou nenhum membro. Convide colegas para começar a colaborar!</p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Pull Handle (Mobile Only) */}
                 <div className="lg:hidden flex justify-center mt-1 -mb-1">
@@ -1056,7 +1159,7 @@ const ProjectDetailsScreen = () => {
                                 ref={provided.innerRef}
                                 className="h-full flex gap-6 min-w-max"
                             >
-                            {/* columns list */}
+                                {/* columns list */}
                                 {displayedColumns && displayedColumns.map((column: any, index: number) => {
                                     const styles = getColumnStyles(column);
                                     return (
@@ -1142,12 +1245,12 @@ const ProjectDetailsScreen = () => {
                                                                             ))}
                                                                         </div>
                                                                     )}
-                                                                    
+
                                                                     {/* Overlay transparente para fechar ao clicar fora (opcional, mas recomendado) */}
                                                                     {pickingColorColumnId === column.id && (
-                                                                        <div 
-                                                                            className="fixed inset-0 z-40 bg-transparent" 
-                                                                            onClick={(e) => { e.stopPropagation(); setPickingColorColumnId(null); }} 
+                                                                        <div
+                                                                            className="fixed inset-0 z-40 bg-transparent"
+                                                                            onClick={(e) => { e.stopPropagation(); setPickingColorColumnId(null); }}
                                                                         />
                                                                     )}
                                                                 </div>
@@ -1178,20 +1281,20 @@ const ProjectDetailsScreen = () => {
                                                                                 }}
                                                                             >
                                                                                 <div className="flex items-center gap-2 mb-2 justify-between">
-                                                    {task.createdBy && (
-                                                        <div className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity" title={`Criado por: ${task.createdBy.name}`}>
-                                                            <img 
-                                                                src={task.createdBy.avatarUrl || `https://ui-avatars.com/api/?name=${task.createdBy.name}&background=random`} 
-                                                                alt={task.createdBy.name}
-                                                                className="w-4 h-4 rounded-full"
-                                                            />
-                                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium hidden group-hover:block transition-all">Criado por: {task.createdBy.name}</span>
-                                                        </div>
-                                                    )}
-                                                    <div className="flex items-center gap-2">
-                                                        {getPriorityBadge(task.priority)}
-                                                    </div>
-                                                </div>
+                                                                                    {task.createdBy && (
+                                                                                        <div className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity" title={`Criado por: ${task.createdBy.name}`}>
+                                                                                            <img
+                                                                                                src={task.createdBy.avatarUrl || `https://ui-avatars.com/api/?name=${task.createdBy.name}&background=random`}
+                                                                                                alt={task.createdBy.name}
+                                                                                                className="w-4 h-4 rounded-full"
+                                                                                            />
+                                                                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium hidden group-hover:block transition-all">Criado por: {task.createdBy.name}</span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        {getPriorityBadge(task.priority)}
+                                                                                    </div>
+                                                                                </div>
                                                                                 <h4 className={`font-bold text-secondary dark:text-gray-100 text-sm mb-3 ${column.status === 'done' ? 'line-through text-gray-400 dark:text-gray-500' : ''}`}>
                                                                                     {task.title}
                                                                                 </h4>
@@ -1249,6 +1352,10 @@ const ProjectDetailsScreen = () => {
                                                                 ))}
                                                                 {/* Skeleton Placeholder Animation */}
                                                                 {provided.placeholder && React.isValidElement(provided.placeholder) ? (
+                                                                    React.cloneElement(provided.placeholder as any, {
+                                                                        className: "bg-gray-200 dark:bg-gray-700 border-2 border-dashed border-gray-400 dark:border-gray-500 rounded-xl animate-pulse opacity-80",
+                                                                        style: {
+                                                                            ...(provided.placeholder as any).props.style,
                                                                     React.cloneElement(provided.placeholder as React.ReactElement<any>, {
                                                                         className: "bg-gray-200 dark:bg-gray-700 border-2 border-dashed border-gray-400 dark:border-gray-500 rounded-xl animate-pulse opacity-80",
                                                                         style: {
@@ -1291,12 +1398,12 @@ const ProjectDetailsScreen = () => {
                                                                     </div>
                                                                 ) : (
                                                                     isProjectMember && (
-                                                                    <button
-                                                                        onClick={() => handleStartInlineCreate(column.id)}
-                                                                        className="w-full py-2 text-sm text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center gap-1 font-medium border border-dashed border-gray-300 dark:border-gray-700"
-                                                                    >
-                                                                        <span className="material-icons text-sm">add</span> Adicionar cartão
-                                                                    </button>
+                                                                        <button
+                                                                            onClick={() => handleStartInlineCreate(column.id)}
+                                                                            className="w-full py-2 text-sm text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center gap-1 font-medium border border-dashed border-gray-300 dark:border-gray-700"
+                                                                        >
+                                                                            <span className="material-icons text-sm">add</span> Adicionar cartão
+                                                                        </button>
                                                                     )
                                                                 )}
                                                             </div>
@@ -1309,19 +1416,17 @@ const ProjectDetailsScreen = () => {
                                 })}
                                 {provided.placeholder}
 
-                                {provided.placeholder}
-
                                 {/* Add Column Button - Only for members */}
                                 {isProjectMember && (
-                                <div className="w-[320px] flex-shrink-0 flex items-start">
-                                    <button
-                                        onClick={handleAddColumn}
-                                        className="w-full py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl flex items-center justify-center gap-2 text-gray-500 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all font-bold"
-                                    >
-                                        <span className="material-icons">add</span>
-                                        Nova Coluna
-                                    </button>
-                                </div>
+                                    <div className="w-[320px] flex-shrink-0 flex items-start">
+                                        <button
+                                            onClick={handleAddColumn}
+                                            className="w-full py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl flex items-center justify-center gap-2 text-gray-500 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all font-bold"
+                                        >
+                                            <span className="material-icons">add</span>
+                                            Nova Coluna
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -1392,23 +1497,23 @@ const ProjectDetailsScreen = () => {
                 cancelText="Cancelar"
                 type="danger"
             />
-            
+
             {/* Modal Transferência de Liderança */}
-             {isTransferModalOpen && (
+            {isTransferModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
                     <div className="bg-white dark:bg-surface-dark w-full max-w-md rounded-2xl p-6 shadow-2xl border border-gray-100 dark:border-gray-800 animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
                                 Transferir Liderança
                             </h2>
-                            <button 
+                            <button
                                 onClick={() => setIsTransferModalOpen(false)}
                                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                             >
                                 <span className="material-icons">close</span>
                             </button>
                         </div>
-                        
+
                         <div className="p-4 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30 rounded-xl mb-6">
                             <div className="flex gap-3">
                                 <span className="material-icons text-orange-500 shrink-0">warning</span>
@@ -1423,7 +1528,7 @@ const ProjectDetailsScreen = () => {
                                 Selecione o novo líder
                             </label>
                             <MemberSelect
-                                members={project?.members?.filter((m: any) => m.user?.id !== user?.id) || []}
+                                members={project?.members?.map((m: any) => m.user).filter((u: any) => u.id !== user?.id) || []}
                                 selectedId={selectedNewLeaderId}
                                 onChange={(id) => setSelectedNewLeaderId(id)}
                                 placeholder="Escolha um membro..."
@@ -1438,7 +1543,7 @@ const ProjectDetailsScreen = () => {
                                 Cancelar
                             </button>
                             <button
-                                onClick={handleTransferLeadership}
+                                onClick={() => handleTransferLeadership()}
                                 disabled={!selectedNewLeaderId}
                                 className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-95"
                             >
@@ -1448,6 +1553,27 @@ const ProjectDetailsScreen = () => {
                     </div>
                 </div>
             )}
+
+            <MembersListModal
+                isOpen={isMembersModalOpen}
+                onClose={() => setIsMembersModalOpen(false)}
+                members={project?.members}
+                leaderId={project?.leaderId || project?.leader?.id}
+                currentUserId={user?.id}
+                onTransfer={(newLeaderId) => {
+                    handleTransferLeadership(newLeaderId);
+                }}
+            />
+
+            <ConfirmationModal
+                isOpen={isDeleteProjectModalOpen}
+                onClose={() => setIsDeleteProjectModalOpen(false)}
+                onConfirm={handleDeleteProject}
+                title="Excluir Projeto"
+                message={`Tem certeza que deseja excluir permanentemente o projeto "${project.title}"? Esta ação não pode ser desfeita e todos os dados relacionados (tarefas, comentários, etc.) serão perdidos.`}
+                confirmText={isDeletingProject ? "Excluindo..." : "Excluir Permanentemente"}
+                type="danger"
+            />
         </div>
     );
 

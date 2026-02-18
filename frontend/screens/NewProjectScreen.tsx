@@ -1,12 +1,24 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Upload, Type, Hash, Users, Award, ArrowLeft, Rocket, LayoutGrid, Crown, Target, Loader } from 'lucide-react';
-import { createProject, uploadProjectCover } from '../services/project.service';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Upload, Type, Hash, Users, Award, ArrowLeft, Rocket, LayoutGrid, Crown, Target, Loader, Check } from 'lucide-react';
+import { createProject, uploadProjectCover, getProjectDetails, updateProject } from '../services/project.service';
 import toast from 'react-hot-toast';
 
 const NewProjectScreen = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditing = Boolean(id);
+
   const [formData, setFormData] = useState({
+
+      name: '',
+      description: '',
+      category: 'Desenvolvimento',
+      type: 'Interno',
+      tags: '',
+      maxMembers: 4,
+      rewardPoints: 1500,
+      coverUrl: ''
     name: '',
     description: '',
     category: 'Desenvolvimento',
@@ -18,11 +30,58 @@ const NewProjectScreen = () => {
   });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [loadingProject, setLoadingProject] = useState(false);
+
+  // Carregar dados do projeto se estiver editando
+  useEffect(() => {
+    const fetchProject = async () => {
+      if (!id) return;
+
+      setLoadingProject(true);
+      try {
+        const project = await getProjectDetails(id);
+        setFormData({
+          name: project.title || '',
+          description: project.description || '',
+          category: project.category || 'Desenvolvimento',
+          tags: project.tags || '',
+          maxMembers: project.maxMembers || 4,
+          rewardPoints: project.rewardPoints || 1500,
+          coverUrl: project.coverUrl || ''
+        });
+      } catch (err: any) {
+        toast.error('Erro ao carregar projeto');
+        navigate('/projects');
+      } finally {
+        setLoadingProject(false);
+      }
+    };
+
+    fetchProject();
+  }, [id, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
+      if (isEditing && id) {
+        // Atualizar projeto existente
+        await updateProject(id, {
+          title: formData.name,
+          description: formData.description,
+          category: formData.category,
+          coverUrl: formData.coverUrl
+        });
+        toast.success('Projeto atualizado com sucesso! ✓');
+        navigate(`/project-details/${id}`);
+      } else {
+        // Criar novo projeto
+        await createProject(formData);
+        toast.success('Projeto criado com sucesso! 🚀');
+        navigate('/projects');
+      }
+    } catch (err: any) {
+      toast.error(`Erro ao ${isEditing ? 'atualizar' : 'criar'} projeto: ` + (err.response?.data?.message || err.message));
       await createProject(formData);
       toast.success('Projeto criado com sucesso! 🚀');
       navigate('/projects');
@@ -53,6 +112,14 @@ const NewProjectScreen = () => {
     }
   };
 
+  if (loadingProject) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <Loader className="animate-spin text-primary" size={40} />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
       <button
@@ -64,10 +131,12 @@ const NewProjectScreen = () => {
 
       <header className="mb-8">
         <h1 className="text-3xl font-display font-extrabold text-secondary dark:text-white mb-2">
-          Criar Novo Projeto
+          {isEditing ? 'Editar Projeto' : 'Criar Novo Projeto'}
         </h1>
         <p className="text-gray-600 dark:text-gray-300">
-          Inicie uma nova jornada acadêmica. Defina objetivos claros e recrute sua equipe.
+          {isEditing
+            ? 'Atualize as informações do seu projeto.'
+            : 'Inicie uma nova jornada acadêmica. Defina objetivos claros e recrute sua equipe.'}
         </p>
       </header>
 
@@ -192,6 +261,8 @@ const NewProjectScreen = () => {
               disabled={loading}
               className="px-8 py-3 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:bg-blue-600 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-50"
             >
+              {loading ? <Loader className="animate-spin" size={20} /> : (isEditing ? <Check size={20} /> : <Rocket size={20} />)}
+              {isEditing ? 'Salvar Alterações' : 'Lançar Projeto'}
               {loading ? <Loader className="animate-spin" size={20} /> : <Rocket size={20} />} Lançar Projeto
             </button>
           </div>

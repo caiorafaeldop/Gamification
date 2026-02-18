@@ -16,6 +16,7 @@ router.put('/projects/:projectId', adminController.updateProject);
 // Users
 router.get('/users', adminController.getAllUsers);
 router.patch('/users/:userId/points', adminController.updateUserPoints);
+router.delete('/users/:userId', adminController.deleteUser);
 
 // Logs
 router.get('/logs', adminController.getAdminLogs);

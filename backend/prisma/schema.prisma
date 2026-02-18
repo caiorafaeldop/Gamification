@@ -48,10 +48,10 @@ model Project {
   description            String?
   category               String?
   type                   String?         @default("Interno")
-  leaderId               String
+  leaderId               String?
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
-  status                 String?         @default("active")
+  status                 ProjectStatus   @default(active)
   progress               Int             @default(0)
   xpReward               Int             @default(100)
   color                  String?
@@ -59,7 +59,7 @@ model Project {
   pointsPerCompletedTask Int?            @default(50)
   pointsPerOpenTask      Int?            @default(50)
   KanbanColumn           KanbanColumn[]
-  leader                 User            @relation("ProjectLeader", fields: [leaderId], references: [id], onDelete: Cascade)
+  leader                 User?           @relation("ProjectLeader", fields: [leaderId], references: [id], onDelete: SetNull)
   members                ProjectMember[]
   tasks                  Task[]
 }
@@ -256,6 +256,12 @@ enum Role {
   ADMIN
   LEADER
   MEMBER
+}
+
+enum ProjectStatus {
+  active
+  inactive
+  archived
 }
 
 enum TaskStatus {

@@ -1,4 +1,4 @@
-export type ProjectStatus = 'active' | 'completed' | 'archived';
+export type ProjectStatus = 'active' | 'archived' | 'inactive';
 
 export interface Project {
   id: string;
@@ -19,14 +19,14 @@ export interface Project {
 
 export const statusStyles: Record<ProjectStatus, string> = {
   active: 'bg-green-100 text-green-700',
-  completed: 'bg-blue-100 text-blue-700',
-  archived: 'bg-gray-200 text-gray-600'
+  archived: 'bg-gray-200 text-gray-600',
+  inactive: 'bg-yellow-100 text-yellow-700'
 };
 
 export const statusLabels: Record<ProjectStatus, string> = {
   active: 'Ativo',
-  completed: 'Concluído',
-  archived: 'Arquivado'
+  archived: 'Arquivado',
+  inactive: 'Inativo'
 };
 
 

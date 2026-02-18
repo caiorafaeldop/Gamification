@@ -2,11 +2,16 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../utils/prisma';
 import { Role, TaskStatus } from '@prisma/client';
 
-import { createNewProject, addMemberToProject, leaveProject as leaveProjectService, transferProjectOwnership } from '../services/project.service';
+import { createNewProject, addMemberToProject, leaveProject as leaveProjectService, transferProjectOwnership, deleteProjectById } from '../services/project.service';
 
 export const getProjects = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const projects = await prisma.project.findMany({
+            where: {
+                status: {
+                    not: 'archived'
+                }
+            },
             include: {
                 members: true,
                 leader: { select: { name: true } },
@@ -164,6 +169,23 @@ export const transferOwnership = async (req: Request, res: Response, next: NextF
         const updatedProject = await transferProjectOwnership(id, newLeaderId, userId);
 
         res.json(updatedProject);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const deleteProject = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user!.userId;
+        const userRole = req.user!.role;
+
+        // Note: deleteProjectById in service only checks for ADMIN by default or takes adminId as param.
+        // We need to ensure leaders can also delete. 
+        // Let's check project.service.ts deleteProjectById implementation again.
+
+        const deletedProject = await deleteProjectById(id, userId);
+        res.json(deletedProject);
     } catch (error) {
         next(error);
     }

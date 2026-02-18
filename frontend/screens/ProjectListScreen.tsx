@@ -41,6 +41,9 @@ const ProjectListScreen = () => {
 
   const filteredProjects = projects
     .filter((p: any) => {
+      // Hide archived projects (though normally handled by backend)
+      if (p.status === 'archived') return false;
+
       const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -55,6 +58,11 @@ const ProjectListScreen = () => {
       return true;
     })
     .sort((a: any, b: any) => {
+      // 1. Prioritize status: Inactive projects go to the end
+      if (a.status === 'inactive' && b.status !== 'inactive') return 1;
+      if (a.status !== 'inactive' && b.status === 'inactive') return -1;
+
+      // 2. Apply user-selected sort order
       if (sortOrder === 'alpha') {
         return a.title.localeCompare(b.title);
       }
