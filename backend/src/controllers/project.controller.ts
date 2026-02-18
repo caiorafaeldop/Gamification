@@ -7,6 +7,11 @@ import { createNewProject, addMemberToProject, leaveProject as leaveProjectServi
 export const getProjects = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const projects = await prisma.project.findMany({
+            where: {
+                status: {
+                    not: 'archived'
+                }
+            },
             include: {
                 members: true,
                 leader: { select: { name: true } },

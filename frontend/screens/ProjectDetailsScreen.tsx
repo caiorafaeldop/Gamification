@@ -15,6 +15,7 @@ import toast from 'react-hot-toast';
 import ConfirmationModal from '../components/ConfirmationModal';
 import MembersListModal from '../components/MembersListModal';
 import { COLUMN_COLORS } from '../constants';
+import { ProjectStatus, statusLabels, statusStyles } from '../types';
 const ProjectDetailsScreen = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -749,9 +750,30 @@ const ProjectDetailsScreen = () => {
                             <div className="flex items-center gap-2">
                                 <h1 className={`${isHeaderMinimized ? 'text-base truncate max-w-[200px]' : 'text-xl'} transition-all duration-300 font-display font-extrabold text-secondary dark:text-white lg:max-w-none`}>{project.title}</h1>
                                 {!isHeaderMinimized && (
-                                    <span className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-green-200 dark:border-green-800">
-                                        {project.status}
-                                    </span>
+                                    isLeaderOrAdmin ? (
+                                        <select
+                                            value={project.status}
+                                            onChange={async (e) => {
+                                                const newStatus = e.target.value as ProjectStatus;
+                                                try {
+                                                    await updateProject(id!, { status: newStatus });
+                                                    setProject({ ...project, status: newStatus });
+                                                    toast.success(`Status alterado para ${statusLabels[newStatus]}`);
+                                                } catch (err: any) {
+                                                    toast.error(err.response?.data?.message || 'Erro ao alterar status');
+                                                }
+                                            }}
+                                            className={`${statusStyles[project.status as ProjectStatus] || 'bg-gray-100 text-gray-700'} px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-current outline-none cursor-pointer focus:ring-1 focus:ring-primary h-6 text-center [text-align-last:center] flex items-center justify-center`}
+                                        >
+                                            <option value="active">Ativo</option>
+                                            <option value="inactive">Inativo</option>
+                                            <option value="archived">Arquivado</option>
+                                        </select>
+                                    ) : (
+                                        <span className={`${statusStyles[project.status as ProjectStatus] || 'bg-green-100 text-green-700'} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border border-current inline-flex items-center justify-center min-w-[80px]`}>
+                                            {statusLabels[project.status as ProjectStatus] || project.status}
+                                        </span>
+                                    )
                                 )}
                                 {project.type && !isHeaderMinimized && (
                                     <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-purple-200 dark:border-purple-800">
@@ -1322,6 +1344,10 @@ const ProjectDetailsScreen = () => {
                                                                         className: "bg-gray-200 dark:bg-gray-700 border-2 border-dashed border-gray-400 dark:border-gray-500 rounded-xl animate-pulse opacity-80",
                                                                         style: {
                                                                             ...(provided.placeholder as any).props.style,
+                                                                    React.cloneElement(provided.placeholder as React.ReactElement<any>, {
+                                                                        className: "bg-gray-200 dark:bg-gray-700 border-2 border-dashed border-gray-400 dark:border-gray-500 rounded-xl animate-pulse opacity-80",
+                                                                        style: {
+                                                                            ...((provided.placeholder as React.ReactElement<any>).props.style || {}),
                                                                             visibility: 'visible',
                                                                         }
                                                                     })
@@ -1376,8 +1402,6 @@ const ProjectDetailsScreen = () => {
                                         </Draggable>
                                     );
                                 })}
-                                {provided.placeholder}
-
                                 {provided.placeholder}
 
                                 {/* Add Column Button - Only for members */}
