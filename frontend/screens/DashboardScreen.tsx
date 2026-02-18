@@ -125,8 +125,8 @@ const DashboardScreen = () => {
                 <Folder className="text-primary" size={24} />
                 Projetos que você participa
               </h2>
-              <Link 
-                to="/projects" 
+              <Link
+                to="/projects"
                 className="hidden sm:inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary/10 text-primary border border-primary/20 rounded-xl text-sm font-bold hover:bg-primary hover:text-white transition-all duration-300 group shadow-sm active:scale-95 min-w-[120px]"
               >
                 Ver todos
@@ -154,8 +154,14 @@ const DashboardScreen = () => {
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                    <div className="absolute bottom-2 left-3 z-20">
+                    <div className="absolute bottom-2 left-3 z-20 flex gap-1.5">
                       <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">{project.category || 'Geral'}</span>
+                      {project.status === 'archived' && (
+                        <span className="bg-gray-500/80 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">Arquivado</span>
+                      )}
+                      {project.status === 'inactive' && (
+                        <span className="bg-yellow-500/80 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">Inativo</span>
+                      )}
                     </div>
                   </div>
                   <div className="p-3 flex-1 flex flex-col">
@@ -175,7 +181,7 @@ const DashboardScreen = () => {
                       )}
                       <span className="text-[11px] text-gray-500 dark:text-gray-400">Líder: <span className="font-semibold text-gray-700 dark:text-gray-200">{project.leader?.name || 'Desconhecido'}</span></span>
                     </div>
-                    
+
                     <div className="mt-auto pt-2 border-t border-gray-100 dark:border-gray-700">
                       <button
                         onClick={(e) => { e.stopPropagation(); navigate(`/project-details/${project.id}`); }}
@@ -190,8 +196,8 @@ const DashboardScreen = () => {
             </div>
             {/* Mobile View All Button */}
             <div className="mt-6 sm:hidden">
-              <Link 
-                to="/projects" 
+              <Link
+                to="/projects"
                 className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-primary/10 text-primary border border-primary/20 rounded-xl text-sm font-bold hover:bg-primary hover:text-white transition-all duration-300 group shadow-sm active:scale-95"
               >
                 Ver todos
@@ -214,7 +220,7 @@ const DashboardScreen = () => {
                       {(() => {
                         const desc = activity.description;
                         const achievementMatch = desc.match(/^Earned achievement: "(.*)"!$/);
-                        
+
                         if (achievementMatch) {
                           return (
                             <span>
@@ -238,21 +244,21 @@ const DashboardScreen = () => {
                         if (joinedProjectMatch) {
                           return `Entrou no projeto "${joinedProjectMatch[1]}".`;
                         }
-                        
+
                         if (desc.startsWith('Completed a task and earned')) {
-                           const points = desc.match(/earned (\d+)/)?.[1];
-                           return `Concluiu uma tarefa e ganhou ${points || ''} pontos.`;
+                          const points = desc.match(/earned (\d+)/)?.[1];
+                          return `Concluiu uma tarefa e ganhou ${points || ''} pontos.`;
                         }
-                        
+
                         if (desc.startsWith('Achieved new tier:')) {
-                           const tier = desc.match(/tier: (.*)!/)?.[1];
-                           return `Alcançou o nível ${tier || ''}! 🎉`;
+                          const tier = desc.match(/tier: (.*)!/)?.[1];
+                          return `Alcançou o nível ${tier || ''}! 🎉`;
                         }
-                        
+
                         if (desc.startsWith('Streak updated:')) {
-                           return 'Sequência diária atualizada!';
+                          return 'Sequência diária atualizada!';
                         }
-                        
+
                         return desc;
                       })()}
                     </p>
