@@ -24,8 +24,8 @@ model User {
   tierId              String
   avatarColor         String?
   course              String?
-  bio                 String?
   avatarUrl           String?
+  bio                 String?
   skills              String[]           @default([])
   activityLogs        ActivityLog[]
   comments            Comment[]
@@ -47,19 +47,19 @@ model Project {
   title                  String          @unique
   description            String?
   category               String?
-  type                   String?         @default("Interno")
-  leaderId               String?
+  leaderId               String
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
-  status                 ProjectStatus   @default(active)
   progress               Int             @default(0)
   xpReward               Int             @default(100)
   color                  String?
   coverUrl               String?
-  pointsPerCompletedTask Int?            @default(50)
   pointsPerOpenTask      Int?            @default(50)
+  pointsPerCompletedTask Int?            @default(50)
+  type                   String?         @default("Interno")
+  status                 ProjectStatus   @default(active)
   KanbanColumn           KanbanColumn[]
-  leader                 User?           @relation("ProjectLeader", fields: [leaderId], references: [id], onDelete: SetNull)
+  leader                 User            @relation("ProjectLeader", fields: [leaderId], references: [id], onDelete: Cascade)
   members                ProjectMember[]
   tasks                  Task[]
 }
