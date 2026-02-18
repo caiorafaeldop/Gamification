@@ -48,7 +48,7 @@ model Project {
   description            String?
   category               String?
   type                   String?         @default("Interno")
-  leaderId               String
+  leaderId               String?
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
   status                 ProjectStatus   @default(active)
@@ -59,7 +59,7 @@ model Project {
   pointsPerCompletedTask Int?            @default(50)
   pointsPerOpenTask      Int?            @default(50)
   KanbanColumn           KanbanColumn[]
-  leader                 User            @relation("ProjectLeader", fields: [leaderId], references: [id], onDelete: Cascade)
+  leader                 User?           @relation("ProjectLeader", fields: [leaderId], references: [id], onDelete: SetNull)
   members                ProjectMember[]
   tasks                  Task[]
 }

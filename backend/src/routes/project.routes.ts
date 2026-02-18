@@ -16,5 +16,6 @@ router.patch('/:id', updateProject);
 router.post('/:id/join', joinProject);
 router.delete('/:id/leave', leaveProject);
 router.put('/:id/transfer-ownership', transferOwnership);
+router.delete('/:id', deleteProject);
 
 export default router;

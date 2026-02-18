@@ -158,16 +158,26 @@ export const updateProjectDetails = async (id: string, data: UpdateProjectInput,
   return updatedProjectResult;
 };
 
-export const deleteProjectById = async (id: string, adminId: string) => {
+export const deleteProjectById = async (id: string, requestId: string) => {
   const project = await findProjectById(id);
   if (!project) {
     throw { statusCode: 404, message: 'Project not found.' };
   }
 
+  // Permission check: Only leader or admin
+  const user = await findUserById(requestId);
+  if (!user) {
+    throw { statusCode: 404, message: 'User not found.' };
+  }
+
+  if (user.role !== Role.ADMIN && project.leaderId !== requestId) {
+    throw { statusCode: 403, message: 'Only the project leader or an admin can delete this project.' };
+  }
+
   return prisma.$transaction(async (tx) => {
     await deleteProject(id);
     await createActivityLog({
-      user: { connect: { id: adminId } },
+      user: { connect: { id: requestId } },
       type: ActivityType.PROJECT_DELETED,
       description: `Deleted project "${project.title}".`,
     }, tx);

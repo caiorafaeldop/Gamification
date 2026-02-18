@@ -14,9 +14,11 @@ interface MembersListModalProps {
     onClose: () => void;
     members: Member[] | undefined;
     leaderId: string | undefined;
+    currentUserId: string | undefined;
+    onTransfer: (newLeaderId: string) => void;
 }
 
-const MembersListModal: React.FC<MembersListModalProps> = ({ isOpen, onClose, members, leaderId }) => {
+const MembersListModal: React.FC<MembersListModalProps> = ({ isOpen, onClose, members, leaderId, currentUserId, onTransfer }) => {
     if (!isOpen) return null;
 
     // Filter members to separate leader and other members if needed, 
@@ -68,7 +70,19 @@ const MembersListModal: React.FC<MembersListModalProps> = ({ isOpen, onClose, me
                                         </span>
                                     )}
                                 </div>
-                                {/* If email is available, we could show it, but it might not be in the selection */}
+                                {currentUserId === leaderId && member.user.id !== leaderId && (
+                                    <button
+                                        onClick={() => {
+                                            if (window.confirm(`Tem certeza que deseja transferir a liderança para ${member.user.name}?`)) {
+                                                onTransfer(member.user.id);
+                                            }
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 p-2 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-all"
+                                        title="Transferir Liderança"
+                                    >
+                                        <span className="material-icons">manage_accounts</span>
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}

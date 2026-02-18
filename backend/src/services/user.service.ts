@@ -1,5 +1,5 @@
 import { Prisma, User, Role, ActivityType, TaskStatus } from '@prisma/client';
-import { findUserById, findUsers, updateUser, updateConnectaPoints, updateManyUsers } from '../repositories/user.repository';
+import { findUserById, findUsers, updateUser, updateConnectaPoints, updateManyUsers, deleteUser } from '../repositories/user.repository';
 import { findActivityLogsByUserId, createActivityLog } from '../repositories/activityLog.repository';
 import { hashPassword } from '../utils/bcrypt';
 import { UpdateUserInput, UpdateUserPointsInput } from '../schemas/user.schema';
@@ -233,5 +233,73 @@ export const activateUser = async (userId: string, adminId: string) => {
       description: `User activated by admin (${adminId}).`,
     }, tx);
     return updatedUser;
+  });
+};
+
+export const deleteUserProfile = async (userId: string, adminId: string) => {
+  return prisma.$transaction(async (tx) => {
+    const user = await findUserById(userId, tx);
+    if (!user) {
+      throw { statusCode: 404, message: 'User not found.' };
+    }
+
+    if (user.role === Role.ADMIN && user.id !== adminId) {
+      throw { statusCode: 403, message: 'Cannot delete another admin.' };
+    }
+
+    // Find projects where this user is the leader
+    const projectsLed = await tx.project.findMany({
+      where: { leaderId: userId },
+      include: {
+        members: {
+          where: { userId: { not: userId } },
+          orderBy: { assignedAt: 'asc' }, // Transfer to oldest member
+          take: 1
+        }
+      }
+    } as any); // Cast to any because Prisma Client might not be synced yet
+
+    for (const project of projectsLed) {
+      const nextMember = (project as any).members[0];
+      if (nextMember) {
+        // Transfer leadership to the oldest member
+        await tx.project.update({
+          where: { id: project.id },
+          data: { leaderId: nextMember.userId }
+        });
+
+        // Upgrade new leader's role if they are just a MEMBER
+        const newLeader = await tx.user.findUnique({ where: { id: nextMember.userId } });
+        if (newLeader && newLeader.role === Role.MEMBER) {
+          await tx.user.update({
+            where: { id: nextMember.userId },
+            data: { role: Role.LEADER }
+          });
+        }
+
+        await createActivityLog({
+          user: { connect: { id: nextMember.userId } },
+          type: ActivityType.ROLE_CHANGED,
+          description: `Assumeu a liderança do projeto "${project.title}" após a saída do antigo líder.`,
+        }, tx);
+      } else {
+        // No other members, project stays without a leader
+        await tx.project.update({
+          where: { id: project.id },
+          data: { leaderId: null } as any // Cast to any until client is regenerated
+        });
+      }
+    }
+
+    // Deleting the user will also delete their ProjectMember records (assuming Cascade on ProjectMember relation in User)
+    const deletedUser = await deleteUser(userId, tx);
+
+    await createActivityLog({
+      user: { connect: { id: adminId } },
+      type: ActivityType.USER_STATUS_CHANGED,
+      description: `User "${user.name}" (${user.email}) was permanently deleted by admin.`,
+    }, tx);
+
+    return deletedUser;
   });
 };
