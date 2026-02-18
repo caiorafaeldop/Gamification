@@ -16,7 +16,21 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import MembersListModal from '../components/MembersListModal';
 import { COLUMN_COLORS } from '../constants';
 import { ProjectStatus, statusLabels, statusStyles } from '../types';
+import ProjectDetailsScreenMobile from './ProjectDetailsScreenMobile';
+
 const ProjectDetailsScreen = () => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 1024);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    if (isMobile) {
+        return <ProjectDetailsScreenMobile />;
+    }
+
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { project, setProject, loading: loadingProject } = useProjectDetails(id!);
@@ -469,8 +483,6 @@ const ProjectDetailsScreen = () => {
             fetchKanban(); // Revert
         }
     };
-
-
 
     const handleDeleteColumn = (columnId: string) => {
         setColumnToDelete(columnId);
@@ -1293,7 +1305,7 @@ const ProjectDetailsScreen = () => {
                                                                                             <>
                                                                                                 {task.assignees.slice(0, 3).map((assignee: any, idx: number) => (
                                                                                                     <img
-                                                                                                        key={assignee.user?.id || idx}
+                                                                                                        key={idx}
                                                                                                         alt={assignee.user?.name}
                                                                                                         className={`w-6 h-6 rounded-full border border-white dark:border-surface-dark object-cover ${column.status === 'done' ? 'grayscale' : ''}`}
                                                                                                         src={assignee.user?.avatarUrl || `https://ui-avatars.com/api/?name=${assignee.user?.name}&background=random`}

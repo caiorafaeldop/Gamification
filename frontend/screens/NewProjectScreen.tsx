@@ -19,6 +19,14 @@ const NewProjectScreen = () => {
       maxMembers: 4,
       rewardPoints: 1500,
       coverUrl: ''
+    name: '',
+    description: '',
+    category: 'Desenvolvimento',
+    type: 'Interno',
+    tags: '',
+    maxMembers: 4,
+    rewardPoints: 1500,
+    coverUrl: ''
   });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -74,6 +82,11 @@ const NewProjectScreen = () => {
       }
     } catch (err: any) {
       toast.error(`Erro ao ${isEditing ? 'atualizar' : 'criar'} projeto: ` + (err.response?.data?.message || err.message));
+      await createProject(formData);
+      toast.success('Projeto criado com sucesso! 🚀');
+      navigate('/projects');
+    } catch (err: any) {
+      toast.error('Erro ao criar projeto: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
@@ -199,38 +212,38 @@ const NewProjectScreen = () => {
                 </select>
               </div>
 
-                 {/* Type */}
-               <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <Target size={16} className="text-primary" /> Tipo
-                  </label>
-                  <select 
-                    name="type"
-                    value={formData.type}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none">
-                    <option>Interno</option>
-                    <option>Extensão</option>
-                    <option>Pesquisa</option>
-                    <option>Empresa</option>
-                    <option>Outro</option>
-                  </select>
-                </div>
+              {/* Type */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <Target size={16} className="text-primary" /> Tipo
+                </label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none">
+                  <option>Interno</option>
+                  <option>Extensão</option>
+                  <option>Pesquisa</option>
+                  <option>Empresa</option>
+                  <option>Outro</option>
+                </select>
+              </div>
 
-                {/* Tags */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <Hash size={16} className="text-primary" /> Tags
-                  </label>
-                  <input 
-                    name="tags"
-                    value={formData.tags}
-                    onChange={handleChange}
-                    type="text" 
-                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
-                    placeholder="react, python, ia..."
-                  />
-                </div>
+              {/* Tags */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <Hash size={16} className="text-primary" /> Tags
+                </label>
+                <input
+                  name="tags"
+                  value={formData.tags}
+                  onChange={handleChange}
+                  type="text"
+                  className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
+                  placeholder="react, python, ia..."
+                />
+              </div>
             </div>
           </div>
 
@@ -250,6 +263,7 @@ const NewProjectScreen = () => {
             >
               {loading ? <Loader className="animate-spin" size={20} /> : (isEditing ? <Check size={20} /> : <Rocket size={20} />)}
               {isEditing ? 'Salvar Alterações' : 'Lançar Projeto'}
+              {loading ? <Loader className="animate-spin" size={20} /> : <Rocket size={20} />} Lançar Projeto
             </button>
           </div>
         </div>

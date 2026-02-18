@@ -16,5 +16,5 @@ export const StrictModeDroppable = ({ children, ...props }: DroppableProps) => {
         return null;
     }
 
-    return <Droppable {...props}>{children}</Droppable>;
+    return <Droppable {...props} isDropDisabled={props.isDropDisabled || false} isCombineEnabled={props.isCombineEnabled || false} ignoreContainerClipping={props.ignoreContainerClipping || false}>{children}</Droppable>;
 };
