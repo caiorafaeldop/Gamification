@@ -1352,10 +1352,6 @@ const ProjectDetailsScreen = () => {
                                                                 ))}
                                                                 {/* Skeleton Placeholder Animation */}
                                                                 {provided.placeholder && React.isValidElement(provided.placeholder) ? (
-                                                                    React.cloneElement(provided.placeholder as any, {
-                                                                        className: "bg-gray-200 dark:bg-gray-700 border-2 border-dashed border-gray-400 dark:border-gray-500 rounded-xl animate-pulse opacity-80",
-                                                                        style: {
-                                                                            ...(provided.placeholder as any).props.style,
                                                                     React.cloneElement(provided.placeholder as React.ReactElement<any>, {
                                                                         className: "bg-gray-200 dark:bg-gray-700 border-2 border-dashed border-gray-400 dark:border-gray-500 rounded-xl animate-pulse opacity-80",
                                                                         style: {

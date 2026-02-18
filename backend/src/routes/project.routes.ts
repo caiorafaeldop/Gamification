@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createProject, getProjectDetails, getProjects, joinProject, uploadProjectCover, updateProject, leaveProject, transferOwnership } from '../controllers/project.controller';
+import { createProject, getProjectDetails, getProjects, joinProject, uploadProjectCover, updateProject, leaveProject, transferOwnership, deleteProject } from '../controllers/project.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import upload from '../middlewares/upload.middleware';
 

@@ -11,14 +11,6 @@ const NewProjectScreen = () => {
 
   const [formData, setFormData] = useState({
 
-      name: '',
-      description: '',
-      category: 'Desenvolvimento',
-      type: 'Interno',
-      tags: '',
-      maxMembers: 4,
-      rewardPoints: 1500,
-      coverUrl: ''
     name: '',
     description: '',
     category: 'Desenvolvimento',
@@ -82,11 +74,6 @@ const NewProjectScreen = () => {
       }
     } catch (err: any) {
       toast.error(`Erro ao ${isEditing ? 'atualizar' : 'criar'} projeto: ` + (err.response?.data?.message || err.message));
-      await createProject(formData);
-      toast.success('Projeto criado com sucesso! 🚀');
-      navigate('/projects');
-    } catch (err: any) {
-      toast.error('Erro ao criar projeto: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
@@ -263,7 +250,6 @@ const NewProjectScreen = () => {
             >
               {loading ? <Loader className="animate-spin" size={20} /> : (isEditing ? <Check size={20} /> : <Rocket size={20} />)}
               {isEditing ? 'Salvar Alterações' : 'Lançar Projeto'}
-              {loading ? <Loader className="animate-spin" size={20} /> : <Rocket size={20} />} Lançar Projeto
             </button>
           </div>
         </div>
