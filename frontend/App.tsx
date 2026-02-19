@@ -1,4 +1,5 @@
 import React from 'react';
+import { AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import LoginScreen from './screens/LoginScreen';
@@ -36,6 +37,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<LoginScreen />} />
         <Route path="/sign-up" element={<SignUpScreen />} />
+        <Route path="/sso-callback" element={<AuthenticateWithRedirectCallback afterSignInUrl="/dashboard" afterSignUpUrl="/dashboard" />} />
 
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<DashboardScreen />} />

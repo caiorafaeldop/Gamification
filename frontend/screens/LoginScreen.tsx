@@ -4,7 +4,7 @@ import { Network, Rocket, Mail, Lock, EyeOff, Loader2 } from 'lucide-react';
 import { login, register, resetPassword } from '../services/auth.service';
 import toast from 'react-hot-toast';
 import logo from '../assets/logo.webp';
-import { useClerk, useSignIn, useSignUp, useAuth, AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
+import { useClerk, useSignIn, useSignUp, useAuth } from '@clerk/clerk-react';
 
 const LoginScreen = () => {
   const navigate = useNavigate();
@@ -16,10 +16,7 @@ const LoginScreen = () => {
 
   const [view, setView] = useState<'login' | 'register' | 'forgot-password'>('login');
 
-  // Handle OAuth Redirect
-  if (window.location.pathname.endsWith('/sso-callback')) {
-    return <AuthenticateWithRedirectCallback />;
-  }
+
 
   // Effect to redirect if already signed in
   useEffect(() => {
@@ -128,7 +125,7 @@ const LoginScreen = () => {
     try {
         await signIn.authenticateWithRedirect({
             strategy: 'oauth_google',
-            redirectUrl: '/sso-callback',
+            redirectUrl: `${window.location.origin}/sso-callback`,
             redirectUrlComplete: '/#/dashboard'
         });
     } catch (error) {
@@ -142,7 +139,7 @@ const LoginScreen = () => {
       try {
           await signUp.authenticateWithRedirect({
               strategy: 'oauth_google',
-              redirectUrl: '/sso-callback',
+              redirectUrl: `${window.location.origin}/sso-callback`,
               redirectUrlComplete: '/#/dashboard'
           });
       } catch (error) {

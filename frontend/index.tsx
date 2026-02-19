@@ -23,8 +23,8 @@ root.render(
       localization={ptBR}
       signInUrl="/"
       signUpUrl="/sign-up"
-      afterSignInUrl="/dashboard"
-      afterSignUpUrl="/dashboard"
+      afterSignInUrl="/#/dashboard"
+      afterSignUpUrl="/#/dashboard"
     >
       <App />
     </ClerkProvider>
