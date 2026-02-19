@@ -1,7 +1,7 @@
-import { SignUp } from '@clerk/clerk-react';
+// import { SignUp } from '@clerk/clerk-react';
 import { Rocket } from 'lucide-react';
 import logo from '../assets/logo.webp';
-import { clerkAppearance } from '../clerkAppearance';
+// import { clerkAppearance } from '../clerkAppearance';
 
 const SignUpScreen = () => {
   return (
@@ -24,7 +24,7 @@ const SignUpScreen = () => {
         </div>
       </div>
 
-      {/* Clerk SignUp Side */}
+      {/* Clerk SignUp Side - Comentado */}
       <div className="w-full md:w-1/2 lg:w-7/12 flex items-center justify-center p-4 sm:p-8 lg:p-12 relative">
         <div className="w-full max-w-md space-y-8">
           <div className="flex flex-col items-center text-center">
@@ -36,13 +36,14 @@ const SignUpScreen = () => {
             </div>
           </div>
 
-          <div className="flex justify-center">
+          {/* <div className="flex justify-center">
             <SignUp
               signInUrl="/#/"
               forceRedirectUrl="/dashboard"
               appearance={clerkAppearance as any}
             />
-          </div>
+          </div> */}
+          <p className="text-center text-gray-500 dark:text-gray-400">Cadastro via formulário na tela de login.</p>
         </div>
       </div>
     </div>

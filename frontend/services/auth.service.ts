@@ -23,20 +23,20 @@ export const register = async (name: string, email: string, password: string): P
 };
 
 export const resetPassword = async (email: string, password: string, secret: string) => {
-    // Note: The original implementation might have had a different endpoint or payload. 
-    // Assuming a standard reset endpoint here. If 'secret' was a specific challenge, ensure backend supports it.
-    // Based on previous view, it seems like a custom implementation.
+  // Note: The original implementation might have had a different endpoint or payload. 
+  // Assuming a standard reset endpoint here. If 'secret' was a specific challenge, ensure backend supports it.
+  // Based on previous view, it seems like a custom implementation.
   const response = await api.post('/auth/reset-password', { email, password, secret });
   return response.data;
 };
 
 export const logout = async () => {
-    const clerk = (window as any).Clerk;
-    if (clerk) {
-        await clerk.signOut();
-    }
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    window.location.href = '/';
+  // const clerk = (window as any).Clerk;
+  // if (clerk) {
+  //     await clerk.signOut();
+  // }
+  localStorage.removeItem('user');
+  localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
+  window.location.href = '/';
 };
