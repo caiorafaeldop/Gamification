@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { useAuth } from '@clerk/clerk-react';
+// import { useAuth } from '@clerk/clerk-react';
 import {
     LayoutDashboard,
     FolderOpen,
@@ -93,7 +93,14 @@ const BottomNavItem = ({ to, icon: Icon, label }: { to: string; icon: any; label
 };
 
 const Layout = () => {
-    const { isLoaded, userId, signOut } = useAuth();
+    // const { isLoaded, userId, signOut } = useAuth();
+    const isLoaded = true;
+    const userId = localStorage.getItem('token') ? 'local-user' : null;
+    const signOut = async () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+    };
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
@@ -103,13 +110,13 @@ const Layout = () => {
         if (!isLoaded) return;
 
         if (!userId) {
-             // If Clerk is loaded but no user, strictly redirect to login
-             // However, we should be careful not to conflict with public routes if any.
-             // But Layout usually covers protected routes.
-             // Let's rely on the api.ts interceptor or this check.
-             // For now, if no userId, we can't fetch profile.
-             setLoading(false);
-             return;
+            // If Clerk is loaded but no user, strictly redirect to login
+            // However, we should be careful not to conflict with public routes if any.
+            // But Layout usually covers protected routes.
+            // Let's rely on the api.ts interceptor or this check.
+            // For now, if no userId, we can't fetch profile.
+            setLoading(false);
+            return;
         }
 
         const fetchUser = async () => {
@@ -137,10 +144,10 @@ const Layout = () => {
 
     if (!isLoaded) {
         return (
-             <div className="flex h-screen items-center justify-center bg-background-light dark:bg-background-dark">
+            <div className="flex h-screen items-center justify-center bg-background-light dark:bg-background-dark">
                 {/* Simple Loader */}
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-             </div>
+            </div>
         );
     }
 
@@ -175,7 +182,7 @@ const Layout = () => {
                 </nav>
 
                 <div className="p-4 border-t border-gray-100 dark:border-gray-800">
-                    <button 
+                    <button
                         onClick={() => navigate('/profile')}
                         className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group text-left"
                     >

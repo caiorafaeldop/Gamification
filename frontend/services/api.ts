@@ -10,14 +10,14 @@ const api = axios.create({
 api.interceptors.request.use(async (config) => {
   try {
     // 1. Prioritize Clerk Token if session exists (Google Login)
-    const clerk = (window as any).Clerk;
-    if (clerk?.session) {
-      const token = await clerk.session.getToken();
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-        return config;
-      }
-    }
+    // const clerk = (window as any).Clerk;
+    // if (clerk?.session) {
+    //   const token = await clerk.session.getToken();
+    //   if (token) {
+    //     config.headers.Authorization = `Bearer ${token}`;
+    //     return config;
+    //   }
+    // }
 
     // 2. Fallback to Legacy Token (Email/Password Login)
     const legacyToken = localStorage.getItem('token');
@@ -54,10 +54,10 @@ api.interceptors.response.use(
       }
 
       // B. If refresh failed or no legacy token, force logout (Clerk + Local)
-      const clerk = (window as any).Clerk;
-      if (clerk) {
-        await clerk.signOut();
-      }
+      // const clerk = (window as any).Clerk;
+      // if (clerk) {
+      //   await clerk.signOut();
+      // }
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
