@@ -16,7 +16,9 @@ import {
     Camera,
     X,
     ArrowRight,
-    LogOut
+    LogOut,
+    Linkedin,
+    Github
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -39,9 +41,12 @@ const ProfileScreen = () => {
         email: '',
         course: '',
         bio: '',
-        skills: '', // Comma separated for editing
+        skills: '',
         avatarColor: '',
-        avatarUrl: ''
+        avatarUrl: '',
+        contactEmail: '',
+        linkedinUrl: '',
+        githubUrl: ''
     });
 
     useEffect(() => {
@@ -60,7 +65,10 @@ const ProfileScreen = () => {
                 bio: data.bio || '',
                 skills: (data.skills || []).join(', '),
                 avatarColor: data.avatarColor || '#3B82F6',
-                avatarUrl: data.avatarUrl || ''
+                avatarUrl: data.avatarUrl || '',
+                contactEmail: data.contactEmail || '',
+                linkedinUrl: data.linkedinUrl || '',
+                githubUrl: data.githubUrl || ''
             });
         } catch (error) {
             toast.error('Erro ao carregar perfil');
@@ -116,7 +124,10 @@ const ProfileScreen = () => {
                 bio: formData.bio,
                 skills: skillsArray,
                 avatarColor: formData.avatarColor,
-                avatarUrl: formData.avatarUrl
+                avatarUrl: formData.avatarUrl,
+                contactEmail: formData.contactEmail || null,
+                linkedinUrl: formData.linkedinUrl || null,
+                githubUrl: formData.githubUrl || null
             });
 
             toast.success('Perfil atualizado com sucesso!');
@@ -270,6 +281,30 @@ const ProfileScreen = () => {
                                 <span className="text-xs text-slate-400 italic">Sem habilidades listadas</span>
                             )}
                         </div>
+
+                        {/* Contact Links - View Mode */}
+                        {(user?.contactEmail || user?.linkedinUrl || user?.githubUrl) && (
+                            <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-2">
+                                {user?.contactEmail && (
+                                    <a href={`mailto:${user.contactEmail}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+                                        <Mail size={14} />
+                                        {user.contactEmail}
+                                    </a>
+                                )}
+                                {user?.linkedinUrl && (
+                                    <a href={user.linkedinUrl.startsWith('http') ? user.linkedinUrl : `https://${user.linkedinUrl}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400 rounded-lg text-xs font-semibold hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-colors">
+                                        <Linkedin size={14} />
+                                        LinkedIn
+                                    </a>
+                                )}
+                                {user?.githubUrl && (
+                                    <a href={user.githubUrl.startsWith('http') ? user.githubUrl : `https://${user.githubUrl}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                                        <Github size={14} />
+                                        GitHub
+                                    </a>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Actions */}
@@ -364,6 +399,46 @@ const ProfileScreen = () => {
                                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-slate-900 dark:text-white font-medium shadow-inner resize-none"
                                     placeholder="Conte um pouco sobre você e seus interesses..."
                                 />
+                            </div>
+
+                            {/* Contact Links */}
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Links de Contato</label>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-3 text-slate-400" size={18} />
+                                        <input
+                                            name="contactEmail"
+                                            value={formData.contactEmail}
+                                            onChange={handleChange}
+                                            type="email"
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-slate-900 dark:text-white font-medium shadow-inner"
+                                            placeholder="Email de contato"
+                                        />
+                                    </div>
+                                    <div className="relative">
+                                        <Linkedin className="absolute left-3 top-3 text-slate-400" size={18} />
+                                        <input
+                                            name="linkedinUrl"
+                                            value={formData.linkedinUrl}
+                                            onChange={handleChange}
+                                            type="text"
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-slate-900 dark:text-white font-medium shadow-inner"
+                                            placeholder="linkedin.com/in/seu-perfil"
+                                        />
+                                    </div>
+                                    <div className="relative">
+                                        <Github className="absolute left-3 top-3 text-slate-400" size={18} />
+                                        <input
+                                            name="githubUrl"
+                                            value={formData.githubUrl}
+                                            onChange={handleChange}
+                                            type="text"
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-slate-900 dark:text-white font-medium shadow-inner"
+                                            placeholder="github.com/seu-usuario"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

@@ -23,6 +23,9 @@ export const updateUserSchema = z.object({
     bio: z.string().optional(),
     avatarUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
     skills: z.array(z.string()).optional(),
+    contactEmail: z.string().or(z.literal('')).optional(),
+    linkedinUrl: z.string().or(z.literal('')).optional(),
+    githubUrl: z.string().or(z.literal('')).optional(),
   }).partial(),
 });
 
