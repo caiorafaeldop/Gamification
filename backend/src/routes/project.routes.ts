@@ -8,7 +8,7 @@ const router = Router();
 router.use(unifiedAuth);
 
 // Public (authenticated) routes
-router.post('/upload-cover', upload.single('image'), uploadProjectCover);
+router.post('/upload-cover', upload.single('image') as any, uploadProjectCover);
 router.get('/', getProjects);
 router.get('/:id', getProjectDetails);
 router.post('/', createProject);

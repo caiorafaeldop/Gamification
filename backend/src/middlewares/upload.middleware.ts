@@ -11,6 +11,6 @@ const storage = new CloudinaryStorage({
   } as any, // Type assertion to avoid ts conflict with multer-storage-cloudinary types
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage: storage as any });
 
 export default upload;

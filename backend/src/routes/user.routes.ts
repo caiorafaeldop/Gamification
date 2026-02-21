@@ -33,7 +33,7 @@ router.use(unifiedAuth); // All user routes require authentication
  */
 router.get('/me', getMyProfile);
 
-router.post('/upload-avatar', upload.single('image'), uploadAvatar);
+router.post('/upload-avatar', upload.single('image') as any, uploadAvatar);
 
 /**
  * @swagger

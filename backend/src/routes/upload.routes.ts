@@ -5,7 +5,7 @@ import upload from '../middlewares/upload.middleware';
 const router = Router();
 router.use(unifiedAuth);
 
-router.post('/', upload.single('file'), (req: Request, res: Response) => {
+router.post('/', upload.single('file') as any, (req: Request, res: Response) => {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
     res.json({ url: req.file.path });
 });
