@@ -1,6 +1,6 @@
 import React from 'react';
 // import { AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import LoginScreen from './screens/LoginScreen';
 import DashboardScreen from './screens/DashboardScreen';
@@ -19,10 +19,37 @@ import AdminProjectsScreen from './screens/AdminProjectsScreen';
 import SignUpScreen from './screens/SignUpScreen';
 
 import { Toaster } from 'react-hot-toast';
+import { TellioWidget } from '@tellio-test/widget';
+
+const TellioIntegration = () => {
+  const location = useLocation();
+  const storedUser = localStorage.getItem('user');
+  let user = null;
+  try {
+    user = storedUser ? JSON.parse(storedUser) : null;
+  } catch (e) {
+    // Ignore parse error
+  }
+
+  return (
+    <TellioWidget
+      id="0ff1da60-faad-47d7-9f66-7e3781c76a65"
+      user={user ? {
+        id: String(user?.id || ''),
+        email: user?.email,
+        name: user?.name,
+      } : undefined}
+      trackPageViews={true}
+      src="http://localhost:3000/loader.js"
+      apiUrl="http://localhost:3000"
+    />
+  );
+};
 
 const App = () => {
   return (
     <HashRouter>
+      <TellioIntegration />
       <Toaster
         position="top-center"
         reverseOrder={false}

@@ -493,6 +493,11 @@
   resolved "https://registry.yarnpkg.com/@rollup/rollup-win32-x64-msvc/-/rollup-win32-x64-msvc-4.57.1.tgz#a03348e7b559c792b6277cc58874b89ef46e1e72"
   integrity sha512-mxRFDdHIWRxg3UfIIAwCm6NzvxG0jDX/wBN6KsQFTvKFqqg9vTrWUE68qEjHt19A5wwx5X5aUi2zuZT7YR0jrA==
 
+"@tellio-test/widget@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@tellio-test/widget/-/widget-1.0.2.tgz#4c73fb1d100940ba5a85228173d651a2560cbce0"
+  integrity sha512-jpeOceEI1h1SYAUuf83NOYWIS0hOKtVtLYyw2Jqw2g2VoVuO8Yyl+gjzcz0Xcq1Kino75PMVad4RFaMKblQoSA==
+
 "@types/babel__core@^7.20.5":
   version "7.20.5"
   resolved "https://registry.yarnpkg.com/@types/babel__core/-/babel__core-7.20.5.tgz#3df15f27ba85319caa07ba08d0721889bb39c017"
