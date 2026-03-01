@@ -40,8 +40,8 @@ const TellioIntegration = () => {
         name: user?.name,
       } : undefined}
       trackPageViews={true}
-      src="http://localhost:3000/loader.js"
-      apiUrl="http://localhost:3000"
+      src="https://product-feedback-lime-five.vercel.app/loader.js"
+      apiUrl="https://product-feedback-lime-five.vercel.app"
     />
   );
 };
