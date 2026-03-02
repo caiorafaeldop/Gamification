@@ -26,7 +26,11 @@ export const resetPassword = async (email: string, password: string, secret: str
   // Note: The original implementation might have had a different endpoint or payload. 
   // Assuming a standard reset endpoint here. If 'secret' was a specific challenge, ensure backend supports it.
   // Based on previous view, it seems like a custom implementation.
-  const response = await api.post('/auth/reset-password', { email, password, secret });
+  const response = await api.post('/auth/reset-password', {
+    email,
+    newPassword: password,
+    secretWord: secret
+  });
   return response.data;
 };
 
