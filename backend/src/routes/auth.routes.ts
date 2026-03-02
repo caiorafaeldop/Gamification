@@ -111,13 +111,13 @@ router.post('/refresh', validate(refreshTokenSchema), refresh);
  *             required:
  *               - email
  *               - newPassword
- *               - token
+ *               - secretWord
  *             properties:
  *               email:
  *                 type: string
  *               newPassword:
  *                 type: string
- *               token:
+ *               secretWord:
  *                 type: string
  *     responses:
  *       200:
