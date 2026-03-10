@@ -12,11 +12,24 @@ export interface LeaderboardEntry {
   }
 }
 
-export const getLeaderboard = async (period: string = 'all', limit: number = 100) => {
+export const getLeaderboard = async (
+  period: string = 'all',
+  limit: number = 100,
+  projectIds: string[] = []
+) => {
   // Map 'week' (from UI filter) to 'weekly' (backend expectation)
   const backendPeriod = period === 'week' ? 'weekly' : period;
-  
-  const response = await api.get(`/leaderboard?period=${backendPeriod}&limit=${limit}`);
+
+  const params = new URLSearchParams({
+    period: backendPeriod,
+    limit: String(limit),
+  });
+
+  if (projectIds.length > 0) {
+    params.set('projectIds', projectIds.join(','));
+  }
+
+  const response = await api.get(`/leaderboard?${params.toString()}`);
   return response.data.users ? response.data.users : response.data;
 };
 

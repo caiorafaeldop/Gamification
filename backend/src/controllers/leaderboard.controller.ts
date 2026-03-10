@@ -6,7 +6,12 @@ export const getLeaderboard = async (req: Request, res: Response, next: NextFunc
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const period = (req.query.period as string) || 'all';
-    const result = await getGlobalLeaderboardService(period, page, limit); // Note: Service import name might need adjustment
+    const projectIds = (req.query.projectIds as string | undefined)
+      ?.split(',')
+      .map((id) => id.trim())
+      .filter(Boolean) || [];
+
+    const result = await getGlobalLeaderboardService(period, page, limit, projectIds);
     res.status(200).json(result);
   } catch (error: unknown) {
     next(error);

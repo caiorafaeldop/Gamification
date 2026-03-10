@@ -3,14 +3,25 @@ import { getLeaderboard as getGlobalLeaderboard, getProjectLeaderboard } from '.
 import { unifiedAuth } from '../middlewares/unifiedAuth';
 import { validate } from '../middlewares/validation.middleware';
 import { paginationSchema, uuidSchema } from '../utils/zod';
-import { z } from 'zod'; // Importar z para usar z.object
+import { z } from 'zod';
 
 const router = Router();
 
-router.use(unifiedAuth); // All leaderboard routes require authentication
+router.use(unifiedAuth);
 
-router.get('/', validate(paginationSchema.partial().extend({ query: z.object({ period: z.string().optional() }) })), getGlobalLeaderboard);
-// Corrigido: uuidSchema é um ZodString, não tem .shape. Deve ser envolvido em z.object.
+router.get(
+  '/',
+  validate(
+    paginationSchema.partial().extend({
+      query: z.object({
+        period: z.string().optional(),
+        projectIds: z.string().optional(),
+      }),
+    })
+  ),
+  getGlobalLeaderboard
+);
+
 router.get('/project/:projectId', validate(paginationSchema.partial().extend({ params: z.object({ projectId: uuidSchema }) })), getProjectLeaderboard);
 
 export default router;
