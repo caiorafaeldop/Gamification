@@ -30,6 +30,7 @@ const RankingScreen = () => {
     fetchLeaderboard();
   }, [activeFilter, selectedProjectIds]);
 
+
   const fetchProjects = async () => {
     try {
       const data = await getProjects();
@@ -63,6 +64,17 @@ const RankingScreen = () => {
     }
   };
 
+
+  const toggleProject = (projectId: string) => {
+    setSelectedProjectIds((current) =>
+      current.includes(projectId)
+        ? current.filter((id) => id !== projectId)
+        : [...current, projectId]
+    );
+  };
+
+  const top3 = rankingData.slice(0, 3);
+  const restOfList = rankingData.slice(3);
   const handleProjectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const values = Array.from(event.target.selectedOptions).map((option) => option.value);
     setSelectedProjectIds(values);
@@ -102,6 +114,40 @@ const RankingScreen = () => {
           ))}
         </div>
 
+
+        <div className="mt-3 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-2xl p-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Projetos</p>
+            {selectedProjectIds.length > 0 && (
+              <button
+                onClick={() => setSelectedProjectIds([])}
+                className="text-xs font-bold text-primary hover:underline"
+              >
+                Limpar
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {projects.map((project) => {
+              const selected = selectedProjectIds.includes(project.id);
+              return (
+                <button
+                  key={project.id}
+                  type="button"
+                  onClick={() => toggleProject(project.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                    selected
+                      ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
+                      : 'bg-gray-50 dark:bg-surface-darker text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40'
+                  }`}
+                >
+                  {project.title}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-gray-400 mt-2">Selecione um ou mais projetos para somar a pontuação entre eles.</p>
         <div>
           <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Projetos (pode selecionar mais de um)</label>
           <select
