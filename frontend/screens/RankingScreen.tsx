@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Trophy, Calendar, Filter, Loader } from 'lucide-react';
 import { getLeaderboard } from '../services/leaderboard.service';
 import { getProfile } from '../services/user.service';
+import { getProjects } from '../services/project.service';
 import { Skeleton } from '../components/Skeleton';
 
 const FILTERS = [
@@ -18,11 +19,27 @@ const RankingScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetchProfile();
+    fetchProjects();
+  }, []);
+
+  useEffect(() => {
     fetchLeaderboard();
-  }, [activeFilter]);
+  }, [activeFilter, selectedProjectIds]);
+
+
+  const fetchProjects = async () => {
+    try {
+      const data = await getProjects();
+      setProjects(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to fetch projects in ranking', err);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -36,7 +53,8 @@ const RankingScreen = () => {
   const fetchLeaderboard = async () => {
     try {
       setLoading(true);
-      const data = await getLeaderboard(activeFilter);
+      setError(null);
+      const data = await getLeaderboard(activeFilter, 100, selectedProjectIds);
       const list = Array.isArray(data) ? data : [];
       setRankingData(list.map((u: any, i: number) => ({ ...u, rank: i + 1 })));
     } catch (err: any) {
@@ -45,6 +63,15 @@ const RankingScreen = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+
+  const toggleProject = (projectId: string) => {
+    setSelectedProjectIds((current) =>
+      current.includes(projectId)
+        ? current.filter((id) => id !== projectId)
+        : [...current, projectId]
+    );
   };
 
   const top3 = rankingData.slice(0, 3);
@@ -59,7 +86,7 @@ const RankingScreen = () => {
       <header className="pt-6 px-4 lg:px-10 z-20 relative bg-surface-light/80 dark:bg-surface-dark/50 backdrop-blur-md border-b border-gray-100 dark:border-gray-800/50 pb-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
           <h1 className="text-2xl font-display font-bold text-secondary dark:text-white flex items-center gap-2">
-            <Trophy className="text-primary" size={24} /> Ranking Global
+            <Trophy className="text-primary" size={24} /> {selectedProjectIds.length > 0 ? 'Ranking por Projeto' : 'Ranking Global'}
           </h1>
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-surface-dark px-3 py-1.5 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm">
             <Calendar size={14} />
@@ -82,6 +109,42 @@ const RankingScreen = () => {
               {filter.label}
             </button>
           ))}
+        </div>
+
+
+        <div className="mt-3 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-2xl p-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Projetos</p>
+            {selectedProjectIds.length > 0 && (
+              <button
+                onClick={() => setSelectedProjectIds([])}
+                className="text-xs font-bold text-primary hover:underline"
+              >
+                Limpar
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {projects.map((project) => {
+              const selected = selectedProjectIds.includes(project.id);
+              return (
+                <button
+                  key={project.id}
+                  type="button"
+                  onClick={() => toggleProject(project.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                    selected
+                      ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
+                      : 'bg-gray-50 dark:bg-surface-darker text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40'
+                  }`}
+                >
+                  {project.title}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-gray-400 mt-2">Selecione um ou mais projetos para somar a pontuação entre eles.</p>
         </div>
       </header>
 

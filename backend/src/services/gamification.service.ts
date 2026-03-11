@@ -7,10 +7,22 @@ import prisma from '../utils/prisma';
 
 // Points per task difficulty are defined in task.service.ts, but can be centralized here if needed.
 
+
+const resolveProjectIdFromTask = async (taskId: string, transaction: Prisma.TransactionClient) => {
+  const task = await transaction.task.findUnique({
+    where: { id: taskId },
+    select: { projectId: true },
+  });
+  return task?.projectId;
+};
+
 export const addPointsForTaskCompletion = async (userId: string, points: number, taskId: string, transaction: Prisma.TransactionClient) => {
   const updatedUser = await updateConnectaPoints(userId, points, transaction);
+  const projectId = await resolveProjectIdFromTask(taskId, transaction);
+
   await createActivityLog({
     user: { connect: { id: userId } },
+    project: projectId ? { connect: { id: projectId } } : undefined,
     type: ActivityType.TASK_COMPLETED,
     description: `Completed a task and earned ${points} Connecta Points.`,
     pointsChange: points,
@@ -35,8 +47,11 @@ export const removePointsForTaskUncompletion = async (userId: string, points: nu
     data: { connectaPoints: newPoints }
   });
 
+  const projectId = await resolveProjectIdFromTask(taskId, transaction);
+
   await createActivityLog({
     user: { connect: { id: userId } },
+    project: projectId ? { connect: { id: projectId } } : undefined,
     type: ActivityType.TASK_COMPLETED, // Reusing same type, description explains
     description: `Task moved from completion column. Lost ${points} Connecta Points.`,
     pointsChange: -points,
@@ -58,8 +73,11 @@ export const removePointsForTaskDeletion = async (userId: string, points: number
     data: { connectaPoints: newPoints }
   });
 
+  const projectId = await resolveProjectIdFromTask(taskId, transaction);
+
   await createActivityLog({
     user: { connect: { id: userId } },
+    project: projectId ? { connect: { id: projectId } } : undefined,
     type: ActivityType.TASK_DELETED,
     description: `Task deleted. Lost ${points} Connecta Points gained from creation.`,
     pointsChange: -points,

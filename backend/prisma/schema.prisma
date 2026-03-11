@@ -65,6 +65,7 @@ model Project {
   leader                 User            @relation("ProjectLeader", fields: [leaderId], references: [id], onDelete: Cascade)
   members                ProjectMember[]
   tasks                  Task[]
+  activityLogs           ActivityLog[]
 }
 
 model ProjectMember {
@@ -123,11 +124,16 @@ model Tier {
 model ActivityLog {
   id           String       @id @default(uuid())
   userId       String
+  projectId    String?
   type         ActivityType
   description  String
   pointsChange Int?
   createdAt    DateTime     @default(now())
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project      Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([userId, projectId, createdAt])
 }
 
 model Achievement {
