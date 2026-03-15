@@ -4,6 +4,7 @@ import { getLeaderboard } from '../services/leaderboard.service';
 import { getProfile } from '../services/user.service';
 import { getProjects } from '../services/project.service';
 import { Skeleton } from '../components/Skeleton';
+import ProjectFilterSelect from '../components/ProjectFilterSelect';
 
 const FILTERS = [
   { id: 'daily', label: 'Diário' },
@@ -29,7 +30,6 @@ const RankingScreen = () => {
   useEffect(() => {
     fetchLeaderboard();
   }, [activeFilter, selectedProjectIds]);
-
 
   const fetchProjects = async () => {
     try {
@@ -64,20 +64,12 @@ const RankingScreen = () => {
     }
   };
 
-
   const toggleProject = (projectId: string) => {
     setSelectedProjectIds((current) =>
       current.includes(projectId)
         ? current.filter((id) => id !== projectId)
         : [...current, projectId]
     );
-  };
-
-  const top3 = rankingData.slice(0, 3);
-  const restOfList = rankingData.slice(3);
-  const handleProjectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const values = Array.from(event.target.selectedOptions).map((option) => option.value);
-    setSelectedProjectIds(values);
   };
 
   const currentUserRankData = rankingData.find((u) => u.id === currentUser?.id);
@@ -87,12 +79,16 @@ const RankingScreen = () => {
       <header className="pt-6 px-4 lg:px-10 z-20 relative bg-surface-light/80 dark:bg-surface-dark/50 backdrop-blur-md border-b border-gray-100 dark:border-gray-800/50 pb-4 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h1 className="text-2xl font-display font-bold text-secondary dark:text-white flex items-center gap-2">
-            <Trophy className="text-primary" size={24} /> {selectedProjectIds.length > 0 ? 'Ranking por Projeto' : 'Ranking Global'}
+            <Trophy className="text-primary" size={24} />{' '}
+            {selectedProjectIds.length > 0 ? 'Ranking por Projeto' : 'Ranking Global'}
           </h1>
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-surface-dark px-3 py-1.5 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm">
             <Calendar size={14} />
             <span>
-              Período: <span className="font-bold text-primary">{FILTERS.find((f) => f.id === activeFilter)?.label}</span>
+              Período:{' '}
+              <span className="font-bold text-primary">
+                {FILTERS.find((f) => f.id === activeFilter)?.label}
+              </span>
             </span>
           </div>
         </div>
@@ -114,56 +110,12 @@ const RankingScreen = () => {
           ))}
         </div>
 
-
-        <div className="mt-3 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-2xl p-3">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Projetos</p>
-            {selectedProjectIds.length > 0 && (
-              <button
-                onClick={() => setSelectedProjectIds([])}
-                className="text-xs font-bold text-primary hover:underline"
-              >
-                Limpar
-              </button>
-            )}
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {projects.map((project) => {
-              const selected = selectedProjectIds.includes(project.id);
-              return (
-                <button
-                  key={project.id}
-                  type="button"
-                  onClick={() => toggleProject(project.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                    selected
-                      ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
-                      : 'bg-gray-50 dark:bg-surface-darker text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40'
-                  }`}
-                >
-                  {project.title}
-                </button>
-              );
-            })}
-          </div>
-          <p className="text-[11px] text-gray-400 mt-2">Selecione um ou mais projetos para somar a pontuação entre eles.</p>
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Projetos (pode selecionar mais de um)</label>
-          <select
-            multiple
-            value={selectedProjectIds}
-            onChange={handleProjectChange}
-            className="w-full min-h-[110px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-surface-dark px-3 py-2 text-sm text-secondary dark:text-gray-200"
-          >
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.title}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-gray-400 mt-1">Sem seleção = ranking global. Com seleção = soma dos pontos dos projetos selecionados.</p>
-        </div>
+        <ProjectFilterSelect
+          projects={projects}
+          selectedProjectIds={selectedProjectIds}
+          onToggle={toggleProject}
+          onClear={() => setSelectedProjectIds([])}
+        />
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 lg:px-10 py-6 pb-20">
@@ -182,19 +134,32 @@ const RankingScreen = () => {
             {rankingData.map((student) => {
               const isMe = student.id === currentUser?.id;
               return (
-                <div key={student.id} className={`grid grid-cols-12 items-center gap-4 p-4 ${isMe ? 'bg-primary/5 dark:bg-primary/10' : ''}`}>
+                <div
+                  key={student.id}
+                  className={`grid grid-cols-12 items-center gap-4 p-4 ${isMe ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
+                >
                   <div className="col-span-2 sm:col-span-1 text-center">
-                    <span className={`font-black text-xs h-7 w-7 inline-flex items-center justify-center rounded-lg ${isMe ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
+                    <span
+                      className={`font-black text-xs h-7 w-7 inline-flex items-center justify-center rounded-lg ${
+                        isMe ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                      }`}
+                    >
                       {student.rank}
                     </span>
                   </div>
                   <div className="col-span-7 sm:col-span-8 flex items-center gap-3 min-w-0">
                     <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700" />
-                    <span className={`font-bold truncate ${isMe ? 'text-primary' : 'text-secondary dark:text-white'}`}>
+                    <span
+                      className={`font-bold truncate ${
+                        isMe ? 'text-primary' : 'text-secondary dark:text-white'
+                      }`}
+                    >
                       {student.name} {isMe && '(Você)'}
                     </span>
                   </div>
-                  <div className="col-span-3 text-right font-black text-primary">{Math.max(0, student.connectaPoints || student.points || 0)} 🪙</div>
+                  <div className="col-span-3 text-right font-black text-primary">
+                    {Math.max(0, student.connectaPoints || student.points || 0)} 🪙
+                  </div>
                 </div>
               );
             })}
@@ -202,7 +167,9 @@ const RankingScreen = () => {
         )}
 
         {currentUserRankData && (
-          <p className="text-center text-xs text-gray-500 mt-4">Sua posição atual: #{currentUserRankData.rank}</p>
+          <p className="text-center text-xs text-gray-500 mt-4">
+            Sua posição atual: #{currentUserRankData.rank}
+          </p>
         )}
       </div>
     </div>
