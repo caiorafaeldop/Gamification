@@ -93,10 +93,14 @@ export const resetPassword = async (email: string, newPassword: string, secretWo
 
   const hashedPassword = await hashPassword(newPassword);
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { passwordHash: hashedPassword },
-  });
+  try {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash: hashedPassword },
+    });
+  } catch (error) {
+    throw error;
+  }
 
   return { message: 'Password reset successfully.' };
 };
