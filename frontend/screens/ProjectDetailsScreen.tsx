@@ -574,63 +574,43 @@ const ProjectDetailsScreen = () => {
     const isDragDisabled = selectedMemberFilters.length > 0 || !!searchQuery.trim() || !isProjectMember;
 
     const getColumnStyles = (column: any) => {
-        const lowerTitle = column.title?.toLowerCase() || '';
-
-        // Estilo especial verde para coluna de conclusão
+        // Completion column: emerald accent
         if (column.isCompletionColumn) {
             return {
-                container: "bg-emerald-50/80 dark:bg-emerald-900/20 border-t-4 border-t-emerald-500 border-x border-b border-emerald-200/50 dark:border-emerald-800/50",
-                headerIcon: <span className="material-icons text-emerald-500 text-sm">verified</span>,
-                titleColor: "text-emerald-700 dark:text-emerald-300",
-                badge: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400",
-                isCompletionColumn: true
+                accentColor: 'bg-emerald-500',
+                titleColor: 'text-gray-700 dark:text-gray-100',
+                badge: 'bg-emerald-100 dark:bg-emerald-800/60 text-emerald-700 dark:text-emerald-300',
             };
         }
+        // Custom color columns
         if (column.color && COLUMN_COLORS[column.color as keyof typeof COLUMN_COLORS]) {
-            const theme = COLUMN_COLORS[column.color as keyof typeof COLUMN_COLORS];
+            const accentMap: Record<string, string> = {
+                DEFAULT: '',
+                BLUE:   'bg-blue-500',
+                RED:    'bg-red-500',
+                PURPLE: 'bg-purple-500',
+                AMBER:  'bg-amber-500',
+                GREEN:  'bg-emerald-500',
+                PINK:   'bg-pink-500',
+                INDIGO: 'bg-indigo-500',
+                CYAN:   'bg-cyan-500',
+                TEAL:   'bg-teal-500',
+                ORANGE: 'bg-orange-500',
+                LIME:   'bg-lime-500',
+                ROSE:   'bg-rose-500',
+                SLATE:  'bg-slate-500',
+            };
             return {
-                container: `${theme.bg} ${theme.border} ${theme.decoration}`,
-                headerIcon: <span className={`w-3 h-3 rounded-full ${theme.bg.replace('/80', '').replace('/10', '-400')}`}></span>, // Exemplo simples de icone
-                titleColor: theme.text,
-                badge: theme.badge
+                accentColor: accentMap[column.color] || '',
+                titleColor: 'text-gray-700 dark:text-gray-100',
+                badge: 'bg-gray-300/80 dark:bg-gray-600/80 text-gray-700 dark:text-gray-200',
             };
         }
-        const config = [
-            {
-                keywords: ['fazer', 'todo', 'backlog'],
-                styles: {
-                    container: "bg-gray-50/50 dark:bg-surface-dark/30 border-gray-200/50 dark:border-gray-800/50",
-                    headerIcon: <span className="w-3 h-3 rounded-full bg-slate-400"></span>,
-                    titleColor: "text-gray-700 dark:text-gray-200",
-                    badge: "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-                }
-            },
-            {
-                keywords: ['progresso', 'fazendo', 'doing', 'progress'],
-                styles: {
-                    container: "bg-primary/5 dark:bg-surface-dark/60 border-t-4 border-t-primary border-x border-b border-gray-200/50 dark:border-gray-800/50",
-                    headerIcon: <span className="material-icons text-primary animate-spin text-sm" style={{ animationDuration: '3s' }}>sync</span>,
-                    titleColor: "text-gray-700 dark:text-gray-200",
-                    badge: "bg-primary/20 text-primary"
-                }
-            },
-            {
-                keywords: ['concluido', 'conclusão', 'feito', 'done', 'finished'],
-                styles: {
-                    container: "bg-gray-50/50 dark:bg-surface-dark/30 border-gray-200/50 dark:border-gray-800/50",
-                    headerIcon: <span className="material-icons text-emerald-500 text-sm">check_circle</span>,
-                    titleColor: "text-gray-700 dark:text-gray-200",
-                    badge: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
-                }
-            }
-        ];
-
-        const match = config.find(c => c.keywords.some(k => lowerTitle.includes(k)));
-        return match ? match.styles : {
-            container: "bg-gray-50/50 dark:bg-surface-dark/30 border-gray-200/50 dark:border-gray-800/50",
-            headerIcon: <span className="w-3 h-3 rounded-full bg-slate-400"></span>,
-            titleColor: "text-gray-700 dark:text-gray-200",
-            badge: "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+        // Default
+        return {
+            accentColor: '',
+            titleColor: 'text-gray-700 dark:text-gray-100',
+            badge: 'bg-gray-300/80 dark:bg-gray-600/80 text-gray-700 dark:text-gray-200',
         };
     };
 
@@ -1168,14 +1148,19 @@ const ProjectDetailsScreen = () => {
                                                 <div
                                                     {...provided.draggableProps}
                                                     ref={provided.innerRef}
-                                                    className={`flex flex-col w-[320px] rounded-2xl border ${styles.container}`}
+                                                    className="flex flex-col w-[272px] flex-shrink-0 rounded-xl bg-[#f1f2f4] dark:bg-[#282e33] overflow-hidden max-h-full"
                                                 >
+                                                    {/* Colored accent strip */}
+                                                    {styles.accentColor && (
+                                                        <div className={`h-2 w-full flex-shrink-0 ${styles.accentColor}`} />
+                                                    )}
+
+                                                    {/* Column Header */}
                                                     <div
                                                         {...provided.dragHandleProps}
-                                                        className="p-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 cursor-grab active:cursor-grabbing"
+                                                        className="px-3 pt-3 pb-2 flex items-center justify-between cursor-grab active:cursor-grabbing flex-shrink-0"
                                                     >
-                                                        <div className="flex items-center gap-2 overflow-hidden flex-1">
-                                                            {styles.headerIcon}
+                                                        <div className="flex items-center gap-2 flex-1 overflow-hidden min-w-0">
                                                             {editingColumnId === column.id ? (
                                                                 <input
                                                                     ref={inputRef}
@@ -1186,21 +1171,21 @@ const ProjectDetailsScreen = () => {
                                                                         if (e.key === 'Enter') handleSaveColumnTitle();
                                                                         if (e.key === 'Escape') setEditingColumnId(null);
                                                                     }}
-                                                                    className="font-display font-bold bg-white dark:bg-surface-dark border border-primary px-2 py-0.5 rounded text-sm w-full outline-none text-gray-800 dark:text-gray-100"
-                                                                    onClick={(e) => e.stopPropagation()} // Prevent drag conflict if needed
+                                                                    className="font-semibold text-sm bg-white dark:bg-[#22272b] border border-primary px-2 py-1 rounded-lg w-full outline-none text-gray-800 dark:text-gray-100 shadow-sm"
+                                                                    onClick={(e) => e.stopPropagation()}
                                                                 />
                                                             ) : (
                                                                 <>
-                                                                    <h3 className={`font-display font-bold truncate ${styles.titleColor}`}>{column.title}</h3>
-                                                                    <span className={`${styles.badge} text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0`}>{column.tasks.length}</span>
+                                                                    <h3 className={`font-semibold text-sm truncate ${styles.titleColor}`}>{column.title}</h3>
+                                                                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${styles.badge}`}>{column.tasks.length}</span>
                                                                 </>
                                                             )}
                                                         </div>
-                                                        <div className="flex items-center">
+                                                        <div className="flex items-center gap-0.5 flex-shrink-0 ml-1">
                                                             {!column.isCompletionColumn && isProjectMember && (
                                                                 <button
                                                                     onClick={() => startEditing(column.id, column.title)}
-                                                                    className="p-1 text-gray-400 hover:text-blue-500"
+                                                                    className="p-1 rounded text-gray-400 hover:text-blue-500 hover:bg-gray-200/70 dark:hover:bg-gray-700/50 transition-colors"
                                                                     title="Renomear"
                                                                 >
                                                                     <span className="material-icons text-sm">edit</span>
@@ -1209,7 +1194,7 @@ const ProjectDetailsScreen = () => {
                                                             {!column.isCompletionColumn && isProjectMember && (
                                                                 <button
                                                                     onClick={() => handleDeleteColumn(column.id)}
-                                                                    className="p-1 text-gray-400 hover:text-red-500"
+                                                                    className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-gray-200/70 dark:hover:bg-gray-700/50 transition-colors"
                                                                     title="Excluir"
                                                                 >
                                                                     <span className="material-icons text-sm">delete</span>
@@ -1220,18 +1205,16 @@ const ProjectDetailsScreen = () => {
                                                                     <button
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            // Se já estiver aberto nesta coluna, fecha. Se não, abre.
                                                                             setPickingColorColumnId(pickingColorColumnId === column.id ? null : column.id);
                                                                         }}
-                                                                        className={`p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors ${pickingColorColumnId === column.id ? 'text-primary' : 'text-gray-400'}`}
+                                                                        className={`p-1 rounded hover:bg-gray-200/70 dark:hover:bg-gray-700/50 transition-colors ${pickingColorColumnId === column.id ? 'text-primary' : 'text-gray-400'}`}
                                                                         title="Trocar Cor"
                                                                     >
                                                                         <span className="material-icons text-sm">palette</span>
                                                                     </button>
 
-                                                                    {/* Menu Flutuante de Cores */}
                                                                     {pickingColorColumnId === column.id && (
-                                                                        <div className="absolute top-8 left-0 z-50 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 shadow-xl rounded-xl p-2 w-32 animate-in fade-in zoom-in-95 duration-200 grid grid-cols-3 gap-2">
+                                                                        <div className="absolute top-8 right-0 z-50 bg-white dark:bg-[#22272b] border border-gray-200 dark:border-gray-700 shadow-xl rounded-xl p-2 w-36 animate-in fade-in zoom-in-95 duration-200 grid grid-cols-3 gap-2">
                                                                             {Object.entries(COLUMN_COLORS).map(([key, theme]) => (
                                                                                 <button
                                                                                     key={key}
@@ -1239,14 +1222,13 @@ const ProjectDetailsScreen = () => {
                                                                                         e.stopPropagation();
                                                                                         handleUpdateColumnColor(key);
                                                                                     }}
-                                                                                    className={`w-8 h-8 rounded-full border-2 ${theme.bg.split(' ')[0].replace(/-200\/.*/, '-500')} ${column.color === key ? 'border-gray-600 dark:border-white scale-110' : 'border-transparent hover:scale-105'} transition-all shadow-sm`}
+                                                                                    className={`w-8 h-8 rounded-full border-2 ${theme.bg.split(' ')[0].replace(/-200\/.*/, '-500').replace(/-50\/.*/, '-400')} ${column.color === key ? 'border-gray-600 dark:border-white scale-110' : 'border-transparent hover:scale-105'} transition-all shadow-sm`}
                                                                                     title={theme.name}
                                                                                 />
                                                                             ))}
                                                                         </div>
                                                                     )}
 
-                                                                    {/* Overlay transparente para fechar ao clicar fora (opcional, mas recomendado) */}
                                                                     {pickingColorColumnId === column.id && (
                                                                         <div
                                                                             className="fixed inset-0 z-40 bg-transparent"
@@ -1258,12 +1240,13 @@ const ProjectDetailsScreen = () => {
                                                         </div>
                                                     </div>
 
+                                                    {/* Tasks area */}
                                                     <StrictModeDroppable droppableId={column.id} type="task" direction="vertical">
                                                         {(provided) => (
                                                             <div
                                                                 {...provided.droppableProps}
                                                                 ref={provided.innerRef}
-                                                                className="p-3 flex-1 overflow-y-auto custom-scrollbar space-y-3"
+                                                                className="px-2 overflow-y-auto custom-scrollbar space-y-2 min-h-[8px] flex-1"
                                                             >
                                                                 {column.tasks.map((task: any, index: number) => (
                                                                     <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={isDragDisabled}>
@@ -1273,47 +1256,37 @@ const ProjectDetailsScreen = () => {
                                                                                 {...provided.draggableProps}
                                                                                 {...provided.dragHandleProps}
                                                                                 onClick={() => { setSelectedTask(task); setIsTaskDetailsOpen(true); }}
-                                                                                className={`bg-white dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-gray-300 dark:border-gray-600 border-t-4 border-t-blue-500 cursor-grab hover:shadow-md hover:border-blue-500/50 group relative transition-all duration-200 ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-blue-500/40 z-50 scale-105' : ''
-                                                                                    }`}
+                                                                                className={`bg-white dark:bg-[#22272b] rounded-lg shadow-sm border border-[#dfe1e6]/80 dark:border-gray-700/60 hover:border-[#b3b9c4] dark:hover:border-gray-500 cursor-pointer group relative transition-all duration-150 p-3 ${
+                                                                                    snapshot.isDragging ? 'shadow-2xl ring-2 ring-blue-500/40 rotate-1 scale-[1.02] z-50' : ''
+                                                                                }`}
                                                                                 style={{
                                                                                     ...provided.draggableProps.style,
-                                                                                    cursor: snapshot.isDragging ? 'grabbing' : 'grab',
+                                                                                    cursor: snapshot.isDragging ? 'grabbing' : 'pointer',
                                                                                 }}
                                                                             >
-                                                                                <div className="flex items-center gap-2 mb-2 justify-between">
-                                                                                    {task.createdBy && (
-                                                                                        <div className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity" title={`Criado por: ${task.createdBy.name}`}>
-                                                                                            <img
-                                                                                                src={task.createdBy.avatarUrl || `https://ui-avatars.com/api/?name=${task.createdBy.name}&background=random`}
-                                                                                                alt={task.createdBy.name}
-                                                                                                className="w-4 h-4 rounded-full"
-                                                                                            />
-                                                                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium hidden group-hover:block transition-all">Criado por: {task.createdBy.name}</span>
-                                                                                        </div>
-                                                                                    )}
-                                                                                    <div className="flex items-center gap-2">
+                                                                                {task.priority && task.priority !== 'Geral' && (
+                                                                                    <div className="mb-2">
                                                                                         {getPriorityBadge(task.priority)}
                                                                                     </div>
-                                                                                </div>
-                                                                                <h4 className={`font-bold text-secondary dark:text-gray-100 text-sm mb-3 ${column.status === 'done' ? 'line-through text-gray-400 dark:text-gray-500' : ''}`}>
+                                                                                )}
+                                                                                <h4 className={`font-medium text-gray-800 dark:text-gray-100 text-sm leading-snug ${column.isCompletionColumn ? 'line-through text-gray-400 dark:text-gray-500' : ''}`}>
                                                                                     {task.title}
                                                                                 </h4>
                                                                                 <div className="flex items-center justify-between mt-3">
-                                                                                    <div className="flex items-center -space-x-2">
-                                                                                        {/* Múltiplos responsáveis */}
+                                                                                    <div className="flex items-center -space-x-1.5">
                                                                                         {(task.assignees && task.assignees.length > 0) ? (
                                                                                             <>
                                                                                                 {task.assignees.slice(0, 3).map((assignee: any, idx: number) => (
                                                                                                     <img
                                                                                                         key={idx}
                                                                                                         alt={assignee.user?.name}
-                                                                                                        className={`w-6 h-6 rounded-full border border-white dark:border-surface-dark object-cover ${column.status === 'done' ? 'grayscale' : ''}`}
+                                                                                                        className={`w-6 h-6 rounded-full border-2 border-white dark:border-[#22272b] object-cover ${column.isCompletionColumn ? 'grayscale' : ''}`}
                                                                                                         src={assignee.user?.avatarUrl || `https://ui-avatars.com/api/?name=${assignee.user?.name}&background=random`}
                                                                                                         title={assignee.user?.name}
                                                                                                     />
                                                                                                 ))}
                                                                                                 {task.assignees.length > 3 && (
-                                                                                                    <div className="w-6 h-6 rounded-full bg-gray-500 text-white flex items-center justify-center text-[10px] font-bold border border-white dark:border-surface-dark">
+                                                                                                    <div className="w-6 h-6 rounded-full bg-gray-400 text-white flex items-center justify-center text-[9px] font-bold border-2 border-white dark:border-[#22272b]">
                                                                                                         +{task.assignees.length - 3}
                                                                                                     </div>
                                                                                                 )}
@@ -1321,14 +1294,21 @@ const ProjectDetailsScreen = () => {
                                                                                         ) : task.assignedTo ? (
                                                                                             <img
                                                                                                 alt={task.assignedTo.name}
-                                                                                                className={`w-6 h-6 rounded-full border border-white dark:border-surface-dark object-cover ${column.status === 'done' ? 'grayscale' : ''}`}
+                                                                                                className={`w-6 h-6 rounded-full border-2 border-white dark:border-[#22272b] object-cover ${column.isCompletionColumn ? 'grayscale' : ''}`}
                                                                                                 src={task.assignedTo.avatarUrl || `https://ui-avatars.com/api/?name=${task.assignedTo.name}&background=random`}
                                                                                                 title={task.assignedTo.name}
                                                                                             />
-                                                                                        ) : (
-                                                                                            <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-[10px] font-bold text-gray-500 dark:text-gray-300 border border-white dark:border-surface-dark">?</div>
-                                                                                        )}
+                                                                                        ) : null}
                                                                                     </div>
+                                                                                    {task.createdBy && (
+                                                                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-60 transition-opacity" title={`Criado por: ${task.createdBy.name}`}>
+                                                                                            <img
+                                                                                                src={task.createdBy.avatarUrl || `https://ui-avatars.com/api/?name=${task.createdBy.name}&background=random`}
+                                                                                                alt={task.createdBy.name}
+                                                                                                className="w-4 h-4 rounded-full"
+                                                                                            />
+                                                                                        </div>
+                                                                                    )}
                                                                                 </div>
                                                                                 <button
                                                                                     onClick={(e) => {
@@ -1350,61 +1330,57 @@ const ProjectDetailsScreen = () => {
                                                                         )}
                                                                     </Draggable>
                                                                 ))}
-                                                                {/* Skeleton Placeholder Animation */}
-                                                                {provided.placeholder && React.isValidElement(provided.placeholder) ? (
-                                                                    React.cloneElement(provided.placeholder as React.ReactElement<any>, {
-                                                                        className: "bg-gray-200 dark:bg-gray-700 border-2 border-dashed border-gray-400 dark:border-gray-500 rounded-xl animate-pulse opacity-80",
-                                                                        style: {
-                                                                            ...((provided.placeholder as React.ReactElement<any>).props.style || {}),
-                                                                            visibility: 'visible',
-                                                                        }
-                                                                    })
-                                                                ) : provided.placeholder}
-
-                                                                {/* Inline card creation (Trello-style) */}
-                                                                {inlineCreatingColumnId === column.id ? (
-                                                                    <div className="bg-white dark:bg-surface-dark p-2 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                                                                        <textarea
-                                                                            ref={inlineInputRef}
-                                                                            value={inlineTaskTitle}
-                                                                            onChange={(e) => setInlineTaskTitle(e.target.value)}
-                                                                            onKeyDown={handleInlineKeyDown}
-                                                                            onBlur={handleInlineBlur}
-                                                                            placeholder="Digite o título da tarefa..."
-                                                                            className="w-full p-2 text-sm bg-transparent border-0 focus:ring-0 resize-none rounded-lg placeholder:text-gray-400 dark:text-gray-100"
-                                                                            rows={2}
-                                                                            disabled={isCreatingInline}
-                                                                        />
-                                                                        <div className="flex items-center gap-2 mt-1">
-                                                                            <button
-                                                                                onClick={submitInlineTask}
-                                                                                disabled={!inlineTaskTitle.trim() || isCreatingInline}
-                                                                                className="px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                                                            >
-                                                                                {isCreatingInline ? 'Criando...' : 'Adicionar'}
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={cancelInlineCreate}
-                                                                                disabled={isCreatingInline}
-                                                                                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                                                                            >
-                                                                                <span className="material-icons text-lg">close</span>
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                ) : (
-                                                                    isProjectMember && (
-                                                                        <button
-                                                                            onClick={() => handleStartInlineCreate(column.id)}
-                                                                            className="w-full py-2 text-sm text-gray-500 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center gap-1 font-medium border border-dashed border-gray-300 dark:border-gray-700"
-                                                                        >
-                                                                            <span className="material-icons text-sm">add</span> Adicionar cartão
-                                                                        </button>
-                                                                    )
-                                                                )}
+                                                                {provided.placeholder}
                                                             </div>
                                                         )}
                                                     </StrictModeDroppable>
+
+                                                    {/* Inline card creation / Add card button */}
+                                                    <div className="px-2 pb-2 pt-1 flex-shrink-0">
+                                                        {inlineCreatingColumnId === column.id ? (
+                                                            <>
+                                                                <div className="bg-white dark:bg-[#22272b] rounded-lg shadow-md border border-[#dfe1e6] dark:border-gray-600 p-2">
+                                                                    <textarea
+                                                                        ref={inlineInputRef}
+                                                                        value={inlineTaskTitle}
+                                                                        onChange={(e) => setInlineTaskTitle(e.target.value)}
+                                                                        onKeyDown={handleInlineKeyDown}
+                                                                        onBlur={handleInlineBlur}
+                                                                        placeholder="Insira o título deste cartão..."
+                                                                        className="w-full p-1.5 text-sm bg-transparent border-0 focus:ring-0 resize-none placeholder:text-gray-400 dark:text-gray-100 outline-none"
+                                                                        rows={3}
+                                                                        disabled={isCreatingInline}
+                                                                    />
+                                                                </div>
+                                                                <div className="flex items-center gap-2 mt-2">
+                                                                    <button
+                                                                        onClick={submitInlineTask}
+                                                                        disabled={!inlineTaskTitle.trim() || isCreatingInline}
+                                                                        className="px-3 py-1.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                                    >
+                                                                        {isCreatingInline ? 'Criando...' : 'Adicionar cartão'}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={cancelInlineCreate}
+                                                                        disabled={isCreatingInline}
+                                                                        className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                                                                    >
+                                                                        <span className="material-icons text-xl">close</span>
+                                                                    </button>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            isProjectMember && (
+                                                                <button
+                                                                    onClick={() => handleStartInlineCreate(column.id)}
+                                                                    className="w-full py-2 px-3 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-200/70 dark:hover:bg-[#333c43] rounded-lg transition-colors flex items-center gap-2 font-medium"
+                                                                >
+                                                                    <span className="material-icons text-sm">add</span>
+                                                                    Adicionar um cartão
+                                                                </button>
+                                                            )
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
                                         </Draggable>
@@ -1414,13 +1390,13 @@ const ProjectDetailsScreen = () => {
 
                                 {/* Add Column Button - Only for members */}
                                 {isProjectMember && (
-                                    <div className="w-[320px] flex-shrink-0 flex items-start">
+                                    <div className="w-[272px] flex-shrink-0">
                                         <button
                                             onClick={handleAddColumn}
-                                            className="w-full py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl flex items-center justify-center gap-2 text-gray-500 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all font-bold"
+                                            className="w-full py-3 px-4 bg-black/10 dark:bg-black/20 hover:bg-black/15 dark:hover:bg-black/30 rounded-xl flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 font-medium transition-all"
                                         >
-                                            <span className="material-icons">add</span>
-                                            Nova Coluna
+                                            <span className="material-icons text-sm">add</span>
+                                            Adicionar outra lista
                                         </button>
                                     </div>
                                 )}
