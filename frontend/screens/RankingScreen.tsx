@@ -148,7 +148,11 @@ const RankingScreen = () => {
                     </span>
                   </div>
                   <div className="col-span-7 sm:col-span-8 flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700" />
+                    <img
+                      src={student.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`}
+                      alt={student.name}
+                      className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                    />
                     <span
                       className={`font-bold truncate ${
                         isMe ? 'text-primary' : 'text-secondary dark:text-white'
