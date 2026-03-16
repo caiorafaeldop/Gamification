@@ -4,7 +4,7 @@ import { DragDropContext, Draggable } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '../components/StrictModeDroppable';
 import { deleteTask, getProjectKanban, updateTaskStatus, createColumn, updateColumn, deleteColumn, reorderColumns, createQuickTask } from '../services/task.service';
 import { getProfile } from '../services/user.service';
-import { uploadProjectCover, updateProject, leaveProject, transferProjectOwnership, deleteProject } from '../services/project.service';
+import { uploadProjectCover, updateProject, leaveProject, transferProjectOwnership, deleteProject, joinProject } from '../services/project.service';
 import { useProjectDetails } from '../hooks/useProjects';
 import { Skeleton } from '../components/Skeleton';
 import TaskModal from '../components/TaskModal';
@@ -936,7 +936,7 @@ const ProjectDetailsScreen = () => {
                         )}
 
                         {/* Leave Project Button */}
-                        {user && project?.members?.some((m: any) => m.user?.id === user.id) && (
+                        {user && isProjectMember && (
                             <button
                                 type="button"
                                 onClick={(e) => {
@@ -956,6 +956,29 @@ const ProjectDetailsScreen = () => {
                             >
                                 <span className="material-icons text-sm">logout</span>
                                 <span>Sair do Projeto</span>
+                            </button>
+                        )}
+
+                        {/* Join Project Button */}
+                        {user && !isProjectMember && (
+                            <button
+                                type="button"
+                                onClick={async (e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    try {
+                                        await joinProject(id!);
+                                        toast.success('Você entrou no projeto com sucesso!');
+                                        window.location.reload(); // Reload to fetch correct member permissions and kanban
+                                    } catch (err: any) {
+                                        toast.error(err.response?.data?.message || 'Erro ao entrar no projeto.');
+                                    }
+                                }}
+                                title="Entrar no Projeto"
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors cursor-pointer z-10 relative shadow-sm font-medium"
+                            >
+                                <span className="material-icons text-sm">login</span>
+                                <span>Entrar no Projeto</span>
                             </button>
                         )}
 
