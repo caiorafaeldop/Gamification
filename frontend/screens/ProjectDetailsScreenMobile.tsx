@@ -95,20 +95,40 @@ const ProjectDetailsScreenMobile = () => {
 
     const activeColumn = columns?.find((c: any) => c.id === activeColumnId);
 
+const isProjectMember = user && project?.members?.some((m: any) => m.user?.id === user.id);
+
     return (
         <div className="flex flex-col h-[100dvh] bg-surface-light dark:bg-background-dark overflow-hidden">
             {/* Mobile Header */}
             <header className="bg-white dark:bg-surface-dark border-b border-gray-100 dark:border-gray-800 p-4 flex items-center justify-between shrink-0 z-20">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => navigate('/projects')} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300">
+                <div className="flex items-center gap-3 overflow-hidden">
+                    <button onClick={() => navigate('/projects')} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 flex-shrink-0">
                         <ArrowLeft size={20} />
                     </button>
-                    <div>
-                        <h1 className="font-bold text-lg text-secondary dark:text-gray-100 leading-tight truncate max-w-[200px]">{project.title}</h1>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{project.members?.length || 0} membros</p>
+                    <div className="overflow-hidden flex-1">
+                        <h1 className="font-bold text-lg text-secondary dark:text-gray-100 leading-tight truncate">{project.title}</h1>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{project.members?.length || 0} membros</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                    {user && !isProjectMember && (
+                        <button
+                            onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                    const { joinProject } = await import('../services/project.service');
+                                    await joinProject(id!);
+                                    toast.success('Você entrou no projeto com sucesso!');
+                                    window.location.reload();
+                                } catch (err: any) {
+                                    toast.error(err.response?.data?.message || 'Erro ao entrar no projeto.');
+                                }
+                            }}
+                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium mr-1 transition-colors whitespace-nowrap"
+                        >
+                            Entrar
+                        </button>
+                    )}
                     <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500">
                         <Search size={20} />
                     </button>
@@ -143,9 +163,11 @@ const ProjectDetailsScreenMobile = () => {
                             </button>
                         );
                     })}
-                    <button onClick={handleAddColumn} className="py-4 text-sm font-bold text-gray-400 flex items-center gap-1 px-2">
-                        <Plus size={16} /> Nova
-                    </button>
+                    {isProjectMember && (
+                        <button onClick={handleAddColumn} className="py-4 text-sm font-bold text-gray-400 flex items-center gap-1 px-2">
+                            <Plus size={16} /> Nova
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -175,18 +197,20 @@ const ProjectDetailsScreenMobile = () => {
                             <div className="flex justify-between items-start mb-2 relative">
                                 {getPriorityBadge(task.priority)}
                                 
-                                <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActiveDropdownId(activeDropdownId === task.id ? null : task.id);
-                                    }}
-                                    className="task-dropdown-trigger p-1 -mr-2 -mt-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-                                >
-                                    <MoreVertical size={18} />
-                                </button>
+                                {isProjectMember && (
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveDropdownId(activeDropdownId === task.id ? null : task.id);
+                                        }}
+                                        className="task-dropdown-trigger p-1 -mr-2 -mt-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                                    >
+                                        <MoreVertical size={18} />
+                                    </button>
+                                )}
 
                                 {/* Dropdown Menu */}
-                                {activeDropdownId === task.id && (
+                                {activeDropdownId === task.id && isProjectMember && (
                                     <div className="task-dropdown-menu absolute right-0 top-8 w-48 bg-white dark:bg-surface-dark rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 animate-in fade-in zoom-in-95 duration-200 flex flex-col overflow-hidden">
                                         <button
                                             onClick={(e) => {
@@ -271,15 +295,17 @@ const ProjectDetailsScreenMobile = () => {
             </div>
 
             {/* FAB Add Task */}
-            <button
-                onClick={() => {
-                    setInitialColumnId(activeColumnId || undefined);
-                    setIsNewTaskModalOpen(true);
-                }}
-                className="fixed right-5 bottom-20 w-14 h-14 bg-primary text-white rounded-full shadow-lg shadow-primary/30 flex items-center justify-center z-30 hover:scale-110 active:scale-90 transition-all font-bold"
-            >
-                <Plus size={28} />
-            </button>
+            {isProjectMember && (
+                <button
+                    onClick={() => {
+                        setInitialColumnId(activeColumnId || undefined);
+                        setIsNewTaskModalOpen(true);
+                    }}
+                    className="fixed right-5 bottom-20 w-14 h-14 bg-primary text-white rounded-full shadow-lg shadow-primary/30 flex items-center justify-center z-30 hover:scale-110 active:scale-90 transition-all font-bold"
+                >
+                    <Plus size={28} />
+                </button>
+            )}
 
             {/* Modals */}
             <MobileNewTaskModal
