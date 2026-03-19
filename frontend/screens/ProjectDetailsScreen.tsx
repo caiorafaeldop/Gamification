@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DragDropContext, Draggable } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '../components/StrictModeDroppable';
-import { deleteTask, getProjectKanban, updateTaskStatus, createColumn, updateColumn, deleteColumn, reorderColumns, createQuickTask } from '../services/task.service';
+import { deleteTask, getProjectKanban, updateTaskStatus, toggleTaskCompletion, createColumn, updateColumn, deleteColumn, reorderColumns, createQuickTask } from '../services/task.service';
 import { getProfile } from '../services/user.service';
 import { uploadProjectCover, updateProject, leaveProject, transferProjectOwnership, deleteProject, joinProject } from '../services/project.service';
 import { useProjectDetails } from '../hooks/useProjects';
@@ -55,6 +55,7 @@ const ProjectDetailsScreen = () => {
     const [isCreatingInline, setIsCreatingInline] = useState(false);
     const inlineInputRef = useRef<HTMLTextAreaElement>(null);
     const scrollInterval = useRef<any>(null);
+    const togglingTaskIds = useRef<Set<string>>(new Set());
 
     // Grab-to-scroll state for desktop
     const [isGrabScrolling, setIsGrabScrolling] = useState(false);
@@ -317,6 +318,33 @@ const ProjectDetailsScreen = () => {
             toast.error(err.response?.data?.message || "Erro ao excluir tarefa");
         } finally {
             setTaskToDelete(null);
+        }
+    };
+
+    const handleToggleCompletion = async (task: any) => {
+        if (togglingTaskIds.current.has(task.id)) return;
+        togglingTaskIds.current.add(task.id);
+        const isNowCompleted = !task.completedAt;
+        // Optimistic update
+        const newColumns = columns.map((col: any) => ({
+            ...col,
+            tasks: col.tasks.map((t: any) =>
+                t.id === task.id
+                    ? { ...t, completedAt: isNowCompleted ? new Date().toISOString() : null }
+                    : t
+            )
+        }));
+        setColumns(newColumns);
+        try {
+            await toggleTaskCompletion(task.id);
+            window.dispatchEvent(new Event('pointsUpdated'));
+            toast.success(isNowCompleted ? 'Tarefa concluída! 🎉' : 'Tarefa reaberta');
+        } catch (err: any) {
+            console.error("Failed to toggle task completion", err);
+            toast.error(err.response?.data?.message || 'Erro ao atualizar tarefa');
+            fetchKanban();
+        } finally {
+            togglingTaskIds.current.delete(task.id);
         }
     };
 
@@ -1281,7 +1309,7 @@ const ProjectDetailsScreen = () => {
                                                                                 onClick={() => { setSelectedTask(task); setIsTaskDetailsOpen(true); }}
                                                                                 className={`bg-white dark:bg-[#22272b] rounded-lg shadow-sm border border-[#dfe1e6]/80 dark:border-gray-700/60 hover:border-[#b3b9c4] dark:hover:border-gray-500 cursor-pointer group relative transition-all duration-150 p-3 ${
                                                                                     snapshot.isDragging ? 'shadow-2xl ring-2 ring-blue-500/40 rotate-1 scale-[1.02] z-50' : ''
-                                                                                }`}
+                                                                                } ${task.completedAt ? 'opacity-75' : ''}`}
                                                                                 style={{
                                                                                     ...provided.draggableProps.style,
                                                                                     cursor: snapshot.isDragging ? 'grabbing' : 'pointer',
@@ -1292,9 +1320,20 @@ const ProjectDetailsScreen = () => {
                                                                                         {getPriorityBadge(task.priority)}
                                                                                     </div>
                                                                                 )}
-                                                                                <h4 className={`font-medium text-gray-800 dark:text-gray-100 text-sm leading-snug ${column.isCompletionColumn ? 'line-through text-gray-400 dark:text-gray-500' : ''}`}>
-                                                                                    {task.title}
-                                                                                </h4>
+                                                                                <div className="flex items-start gap-2">
+                                                                                    <button
+                                                                                        onClick={(e) => { e.stopPropagation(); handleToggleCompletion(task); }}
+                                                                                        className={`flex-shrink-0 mt-0.5 transition-colors ${task.completedAt ? 'text-emerald-500 hover:text-emerald-600' : 'text-gray-300 hover:text-emerald-500'}`}
+                                                                                        title={task.completedAt ? 'Marcar como não concluído' : 'Marcar como concluído'}
+                                                                                    >
+                                                                                        <span className="material-icons text-base leading-none">
+                                                                                            {task.completedAt ? 'check_circle' : 'radio_button_unchecked'}
+                                                                                        </span>
+                                                                                    </button>
+                                                                                    <h4 className={`font-medium text-sm leading-snug ${task.completedAt ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-gray-100'}`}>
+                                                                                        {task.title}
+                                                                                    </h4>
+                                                                                </div>
                                                                                 <div className="flex items-center justify-between mt-3">
                                                                                     <div className="flex items-center -space-x-1.5">
                                                                                         {(task.assignees && task.assignees.length > 0) ? (
@@ -1303,7 +1342,7 @@ const ProjectDetailsScreen = () => {
                                                                                                     <img
                                                                                                         key={idx}
                                                                                                         alt={assignee.user?.name}
-                                                                                                        className={`w-6 h-6 rounded-full border-2 border-white dark:border-[#22272b] object-cover ${column.isCompletionColumn ? 'grayscale' : ''}`}
+                                                                                                        className={`w-6 h-6 rounded-full border-2 border-white dark:border-[#22272b] object-cover ${task.completedAt ? 'grayscale' : ''}`}
                                                                                                         src={assignee.user?.avatarUrl || `https://ui-avatars.com/api/?name=${assignee.user?.name}&background=random`}
                                                                                                         title={assignee.user?.name}
                                                                                                     />
@@ -1317,7 +1356,7 @@ const ProjectDetailsScreen = () => {
                                                                                         ) : task.assignedTo ? (
                                                                                             <img
                                                                                                 alt={task.assignedTo.name}
-                                                                                                className={`w-6 h-6 rounded-full border-2 border-white dark:border-[#22272b] object-cover ${column.isCompletionColumn ? 'grayscale' : ''}`}
+                                                                                                className={`w-6 h-6 rounded-full border-2 border-white dark:border-[#22272b] object-cover ${task.completedAt ? 'grayscale' : ''}`}
                                                                                                 src={task.assignedTo.avatarUrl || `https://ui-avatars.com/api/?name=${task.assignedTo.name}&background=random`}
                                                                                                 title={task.assignedTo.name}
                                                                                             />

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getProjectKanban, moveTask, createColumn, updateColumn, deleteColumn, reorderColumns } from '../controllers/kanban.controller';
+import { getProjectKanban, moveTask, createColumn, updateColumn, deleteColumn, reorderColumns, toggleTaskCompletion } from '../controllers/kanban.controller';
 import { unifiedAuth } from '../middlewares/unifiedAuth';
 
 const router = Router();
@@ -9,8 +9,11 @@ router.use(unifiedAuth);
 // Get Kanban board for a project
 router.get('/projects/:projectId', getProjectKanban);
 
-// Move a task
+// Move a task (column change only — for organization)
 router.patch('/tasks/:taskId/move', moveTask);
+
+// Toggle task completion (awards/removes points)
+router.patch('/tasks/:taskId/toggle-completion', toggleTaskCompletion);
 
 // Column management
 router.post('/columns', createColumn);

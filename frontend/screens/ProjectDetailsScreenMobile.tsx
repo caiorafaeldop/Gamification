@@ -19,7 +19,7 @@ const ProjectDetailsScreenMobile = () => {
         initialColumnId, setInitialColumnId,
         refetchKanban,
         handleAddColumn,
-        handleMoveTask,
+        handleMoveTask, handleToggleCompletion,
         handleDeleteTask, confirmDeleteTask, taskToDelete, setTaskToDelete
     } = useProjectKanban(id!);
 
@@ -265,9 +265,18 @@ const isProjectMember = user && project?.members?.some((m: any) => m.user?.id ==
                                     </span>
                                 </div>
                             )}
-                            <h3 className={`font-bold text-secondary dark:text-gray-100 text-sm mb-3 ${activeColumn.status === 'done' ? 'line-through text-gray-400' : ''}`}>
-                                {task.title}
-                            </h3>
+                            <div className="flex items-start gap-2 mb-3">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleToggleCompletion(task); setActiveDropdownId(null); }}
+                                    className={`flex-shrink-0 mt-0.5 transition-colors ${task.completedAt ? 'text-emerald-500' : 'text-gray-300 hover:text-emerald-500'}`}
+                                    title={task.completedAt ? 'Marcar como não concluído' : 'Marcar como concluído'}
+                                >
+                                    {task.completedAt ? <CheckCircle2 size={18} /> : <Circle size={18} />}
+                                </button>
+                                <h3 className={`font-bold text-sm ${task.completedAt ? 'line-through text-gray-400' : 'text-secondary dark:text-gray-100'}`}>
+                                    {task.title}
+                                </h3>
+                            </div>
                             <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
                                 <div className="flex items-center gap-2">
                                     {(task.assignees?.length > 0) ? (

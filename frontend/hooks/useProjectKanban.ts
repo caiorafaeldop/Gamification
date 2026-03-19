@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { 
     getProjectKanban, updateTaskStatus, createColumn, updateColumn, 
-    deleteColumn, reorderColumns, createQuickTask, deleteTask 
+    deleteColumn, reorderColumns, createQuickTask, deleteTask, toggleTaskCompletion
 } from '../services/task.service';
 import { getProfile } from '../services/user.service';
 import { uploadProjectCover, updateProject, transferProjectOwnership } from '../services/project.service';
@@ -55,6 +55,7 @@ export const useProjectKanban = (id: string) => {
 
     // Refs
     const kanbanRef = useRef<HTMLDivElement>(null);
+    const togglingTaskIds = useRef<Set<string>>(new Set());
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -247,6 +248,33 @@ export const useProjectKanban = (id: string) => {
         }
     };
 
+    const handleToggleCompletion = async (task: any) => {
+        if (togglingTaskIds.current.has(task.id)) return;
+        togglingTaskIds.current.add(task.id);
+        const isNowCompleted = !task.completedAt;
+        // Optimistic update
+        const newColumns = columns.map((col: any) => ({
+            ...col,
+            tasks: col.tasks.map((t: any) =>
+                t.id === task.id
+                    ? { ...t, completedAt: isNowCompleted ? new Date().toISOString() : null }
+                    : t
+            )
+        }));
+        setColumns(newColumns);
+        try {
+            await toggleTaskCompletion(task.id);
+            window.dispatchEvent(new Event('pointsUpdated'));
+            toast.success(isNowCompleted ? 'Tarefa concluída! 🎉' : 'Tarefa reaberta');
+        } catch (err: any) {
+            console.error("Failed to toggle task completion", err);
+            toast.error(err.response?.data?.message || 'Erro ao atualizar tarefa');
+            fetchKanban();
+        } finally {
+            togglingTaskIds.current.delete(task.id);
+        }
+    };
+
     const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
@@ -346,7 +374,7 @@ export const useProjectKanban = (id: string) => {
         handleAddColumn, onDragEnd, isDragging, setIsDragging,
         initialColumnId, setInitialColumnId,
         selectedTask, setSelectedTask, isTaskDetailsOpen, setIsTaskDetailsOpen,
-        refetchKanban: fetchKanban, kanbanRef, handleMoveTask,
+        refetchKanban: fetchKanban, kanbanRef, handleMoveTask, handleToggleCompletion,
         allColumns: columns // Export raw columns without filter for the move menu
     };
 };

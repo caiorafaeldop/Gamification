@@ -36,6 +36,11 @@ export const updateTaskStatus = async (taskId: string, columnId: string) => {
   return response.data;
 };
 
+export const toggleTaskCompletion = async (taskId: string) => {
+  const response = await api.patch(`/kanban/tasks/${taskId}/toggle-completion`);
+  return response.data;
+};
+
 export const deleteTask = async (taskId: string) => {
   const response = await api.delete(`/tasks/${taskId}`);
   return response.data;
