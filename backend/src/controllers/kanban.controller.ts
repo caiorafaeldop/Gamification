@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { getProjectBoard, createColumnService, updateColumnService, deleteColumnService, moveTaskService, reorderColumnsService } from '../services/kanban.service';
+import { getProjectBoard, createColumnService, updateColumnService, deleteColumnService, moveTaskService, reorderColumnsService, toggleTaskCompletionService } from '../services/kanban.service';
 
 export const getProjectKanban = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -66,6 +66,17 @@ export const reorderColumns = async (req: Request, res: Response, next: NextFunc
     const userId = req.user!.userId;
     const userRole = req.user!.role;
     const result = await reorderColumnsService(projectId, columnIds, userId, userRole);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const toggleTaskCompletion = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { taskId } = req.params;
+    const userId = req.user!.userId;
+    const result = await toggleTaskCompletionService(taskId, userId);
     res.json(result);
   } catch (error) {
     next(error);

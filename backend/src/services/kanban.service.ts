@@ -136,6 +136,33 @@ export const moveTaskService = async (taskId: string, columnId: string, userId: 
         include: { 
             project: { include: { members: true } },
             KanbanColumn: true,
+        }
+    });
+
+    if (!task) throw { statusCode: 404, message: 'Task not found' };
+
+    const newColumn = await prisma.kanbanColumn.findUnique({ where: { id: columnId } });
+    if (!newColumn) throw { statusCode: 404, message: 'Column not found' };
+
+    // Se não há mudança de coluna, apenas retorna
+    if (task.columnId === columnId) {
+        return task;
+    }
+
+    // Mover task entre colunas é apenas para organização — pontos são gerenciados pelo botão de conclusão
+    return prisma.task.update({
+        where: { id: taskId },
+        data: { 
+            columnId, 
+            status: newColumn.status,
+        }
+    });
+};
+
+export const toggleTaskCompletionService = async (taskId: string, userId: string) => {
+    const task = await prisma.task.findUnique({
+        where: { id: taskId },
+        include: { 
             assignees: {
                 include: { user: { select: { id: true } } }
             }
@@ -144,67 +171,36 @@ export const moveTaskService = async (taskId: string, columnId: string, userId: 
 
     if (!task) throw { statusCode: 404, message: 'Task not found' };
 
-    /* Permissão removida conforme solicitação: qualquer usuário autenticado pode mover */
-    // const isMember = task.project.members.some(m => m.userId === userId);
-    // if (!isMember && !isAdmin) throw { statusCode: 403, message: 'Not authorized' };
+    const isNowCompleted = !task.completedAt;
 
-    const newColumn = await prisma.kanbanColumn.findUnique({ where: { id: columnId } });
-    if (!newColumn) throw { statusCode: 404, message: 'Column not found' };
-
-    const oldColumn = task.KanbanColumn;
-    const wasInCompletionColumn = oldColumn?.isCompletionColumn || false;
-    const isGoingToCompletionColumn = newColumn.isCompletionColumn;
-
-    // Se não há mudança de coluna, apenas retorna
-    if (task.columnId === columnId) {
-        return task;
-    }
-
-    // Import gamification functions
     const { addPointsForTaskCompletion, removePointsForTaskUncompletion } = await import('./gamification.service');
 
     return prisma.$transaction(async (tx) => {
-        // Buscar o projeto para obter a configuração de pontos
         const project = await tx.project.findUnique({ where: { id: task.projectId } });
         const pointsToAward = project?.pointsPerCompletedTask ?? 100;
 
-        // Atualizar task
         const updatedTask = await tx.task.update({
             where: { id: taskId },
-            data: { 
-                columnId, 
-                status: newColumn.status,
-                completedAt: isGoingToCompletionColumn ? new Date() : (wasInCompletionColumn ? null : task.completedAt)
-            }
+            data: { completedAt: isNowCompleted ? new Date() : null }
         });
 
-        // Pegar todos os IDs dos assignees - APENAS assignees recebem pontos de conclusão
+        // Apenas assignees recebem pontos de conclusão
         const assigneeIds = task.assignees.map(a => a.user.id);
-        
-        // Se não tem assignees, ninguém recebe pontos de conclusão
-        const usersToAward = assigneeIds;
 
-        console.log(`[POINTS DEBUG] Task ${taskId} moved. Assignees to award:`, usersToAward, `wasCompletion: ${wasInCompletionColumn}, isCompletion: ${isGoingToCompletionColumn}`);
-
-        // Lógica de pontuação - usar pontos do projeto
-        for (const memberId of usersToAward) {
-            // Caso 1: Task entrando na coluna de conclusão
-            if (!wasInCompletionColumn && isGoingToCompletionColumn) {
+        for (const memberId of assigneeIds) {
+            if (isNowCompleted) {
                 await addPointsForTaskCompletion(memberId, pointsToAward, taskId, tx);
-                console.log(`[POINTS] Added ${pointsToAward} points to user ${memberId} for completing task`);
-            }
-
-            // Caso 2: Task saindo da coluna de conclusão
-            if (wasInCompletionColumn && !isGoingToCompletionColumn) {
+                console.log(`[POINTS] Added ${pointsToAward} points to user ${memberId} for completing task ${taskId}`);
+            } else {
                 await removePointsForTaskUncompletion(memberId, pointsToAward, taskId, tx);
-                console.log(`[POINTS] Removed ${pointsToAward} points from user ${memberId} for uncompleting task`);
+                console.log(`[POINTS] Removed ${pointsToAward} points from user ${memberId} for uncompleting task ${taskId}`);
             }
         }
 
         return updatedTask;
     }, {
-        maxWait: 5000, // default: 2000
-        timeout: 20000 // default: 5000
+        maxWait: 5000,
+        timeout: 20000
     });
 };
 
