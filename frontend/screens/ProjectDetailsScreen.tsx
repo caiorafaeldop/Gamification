@@ -1333,22 +1333,26 @@ const ProjectDetailsScreen = () => {
                                                                                         </div>
                                                                                     )}
                                                                                 </div>
-                                                                                <button
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        setSelectedTask(task);
-                                                                                        setIsTaskDetailsOpen(true);
-                                                                                    }}
-                                                                                    className="absolute top-2 right-8 text-gray-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                                >
-                                                                                    <span className="material-icons text-sm">edit</span>
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
-                                                                                    className="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                                >
-                                                                                    <span className="material-icons text-sm">delete</span>
-                                                                                </button>
+                                                                                {isProjectMember && (
+                                                                                    <button
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            setSelectedTask(task);
+                                                                                            setIsTaskDetailsOpen(true);
+                                                                                        }}
+                                                                                        className="absolute top-2 right-8 text-gray-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                                    >
+                                                                                        <span className="material-icons text-sm">edit</span>
+                                                                                    </button>
+                                                                                )}
+                                                                                {isProjectMember && (
+                                                                                    <button
+                                                                                        onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
+                                                                                        className="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                                    >
+                                                                                        <span className="material-icons text-sm">delete</span>
+                                                                                    </button>
+                                                                                )}
                                                                             </div>
                                                                         )}
                                                                     </Draggable>
