@@ -45,9 +45,10 @@ export const getMyProfile = async (userId: string) => {
     }
   }
 
-  // Exclude sensitive data
+  // Exclude sensitive data and compute level from points
   const { passwordHash, ...userWithoutHash } = userWithExtras;
-  return userWithoutHash;
+  const level = Math.floor((userWithoutHash.connectaPoints || 0) / 1000) + 1;
+  return { ...userWithoutHash, level };
 };
 
 export const getUserProfile = async (id: string) => {
@@ -66,7 +67,8 @@ export const getUserProfile = async (id: string) => {
   }
 
   const { passwordHash, ...userWithoutHash } = user;
-  return userWithoutHash;
+  const level = Math.floor((userWithoutHash.connectaPoints || 0) / 1000) + 1;
+  return { ...userWithoutHash, level };
 };
 
 export const updateUserDetails = async (userId: string, data: UpdateUserInput, requestingUserRole: Role) => {
