@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getSystemOverview } from '../controllers/stats.controller';
+import { getSystemOverview, getPublicProfile } from '../controllers/stats.controller';
 
 const router = Router();
 
@@ -85,5 +85,6 @@ const router = Router();
  *                         type: string
  */
 router.get('/', getSystemOverview);
+router.get('/public-profile/:userId', getPublicProfile);
 
 export default router;

@@ -18,7 +18,9 @@ import {
     ArrowRight,
     LogOut,
     Linkedin,
-    Github
+    Github,
+    Link,
+    ExternalLink
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -499,6 +501,47 @@ const ProfileScreen = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Public Portfolio Link Section */}
+                    {user?.id && (
+                        <div className="bg-gradient-to-r from-primary/5 to-sky-400/5 border border-primary/20 dark:border-primary/30 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div className="flex items-center gap-4 text-center sm:text-left">
+                                    <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 mx-auto sm:mx-0">
+                                        <ExternalLink size={26} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Meu Currículo Público</h3>
+                                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                                            Compartilhe suas conquistas, projetos e nível Connecta com recrutadores.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 w-full sm:w-auto">
+                                    <button
+                                        onClick={() => {
+                                            const url = `${window.location.protocol}//${window.location.host.replace('5173', '5174')}/#/cv/${user.id}`;
+                                            navigator.clipboard.writeText(url);
+                                            toast.success('Link do currículo copiado!');
+                                        }}
+                                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                                    >
+                                        <Link size={18} />
+                                        Copiar Link
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const url = `${window.location.protocol}//${window.location.host.replace('5173', '5174')}/#/cv/${user.id}`;
+                                            window.open(url, '_blank');
+                                        }}
+                                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-blue-600 shadow-md shadow-primary/20 transition-colors"
+                                    >
+                                        Ver Currículo
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Projects Participating */}
                     <div>
