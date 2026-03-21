@@ -520,7 +520,8 @@ const ProfileScreen = () => {
                                 <div className="flex items-center gap-3 w-full sm:w-auto">
                                     <button
                                         onClick={() => {
-                                            const url = `${window.location.protocol}//${window.location.host.replace('5173', '5174')}/#/cv/${user.id}`;
+                                            const landingBase = import.meta.env.VITE_LANDING_PAGE_URL || 'https://connecta-landing-page.onrender.com';
+                                            const url = `${landingBase}/#/cv/${user.id}`;
                                             navigator.clipboard.writeText(url);
                                             toast.success('Link do currículo copiado!');
                                         }}
@@ -531,7 +532,8 @@ const ProfileScreen = () => {
                                     </button>
                                     <button
                                         onClick={() => {
-                                            const url = `${window.location.protocol}//${window.location.host.replace('5173', '5174')}/#/cv/${user.id}`;
+                                            const landingBase = import.meta.env.VITE_LANDING_PAGE_URL || 'https://connecta-landing-page.onrender.com';
+                                            const url = `${landingBase}/#/cv/${user.id}`;
                                             window.open(url, '_blank');
                                         }}
                                         className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-blue-600 shadow-md shadow-primary/20 transition-colors"
