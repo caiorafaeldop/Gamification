@@ -41,7 +41,26 @@ export const getPublicProfile = async (userId: string) => {
             },
             memberOfProjects: {
                 select: {
-                    project: { select: { id: true, title: true, description: true, category: true, progress: true } }
+                    project: { 
+                        select: { 
+                            id: true, 
+                            title: true, 
+                            description: true, 
+                            category: true, 
+                            progress: true,
+                            tasks: {
+                                where: {
+                                    status: 'done',
+                                    assignees: {
+                                        some: {
+                                            userId: userId
+                                        }
+                                    }
+                                },
+                                select: { id: true }
+                            }
+                        } 
+                    }
                 }
             }
         }
