@@ -86,5 +86,7 @@ const router = Router();
  */
 router.get('/', getSystemOverview);
 router.get('/public-profile/:userId', getPublicProfile);
+// Alias para corrigir o bug da Connecta Landing Page
+router.get('/stats/public-profile/:userId', getPublicProfile);
 
 export default router;
