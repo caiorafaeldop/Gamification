@@ -57,7 +57,7 @@ export const getPublicProfile = async (userId: string) => {
                                         }
                                     }
                                 },
-                                select: { id: true }
+                                select: { id: true, title: true }
                             }
                         } 
                     }
