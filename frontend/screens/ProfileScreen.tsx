@@ -22,14 +22,16 @@ import {
     Link,
     ExternalLink
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { getProfile, updateUser, uploadAvatar } from '../services/user.service';
+import { getProfile, getUserById, updateUser, uploadAvatar } from '../services/user.service';
 import toast from 'react-hot-toast';
 
 import { Skeleton } from '../components/Skeleton';
 
 const ProfileScreen = () => {
+    const { id } = useParams<{ id: string }>();
+    const isMyProfile = !id;
     const navigate = useNavigate();
     const { logout } = useAuth();
     const [loading, setLoading] = useState(true);
@@ -58,20 +60,22 @@ const ProfileScreen = () => {
     const fetchProfile = async () => {
         try {
             setLoading(true);
-            const data = await getProfile();
+            const data = id ? await getUserById(id) : await getProfile();
             setUser(data);
-            setFormData({
-                name: data.name || '',
-                email: data.email || '',
-                course: data.course || '',
-                bio: data.bio || '',
-                skills: (data.skills || []).join(', '),
-                avatarColor: data.avatarColor || '#3B82F6',
-                avatarUrl: data.avatarUrl || '',
-                contactEmail: data.contactEmail || '',
-                linkedinUrl: data.linkedinUrl || '',
-                githubUrl: data.githubUrl || ''
-            });
+            if (isMyProfile) {
+                setFormData({
+                    name: data.name || '',
+                    email: data.email || '',
+                    course: data.course || '',
+                    bio: data.bio || '',
+                    skills: (data.skills || []).join(', '),
+                    avatarColor: data.avatarColor || '#3B82F6',
+                    avatarUrl: data.avatarUrl || '',
+                    contactEmail: data.contactEmail || '',
+                    linkedinUrl: data.linkedinUrl || '',
+                    githubUrl: data.githubUrl || ''
+                });
+            }
         } catch (error) {
             toast.error('Erro ao carregar perfil');
             console.error(error);
@@ -228,17 +232,19 @@ const ProfileScreen = () => {
                             )}
 
                             {/* Hover Overlay */}
-                            <label className={`absolute inset-0 bg-black/50 backdrop-blur-[1px] flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer rounded-full ${uploading ? 'opacity-100 !cursor-wait' : ''}`}>
-                                <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
-                                {uploading ? (
-                                    <Loader className="text-white animate-spin" size={24} />
-                                ) : (
-                                    <>
-                                        <Camera className="text-white mb-1.5" size={26} />
-                                        <span className="text-white text-[10px] font-bold uppercase tracking-wider">Alterar Foto</span>
-                                    </>
-                                )}
-                            </label>
+                            {isMyProfile && (
+                                <label className={`absolute inset-0 bg-black/50 backdrop-blur-[1px] flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer rounded-full ${uploading ? 'opacity-100 !cursor-wait' : ''}`}>
+                                    <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
+                                    {uploading ? (
+                                        <Loader className="text-white animate-spin" size={24} />
+                                    ) : (
+                                        <>
+                                            <Camera className="text-white mb-1.5" size={26} />
+                                            <span className="text-white text-[10px] font-bold uppercase tracking-wider">Alterar Foto</span>
+                                        </>
+                                    )}
+                                </label>
+                            )}
                         </div>
                         {/* Status Indicator */}
                         <div className="absolute bottom-1 right-1 w-6 h-6 bg-green-500 border-4 border-white dark:border-surface-dark rounded-full"></div>
@@ -310,25 +316,27 @@ const ProfileScreen = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
-                        <button
-                            onClick={() => setIsEditing(!isEditing)}
-                            className="bg-primary hover:bg-sky-600 text-white px-5 py-2.5 rounded-lg shadow-lg shadow-primary/30 flex items-center justify-center gap-2 font-bold transition-all transform hover:-translate-y-0.5"
-                        >
-                            {isEditing ? <X size={18} /> : <Edit3 size={18} />}
-                            {isEditing ? 'Cancelar' : 'Editar Perfil'}
-                        </button>
-
-                        {!isEditing && (
+                    {isMyProfile && (
+                        <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
                             <button
-                                onClick={logout}
-                                className="bg-red-500/10 hover:bg-red-500 text-red-600 hover:text-white border border-red-500/20 px-5 py-2.5 rounded-lg font-bold transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                                onClick={() => setIsEditing(!isEditing)}
+                                className="bg-primary hover:bg-sky-600 text-white px-5 py-2.5 rounded-lg shadow-lg shadow-primary/30 flex items-center justify-center gap-2 font-bold transition-all transform hover:-translate-y-0.5"
                             >
-                                <LogOut size={18} />
-                                Sair
+                                {isEditing ? <X size={18} /> : <Edit3 size={18} />}
+                                {isEditing ? 'Cancelar' : 'Editar Perfil'}
                             </button>
-                        )}
-                    </div>
+
+                            {!isEditing && (
+                                <button
+                                    onClick={logout}
+                                    className="bg-red-500/10 hover:bg-red-500 text-red-600 hover:text-white border border-red-500/20 px-5 py-2.5 rounded-lg font-bold transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                                >
+                                    <LogOut size={18} />
+                                    Sair
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -511,9 +519,9 @@ const ProfileScreen = () => {
                                         <ExternalLink size={26} />
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Meu Currículo Público</h3>
+                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">{isMyProfile ? 'Meu Currículo Público' : 'Currículo Público'}</h3>
                                         <p className="text-sm text-slate-600 dark:text-slate-400">
-                                            Compartilhe suas conquistas, projetos e nível Connecta com recrutadores.
+                                            {isMyProfile ? 'Compartilhe suas conquistas, projetos e nível Connecta com recrutadores.' : 'Veja a visão detalhada deste currículo.'}
                                         </p>
                                     </div>
                                 </div>
@@ -548,7 +556,7 @@ const ProfileScreen = () => {
                     {/* Projects Participating */}
                     <div>
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Projetos atuais: </h3>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Projetos {isMyProfile ? 'atuais' : `de ${user?.name}`}: </h3>
                             <button
                                 onClick={() => navigate('/projects')}
                                 className="hidden sm:inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary/10 text-primary border border-primary/20 rounded-xl text-sm font-bold hover:bg-primary hover:text-white transition-all duration-300 group shadow-sm active:scale-95 min-w-[120px]"
@@ -603,7 +611,7 @@ const ProfileScreen = () => {
                         ) : (
                             <div className="p-12 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl text-center">
                                 <User size={48} className="text-slate-400 mx-auto mb-4 opacity-50" />
-                                <p className="text-slate-500 dark:text-slate-400 font-medium">Você ainda não entrou em nenhum projeto.</p>
+                                <p className="text-slate-500 dark:text-slate-400 font-medium">{isMyProfile ? 'Você ainda' : 'Este usuário ainda'} não entrou em nenhum projeto.</p>
                                 <button
                                     onClick={() => navigate('/projects')}
                                     className="mt-4 text-primary font-bold hover:underline"

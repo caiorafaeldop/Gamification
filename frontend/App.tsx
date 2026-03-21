@@ -56,6 +56,7 @@ const App = () => {
           <Route path="/eventos/novo" element={<NewEventScreen />} />
           <Route path="/eventos/editar/:id" element={<NewEventScreen />} />
           <Route path="/profile" element={<ProfileScreen />} />
+          <Route path="/profile/:id" element={<ProfileScreen />} />
 
           {/* Admin Routes */}
           <Route path="/admin/users" element={<AdminUsersScreen />} />

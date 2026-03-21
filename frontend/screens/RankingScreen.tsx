@@ -5,6 +5,7 @@ import { getProfile } from '../services/user.service';
 import { getProjects } from '../services/project.service';
 import { Skeleton } from '../components/Skeleton';
 import ProjectFilterSelect from '../components/ProjectFilterSelect';
+import { Link } from 'react-router-dom';
 
 const FILTERS = [
   { id: 'daily', label: 'Diário' },
@@ -147,20 +148,20 @@ const RankingScreen = () => {
                       {student.rank}
                     </span>
                   </div>
-                  <div className="col-span-7 sm:col-span-8 flex items-center gap-3 min-w-0">
+                  <Link to={`/profile/${student.id}`} className="col-span-7 sm:col-span-8 flex items-center gap-3 min-w-0 group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 p-1 -m-1 rounded-lg transition-colors">
                     <img
                       src={student.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`}
                       alt={student.name}
-                      className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                      className="w-9 h-9 rounded-full object-cover flex-shrink-0 group-hover:ring-2 ring-primary/50 transition-all"
                     />
                     <span
-                      className={`font-bold truncate ${
+                      className={`font-bold truncate group-hover:text-primary transition-colors ${
                         isMe ? 'text-primary' : 'text-secondary dark:text-white'
                       }`}
                     >
                       {student.name} {isMe && '(Você)'}
                     </span>
-                  </div>
+                  </Link>
                   <div className="col-span-3 text-right font-black text-primary">
                     {Math.max(0, student.connectaPoints || student.points || 0)} 🪙
                   </div>

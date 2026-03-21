@@ -57,7 +57,13 @@ export const getUserProfile = async (id: string) => {
     include: {
       tier: true,
       memberOfProjects: {
-        include: { project: { select: { id: true, title: true } } },
+        include: { project: { select: { id: true, title: true, description: true, coverUrl: true } } },
+      },
+      assignedTasks: {
+        where: { status: { not: TaskStatus.done } },
+        orderBy: { dueDate: 'asc' },
+        take: 5,
+        include: { project: { select: { title: true } } },
       },
     },
   });
