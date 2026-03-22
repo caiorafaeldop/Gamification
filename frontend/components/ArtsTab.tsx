@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Download, Copy, Check, Instagram, Linkedin, Image as ImageIcon, Pencil, X, ChevronDown } from 'lucide-react';
-import { getRankingArts, RankingArt } from '../services/ranking.service';
+import { getWeeklyRanking, WeeklyWinner } from '../services/ranking.service';
+import { generatePodiumImage, PodiumWinner } from '../utils/podiumCanvas';
 import { Skeleton } from './Skeleton';
 
 // Helper: calcula o número da semana atual no ano
@@ -13,53 +14,94 @@ function getCurrentWeekNumber(): number {
 }
 
 const ArtsTab = () => {
-  const [arts, setArts] = useState<RankingArt[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [customTexts, setCustomTexts] = useState<Record<string, string>>({});
   const [isEditing, setIsEditing] = useState<string | null>(null);
   
   const currentYear = new Date().getFullYear();
   const currentWeek = getCurrentWeekNumber();
-  const [selectedWeek, setSelectedWeek] = useState(currentWeek);
 
-  // Gerar opções de semana (em 2026 começa na 9)
+  // Imagens geradas via Canvas
+  const [instaImageUrl, setInstaImageUrl] = useState<string>('');
+  const [linkedinImageUrl, setLinkedinImageUrl] = useState<string>('');
+  
+  // Textos dinâmicos
+  const [instaText, setInstaText] = useState('');
+  const [linkedinText, setLinkedinText] = useState('');
+
+  // Winners da semana selecionada
+  const [winners, setWinners] = useState<WeeklyWinner[]>([]);
+
+  // Gerar opções de semana: apenas semanas ANTERIORES à atual, últimas 5
   const weekOptions = useMemo(() => {
     const startWeek = currentYear === 2026 ? 9 : 1;
+    const lastWeek = currentWeek - 1; // Exclui semana atual
     const options = [];
-    for (let i = startWeek; i <= 52; i++) {
+    const firstOption = Math.max(startWeek, lastWeek - 4); // Últimas 5
+    for (let i = lastWeek; i >= firstOption; i--) {
       options.push(i);
     }
     return options;
-  }, [currentYear]);
+  }, [currentYear, currentWeek]);
+
+  const [selectedWeek, setSelectedWeek] = useState(weekOptions[0] || currentWeek - 1);
+
+  // Gerar texto dinâmico baseado nos winners reais
+  function generateTexts(w: WeeklyWinner[], week: number) {
+    const names = w.map(winner => winner.user.name.split(' ')[0]).join(', ');
+    const top1 = w.find(x => x.position === 1);
+    const top1Name = top1 ? top1.user.name : 'Ninguém ainda';
+    
+    const insta = `🏆 Destaques da Semana ${week} no Connecta!\n\n🥇 ${w[0]?.user.name || '---'}\n🥈 ${w[1]?.user.name || '---'}\n🥉 ${w[2]?.user.name || '---'}\n\nParabéns aos nossos campeões! O esforço contínuo sempre traz resultados. 💪🚀\n\n#Connecta #Gamification #DestaqueDaSemana #Top3 #Tech`;
+
+    const linkedin = `Tenho o prazer de compartilhar os destaques da Semana ${week} na plataforma Connecta Gamification! 🏆\n\n🥇 ${w[0]?.user.name || '---'} — ${w[0]?.points || 0} XP\n🥈 ${w[1]?.user.name || '---'} — ${w[1]?.points || 0} XP\n🥉 ${w[2]?.user.name || '---'} — ${w[2]?.points || 0} XP\n\nUma ótima jornada de aprendizado contínuo ao lado de excelentes profissionais!\n\n#Connecta #Gamification #EvoluçãoProfissional #Reconhecimento #Carreira`;
+
+    return { insta, linkedin };
+  }
 
   useEffect(() => {
-    const fetchArts = async () => {
+    const fetchAndGenerate = async () => {
       setLoading(true);
       try {
-        const data = await getRankingArts(selectedWeek, currentYear);
-        let loadedArts = data;
-        
-        if (!data || data.length === 0) {
-          loadedArts = [
-            { id: '1', type: 'instagram', imageUrl: 'https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=400&h=400&fit=crop', text: `🏆 Destaques da Semana ${selectedWeek} no Connecta!\n\nO esforço contínuo sempre traz ótimos resultados. Parabéns aos nossos campeões! 🚀\n\n#Connecta #Gamification #Tech #DestaqueDaSemana` },
-            { id: '2', type: 'linkedin', imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&h=400&fit=crop', text: `Feliz em compartilhar os destaques da Semana ${selectedWeek} na plataforma Connecta Gamification.\n\nUma ótima jornada de aprendizado contínuo ao lado de excelentes profissionais! 🚀\n\n#Connecta #Gamification #EvoluçãoProfissional #Reconhecimento #Carreira` }
-          ];
-        }
-        
-        setArts(loadedArts);
-        const initialTexts: Record<string, string> = {};
-        loadedArts.forEach((art: RankingArt) => {
-          initialTexts[art.id || art.type] = art.text;
-        });
-        setCustomTexts(initialTexts);
+        // 1. Buscar dados reais do Top 3
+        const weekWinners = await getWeeklyRanking(selectedWeek, currentYear);
+        setWinners(weekWinners);
+
+        // 2. Preparar dados para o Canvas
+        const podiumWinners: PodiumWinner[] = weekWinners.map(w => ({
+          position: w.position,
+          name: w.user.name,
+          points: w.points,
+        }));
+
+        // Se não tiver dados, usar placeholder
+        const finalWinners = podiumWinners.length > 0 ? podiumWinners : [
+          { position: 1, name: 'Aguardando...', points: 0 },
+          { position: 2, name: 'Aguardando...', points: 0 },
+          { position: 3, name: 'Aguardando...', points: 0 },
+        ];
+
+        // 3. Gerar imagens via Canvas
+        const [instaImg, linkedinImg] = await Promise.all([
+          generatePodiumImage(finalWinners, selectedWeek, currentYear, 'instagram'),
+          generatePodiumImage(finalWinners, selectedWeek, currentYear, 'linkedin'),
+        ]);
+
+        setInstaImageUrl(instaImg);
+        setLinkedinImageUrl(linkedinImg);
+
+        // 4. Gerar textos
+        const texts = generateTexts(weekWinners, selectedWeek);
+        setInstaText(texts.insta);
+        setLinkedinText(texts.linkedin);
+
       } catch (error) {
-        console.error('Failed to load arts', error);
+        console.error('Failed to generate arts', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchArts();
+    fetchAndGenerate();
   }, [selectedWeek, currentYear]);
 
   const handleCopy = (id: string, text: string) => {
@@ -72,22 +114,13 @@ const ArtsTab = () => {
     }
   };
 
-  const handleDownload = async (imageUrl: string, type: string) => {
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `connecta-destaque-sem${selectedWeek}-${type}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-        console.error('Download falhou', error);
-        window.open(imageUrl, '_blank');
-    }
+  const handleDownload = (dataUrl: string, type: string) => {
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = `connecta-top3-sem${selectedWeek}-${type}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (loading) {
@@ -101,9 +134,6 @@ const ArtsTab = () => {
     );
   }
 
-  const instaArt = arts.find(a => a.type === 'instagram');
-  const linkedinArt = arts.find(a => a.type === 'linkedin');
-
   return (
     <div className="p-4 md:p-8 relative z-10 w-full max-w-5xl mx-auto">
       <div className="mb-8 p-6 bg-surface-light/80 dark:bg-surface-dark/80 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm backdrop-blur-sm">
@@ -113,7 +143,7 @@ const ArtsTab = () => {
             <p className="text-gray-500 dark:text-gray-400">Baixe as imagens e copie os textos prontos para postar nas redes sociais.</p>
           </div>
           
-          {/* Select de Semana */}
+          {/* Select de Semana — apenas últimas 5 anteriores */}
           <div className="relative flex-shrink-0">
             <select
               value={selectedWeek}
@@ -122,7 +152,7 @@ const ArtsTab = () => {
             >
               {weekOptions.map(w => (
                 <option key={w} value={w}>
-                  📅 Semana {w}{w === currentWeek ? ' (Atual)' : ''}
+                  📅 Semana {w}
                 </option>
               ))}
             </select>
@@ -134,150 +164,136 @@ const ArtsTab = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         
         {/* Instagram Card */}
-        {instaArt && (
-          <div className="bg-surface-light dark:bg-surface-dark rounded-3xl p-6 md:p-8 border border-gray-100 dark:border-gray-800 shadow-xl flex flex-col items-center hover:border-primary/50 transition-colors duration-300">
-            <div className="flex items-center gap-3 mb-6 self-start">
-              <div className="p-2.5 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 rounded-xl text-white shadow-md">
-                <Instagram size={24} />
-              </div>
-              <div>
-                 <h3 className="font-bold text-lg text-secondary dark:text-white leading-tight">Post Instagram</h3>
-                 <p className="text-xs text-gray-500 dark:text-gray-400">1:1 Square (1080x1080)</p>
-              </div>
+        <div className="bg-surface-light dark:bg-surface-dark rounded-3xl p-6 md:p-8 border border-gray-100 dark:border-gray-800 shadow-xl flex flex-col items-center hover:border-primary/50 transition-colors duration-300">
+          <div className="flex items-center gap-3 mb-6 self-start">
+            <div className="p-2.5 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 rounded-xl text-white shadow-md">
+              <Instagram size={24} />
             </div>
-            
-            <div className="w-full max-w-[320px] aspect-square bg-gray-50 dark:bg-gray-800/50 rounded-2xl overflow-hidden mb-6 flex items-center justify-center border border-gray-200 dark:border-gray-700/50 shadow-inner group relative">
-              {instaArt.imageUrl ? (
-                <img src={instaArt.imageUrl} alt="Instagram Art" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-              ) : (
-                <ImageIcon className="text-gray-300 dark:text-gray-600" size={48} />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-end justify-center pb-4 text-white font-medium">Pré-visualização</div>
-            </div>
-
-            <div className="w-full mb-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700/50 p-4 relative">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Texto da Publicação</span>
-                <button 
-                  onClick={() => setIsEditing(isEditing === 'insta' ? null : 'insta')}
-                  className="text-gray-400 hover:text-primary transition-colors focus:outline-none"
-                  title={isEditing === 'insta' ? 'Fechar Edição' : 'Editar Texto'}
-                >
-                  {isEditing === 'insta' ? <X size={16} /> : <Pencil size={16} />}
-                </button>
-              </div>
-              
-              {isEditing === 'insta' ? (
-                <textarea 
-                  className="w-full h-24 bg-white dark:bg-gray-900 border border-primary/30 rounded-lg p-3 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                  value={customTexts[instaArt.id || 'insta']}
-                  onChange={(e) => setCustomTexts({ ...customTexts, [instaArt.id || 'insta']: e.target.value })}
-                  placeholder="Escreva sua legenda aqui..."
-                />
-              ) : (
-                <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap line-clamp-4">
-                  {customTexts[instaArt.id || 'insta']}
-                </p>
-              )}
-            </div>
-
-            <div className="w-full space-y-3 mt-auto">
-              <button 
-                onClick={() => handleDownload(instaArt.imageUrl, 'instagram')}
-                className="w-full flex items-center justify-center gap-2 py-3.5 bg-secondary hover:bg-secondary-hover dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white text-white rounded-xl font-bold transition-all shadow-md active:scale-[0.98]"
-              >
-                <Download size={20} /> Baixar Imagem
-              </button>
-              <button 
-                onClick={() => handleCopy(instaArt.id || 'insta', customTexts[instaArt.id || 'insta'])}
-                className={`w-full flex items-center justify-center gap-2 py-3.5 border-2 rounded-xl font-bold transition-all active:scale-[0.98] ${copiedId === (instaArt.id || 'insta') ? 'bg-green-50 border-green-500 text-green-600 dark:bg-green-900/20 dark:border-green-500 dark:text-green-400 shadow-sm' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10'}`}
-              >
-                {copiedId === (instaArt.id || 'insta') ? (
-                  <><Check size={20} className="text-green-500" /> Texto Copiado!</>
-                ) : (
-                  <><Copy size={20} /> Copiar Texto</>
-                )}
-              </button>
+            <div>
+               <h3 className="font-bold text-lg text-secondary dark:text-white leading-tight">Post Instagram</h3>
+               <p className="text-xs text-gray-500 dark:text-gray-400">4:5 Portrait (1080×1350)</p>
             </div>
           </div>
-        )}
+          
+          <div className="w-full max-w-[320px] aspect-[4/5] bg-gray-50 dark:bg-gray-800/50 rounded-2xl overflow-hidden mb-6 flex items-center justify-center border border-gray-200 dark:border-gray-700/50 shadow-inner group relative">
+            {instaImageUrl ? (
+              <img src={instaImageUrl} alt="Instagram Art" className="w-full h-full object-cover" />
+            ) : (
+              <ImageIcon className="text-gray-300 dark:text-gray-600" size={48} />
+            )}
+          </div>
+
+          <div className="w-full mb-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700/50 p-4 relative">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Texto da Publicação</span>
+              <button 
+                onClick={() => setIsEditing(isEditing === 'insta' ? null : 'insta')}
+                className="text-gray-400 hover:text-primary transition-colors focus:outline-none"
+                title={isEditing === 'insta' ? 'Fechar Edição' : 'Editar Texto'}
+              >
+                {isEditing === 'insta' ? <X size={16} /> : <Pencil size={16} />}
+              </button>
+            </div>
+            
+            {isEditing === 'insta' ? (
+              <textarea 
+                className="w-full h-32 bg-white dark:bg-gray-900 border border-primary/30 rounded-lg p-3 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                value={instaText}
+                onChange={(e) => setInstaText(e.target.value)}
+                placeholder="Escreva sua legenda aqui..."
+              />
+            ) : (
+              <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap line-clamp-6">
+                {instaText}
+              </p>
+            )}
+          </div>
+
+          <div className="w-full space-y-3 mt-auto">
+            <button 
+              onClick={() => handleDownload(instaImageUrl, 'instagram')}
+              className="w-full flex items-center justify-center gap-2 py-3.5 bg-secondary hover:bg-secondary-hover dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white text-white rounded-xl font-bold transition-all shadow-md active:scale-[0.98]"
+            >
+              <Download size={20} /> Baixar Imagem
+            </button>
+            <button 
+              onClick={() => handleCopy('insta', instaText)}
+              className={`w-full flex items-center justify-center gap-2 py-3.5 border-2 rounded-xl font-bold transition-all active:scale-[0.98] ${copiedId === 'insta' ? 'bg-green-50 border-green-500 text-green-600 dark:bg-green-900/20 dark:border-green-500 dark:text-green-400 shadow-sm' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10'}`}
+            >
+              {copiedId === 'insta' ? (
+                <><Check size={20} className="text-green-500" /> Texto Copiado!</>
+              ) : (
+                <><Copy size={20} /> Copiar Texto</>
+              )}
+            </button>
+          </div>
+        </div>
 
         {/* LinkedIn Card */}
-        {linkedinArt && (
-          <div className="bg-surface-light dark:bg-surface-dark rounded-3xl p-6 md:p-8 border border-gray-100 dark:border-gray-800 shadow-xl flex flex-col items-center hover:border-primary/50 transition-colors duration-300">
-            <div className="flex items-center gap-3 mb-6 self-start">
-              <div className="p-2.5 bg-[#0077b5] rounded-xl text-white shadow-md">
-                <Linkedin size={24} />
-              </div>
-              <div>
-                 <h3 className="font-bold text-lg text-secondary dark:text-white leading-tight">Post LinkedIn</h3>
-                 <p className="text-xs text-gray-500 dark:text-gray-400">1.91:1 Landscape (1200x627)</p>
-              </div>
+        <div className="bg-surface-light dark:bg-surface-dark rounded-3xl p-6 md:p-8 border border-gray-100 dark:border-gray-800 shadow-xl flex flex-col items-center hover:border-primary/50 transition-colors duration-300">
+          <div className="flex items-center gap-3 mb-6 self-start">
+            <div className="p-2.5 bg-[#0077b5] rounded-xl text-white shadow-md">
+              <Linkedin size={24} />
             </div>
-            
-            <div className="w-full aspect-[1.91/1] bg-gray-50 dark:bg-gray-800/50 rounded-2xl overflow-hidden mb-6 flex items-center justify-center border border-gray-200 dark:border-gray-700/50 shadow-inner group relative mt-4 md:mt-12">
-              {linkedinArt.imageUrl ? (
-                <img src={linkedinArt.imageUrl} alt="LinkedIn Art" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-              ) : (
-                <ImageIcon className="text-gray-300 dark:text-gray-600" size={48} />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-end justify-center pb-4 text-white font-medium">Pré-visualização</div>
-            </div>
-
-            <div className="w-full mb-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700/50 p-4 relative">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Texto da Publicação</span>
-                <button 
-                  onClick={() => setIsEditing(isEditing === 'linkedin' ? null : 'linkedin')}
-                  className="text-gray-400 hover:text-primary transition-colors focus:outline-none"
-                  title={isEditing === 'linkedin' ? 'Fechar Edição' : 'Editar Texto'}
-                >
-                  {isEditing === 'linkedin' ? <X size={16} /> : <Pencil size={16} />}
-                </button>
-              </div>
-              
-              {isEditing === 'linkedin' ? (
-                <textarea 
-                  className="w-full h-32 bg-white dark:bg-gray-900 border border-primary/30 rounded-lg p-3 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                  value={customTexts[linkedinArt.id || 'linkedin']}
-                  onChange={(e) => setCustomTexts({ ...customTexts, [linkedinArt.id || 'linkedin']: e.target.value })}
-                  placeholder="Escreva sua publicação aqui..."
-                />
-              ) : (
-                <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap line-clamp-4">
-                  {customTexts[linkedinArt.id || 'linkedin']}
-                </p>
-              )}
-            </div>
-
-            <div className="w-full space-y-3 mt-auto">
-              <button 
-                onClick={() => handleDownload(linkedinArt.imageUrl, 'linkedin')}
-                className="w-full flex items-center justify-center gap-2 py-3.5 bg-secondary hover:bg-secondary-hover dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white text-white rounded-xl font-bold transition-all shadow-md active:scale-[0.98]"
-              >
-                <Download size={20} /> Baixar Imagem
-              </button>
-              <button 
-                onClick={() => handleCopy(linkedinArt.id || 'linkedin', customTexts[linkedinArt.id || 'linkedin'])}
-                className={`w-full flex items-center justify-center gap-2 py-3.5 border-2 rounded-xl font-bold transition-all active:scale-[0.98] ${copiedId === (linkedinArt.id || 'linkedin') ? 'bg-green-50 border-green-500 text-green-600 dark:bg-green-900/20 dark:border-green-500 dark:text-green-400 shadow-sm' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10'}`}
-              >
-                {copiedId === (linkedinArt.id || 'linkedin') ? (
-                  <><Check size={20} className="text-green-500" /> Texto Copiado!</>
-                ) : (
-                  <><Copy size={20} /> Copiar Texto</>
-                )}
-              </button>
+            <div>
+               <h3 className="font-bold text-lg text-secondary dark:text-white leading-tight">Post LinkedIn</h3>
+               <p className="text-xs text-gray-500 dark:text-gray-400">1.91:1 Landscape (1200×627)</p>
             </div>
           </div>
-        )}
+          
+          <div className="w-full aspect-[1.91/1] bg-gray-50 dark:bg-gray-800/50 rounded-2xl overflow-hidden mb-6 flex items-center justify-center border border-gray-200 dark:border-gray-700/50 shadow-inner group relative mt-4 md:mt-12">
+            {linkedinImageUrl ? (
+              <img src={linkedinImageUrl} alt="LinkedIn Art" className="w-full h-full object-cover" />
+            ) : (
+              <ImageIcon className="text-gray-300 dark:text-gray-600" size={48} />
+            )}
+          </div>
 
-        {!instaArt && !linkedinArt && (
-           <div className="col-span-full py-20 text-center flex flex-col items-center border border-dashed border-gray-300 dark:border-gray-700 rounded-3xl">
-             <ImageIcon className="text-gray-300 dark:text-gray-600 mb-4" size={64} />
-             <p className="text-lg font-medium text-gray-600 dark:text-gray-400 mb-2">Nenhuma arte disponível no momento.</p>
-             <p className="text-sm text-gray-500 dark:text-gray-500 max-w-md">Continue realizando tarefas para acumular pontos e se tornar um dos destaques da plataforma!</p>
-           </div>
-        )}
+          <div className="w-full mb-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700/50 p-4 relative">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Texto da Publicação</span>
+              <button 
+                onClick={() => setIsEditing(isEditing === 'linkedin' ? null : 'linkedin')}
+                className="text-gray-400 hover:text-primary transition-colors focus:outline-none"
+                title={isEditing === 'linkedin' ? 'Fechar Edição' : 'Editar Texto'}
+              >
+                {isEditing === 'linkedin' ? <X size={16} /> : <Pencil size={16} />}
+              </button>
+            </div>
+            
+            {isEditing === 'linkedin' ? (
+              <textarea 
+                className="w-full h-40 bg-white dark:bg-gray-900 border border-primary/30 rounded-lg p-3 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                value={linkedinText}
+                onChange={(e) => setLinkedinText(e.target.value)}
+                placeholder="Escreva sua publicação aqui..."
+              />
+            ) : (
+              <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap line-clamp-6">
+                {linkedinText}
+              </p>
+            )}
+          </div>
+
+          <div className="w-full space-y-3 mt-auto">
+            <button 
+              onClick={() => handleDownload(linkedinImageUrl, 'linkedin')}
+              className="w-full flex items-center justify-center gap-2 py-3.5 bg-secondary hover:bg-secondary-hover dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white text-white rounded-xl font-bold transition-all shadow-md active:scale-[0.98]"
+            >
+              <Download size={20} /> Baixar Imagem
+            </button>
+            <button 
+              onClick={() => handleCopy('linkedin', linkedinText)}
+              className={`w-full flex items-center justify-center gap-2 py-3.5 border-2 rounded-xl font-bold transition-all active:scale-[0.98] ${copiedId === 'linkedin' ? 'bg-green-50 border-green-500 text-green-600 dark:bg-green-900/20 dark:border-green-500 dark:text-green-400 shadow-sm' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10'}`}
+            >
+              {copiedId === 'linkedin' ? (
+                <><Check size={20} className="text-green-500" /> Texto Copiado!</>
+              ) : (
+                <><Copy size={20} /> Copiar Texto</>
+              )}
+            </button>
+          </div>
+        </div>
 
       </div>
     </div>
