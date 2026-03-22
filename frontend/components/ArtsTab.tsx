@@ -44,7 +44,10 @@ const ArtsTab = () => {
     return options;
   }, [currentYear, currentWeek]);
 
-  const [selectedWeek, setSelectedWeek] = useState(weekOptions[0] || currentWeek - 1);
+  const [selectedWeek, setSelectedWeek] = useState(() => {
+    const startWeek = currentYear === 2026 ? 9 : 1;
+    return Math.max(startWeek, currentWeek - 1);
+  });
 
   // Gerar texto dinâmico baseado nos winners reais
   function generateTexts(w: WeeklyWinner[], week: number) {

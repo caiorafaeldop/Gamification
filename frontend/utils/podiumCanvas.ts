@@ -136,11 +136,12 @@ async function drawPodiumBar(
   position: number, winner: PodiumWinner,
   scale: number
 ) {
-  const avatarRadius = 40 * scale;
+  const avatarRadius = 80 * scale; // 2x maior
+  const avatarGap = 30 * scale; // espaçamento entre avatar e barra
 
-  // Avatar above the bar
+  // Avatar above the bar (com gap)
   const avatarCenterX = x + barW / 2;
-  const avatarCenterY = y - avatarRadius - 12 * scale;
+  const avatarCenterY = y - avatarGap - avatarRadius;
   await drawAvatar(ctx, winner.avatarUrl, winner.name, avatarCenterX, avatarCenterY, avatarRadius, color);
 
   // Bar shadow
@@ -171,18 +172,44 @@ async function drawPodiumBar(
   ctx.font = `${32 * scale}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
   ctx.fillText(medals[position - 1], x + barW / 2, posY + 40 * scale);
 
-  // Name (GRANDE e destacado)
+  // --- Nome: primeiro nome + primeiro sobrenome (em 2 linhas, fonte dinâmica) ---
+  const nameParts = winner.name.trim().split(/\s+/);
+  const firstName = nameParts[0] || '';
+  const surname = nameParts.length > 1 ? nameParts[1] : '';
+  const centerX = x + barW / 2;
+  const maxTextWidth = barW - 20 * scale;
+
+  // Função helper: calcula tamanho de fonte que cabe na largura
+  function fitFontSize(text: string, maxW: number, idealSize: number, minSize: number): number {
+    let size = idealSize;
+    ctx.font = `bold ${size}px "Inter", "Segoe UI", sans-serif`;
+    while (ctx.measureText(text).width > maxW && size > minSize) {
+      size -= 1;
+      ctx.font = `bold ${size}px "Inter", "Segoe UI", sans-serif`;
+    }
+    return size;
+  }
+
+  // Primeiro nome
   ctx.fillStyle = COLORS.white;
-  ctx.font = `bold ${22 * scale}px "Inter", "Segoe UI", sans-serif`;
-  const firstName = winner.name.split(' ')[0];
-  const displayName = firstName.length > 12 ? firstName.substring(0, 10) + '..' : firstName;
-  ctx.fillText(displayName, x + barW / 2, y + barH - 50 * scale);
+  const firstNameSize = fitFontSize(firstName, maxTextWidth, 26 * scale, 16 * scale);
+  ctx.font = `bold ${firstNameSize}px "Inter", "Segoe UI", sans-serif`;
+  ctx.fillText(firstName, centerX, y + barH - 75 * scale);
+
+  // Sobrenome (abaixo)
+  if (surname) {
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    const surnameSize = fitFontSize(surname, maxTextWidth, 22 * scale, 14 * scale);
+    ctx.font = `bold ${surnameSize}px "Inter", "Segoe UI", sans-serif`;
+    ctx.fillText(surname, centerX, y + barH - 48 * scale);
+  }
 
   // Points (GRANDE e destacado)
   ctx.fillStyle = COLORS.secondaryLight;
-  ctx.font = `bold ${26 * scale}px "Inter", "Segoe UI", sans-serif`;
-  ctx.fillText(`${winner.points} XP`, x + barW / 2, y + barH - 18 * scale);
+  ctx.font = `bold ${28 * scale}px "Inter", "Segoe UI", sans-serif`;
+  ctx.fillText(`${winner.points} XP`, centerX, y + barH - 14 * scale);
 }
+
 
 export async function generatePodiumImage(
   winners: PodiumWinner[],
