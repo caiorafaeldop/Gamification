@@ -107,7 +107,13 @@ async function drawAvatar(
       ctx.save();
       drawCircleClip(ctx, centerX, centerY, radius);
       ctx.clip();
-      ctx.drawImage(img, centerX - radius, centerY - radius, radius * 2, radius * 2);
+      
+      // Crop centralizado
+      const minDim = Math.min(img.width, img.height);
+      const sx = (img.width - minDim) / 2;
+      const sy = (img.height - minDim) / 2;
+      ctx.drawImage(img, sx, sy, minDim, minDim, centerX - radius, centerY - radius, radius * 2, radius * 2);
+      
       ctx.restore();
       return;
     } catch (e) {
@@ -230,46 +236,101 @@ export async function generatePodiumImage(
   // 1. Background
   drawBackground(ctx, W, H);
 
-  // 2. Logo
+  // 2 & 3. Header (Logo + Title + Badge)
+  let logoImg: HTMLImageElement | null = null;
   try {
-    const logo = await loadImage(logoUrl);
-    const logoH = format === 'instagram' ? 80 : 50;
-    const logoW = (logo.width / logo.height) * logoH;
-    ctx.drawImage(logo, (W - logoW) / 2, format === 'instagram' ? 60 : 25, logoW, logoH);
+    logoImg = await loadImage(logoUrl);
   } catch (e) {
-    ctx.fillStyle = COLORS.secondary;
-    ctx.font = `bold ${36 * scale}px "Inter", "Segoe UI", sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.fillText('CONNECTA', W / 2, format === 'instagram' ? 100 : 55);
+    // fallback text handled below
   }
 
-  // 3. Title
-  const titleY = format === 'instagram' ? 200 : 105;
-
-  ctx.fillStyle = COLORS.secondary;
-  ctx.font = `bold ${14 * scale}px "Inter", "Segoe UI", sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.fillText('CONNECTHUB', W / 2, titleY - 30 * scale);
-
-  ctx.fillStyle = COLORS.white;
-  ctx.font = `bold ${46 * scale}px "Inter", "Segoe UI", sans-serif`;
-  ctx.fillText('🏆 TOP 3 DA SEMANA', W / 2, titleY + 14 * scale);
-
-  // Week badge
   const badgeText = `SEMANA ${weekNumber}`;
-  ctx.font = `bold ${22 * scale}px "Inter", "Segoe UI", sans-serif`;
-  const badgeW = ctx.measureText(badgeText).width + 48 * scale;
-  const badgeX = (W - badgeW) / 2;
-  const badgeY = titleY + 34 * scale;
 
-  ctx.fillStyle = COLORS.secondary;
-  drawRoundedRect(ctx, badgeX, badgeY, badgeW, 40 * scale, 20 * scale);
-  ctx.fill();
+  if (format === 'instagram') {
+    // --- Layout Empilhado (Vertical) do Instagram ---
+    if (logoImg) {
+      const logoH = 80;
+      const logoW = (logoImg.width / logoImg.height) * logoH;
+      ctx.drawImage(logoImg, (W - logoW) / 2, 60, logoW, logoH);
+    } else {
+      ctx.fillStyle = COLORS.secondary;
+      ctx.font = `bold 36px "Inter", "Segoe UI", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('CONNECTHUB', W / 2, 100);
+    }
 
-  ctx.fillStyle = COLORS.primaryDark;
-  ctx.font = `bold ${20 * scale}px "Inter", "Segoe UI", sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.fillText(badgeText, W / 2, badgeY + 27 * scale);
+    const titleY = 200;
+    ctx.fillStyle = COLORS.white;
+    ctx.font = `bold 46px "Inter", "Segoe UI", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('🏆 TOP 3 DA SEMANA', W / 2, titleY + 14);
+
+    ctx.font = `bold 22px "Inter", "Segoe UI", sans-serif`;
+    const badgeW = ctx.measureText(badgeText).width + 48;
+    const badgeX = (W - badgeW) / 2;
+    const badgeY = titleY + 34;
+
+    ctx.fillStyle = COLORS.secondary;
+    drawRoundedRect(ctx, badgeX, badgeY, badgeW, 40, 20);
+    ctx.fill();
+
+    ctx.fillStyle = COLORS.primaryDark;
+    ctx.font = `bold 20px "Inter", "Segoe UI", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(badgeText, W / 2, badgeY + 27);
+
+  } else {
+    // --- Layout na mesma linha (Horizontal) do LinkedIn ---
+    const titleText = '🏆 TOP 3 DA SEMANA';
+    ctx.font = `bold ${36 * scale}px "Inter", "Segoe UI", sans-serif`; 
+    const titleW = ctx.measureText(titleText).width;
+
+    ctx.font = `bold ${22 * scale}px "Inter", "Segoe UI", sans-serif`;
+    const badgeW = ctx.measureText(badgeText).width + 48 * scale;
+    
+    const logoH = 45 * scale;
+    const logoW = logoImg ? (logoImg.width / logoImg.height) * logoH : 220 * scale;
+
+    const gap = 40 * scale;
+    const totalHeaderW = logoW + gap + titleW + gap + badgeW;
+    let currentX = (W - totalHeaderW) / 2;
+    const centerY = 75 * scale; // Y center for the header elements
+
+    // Draw logo
+    if (logoImg) {
+      ctx.drawImage(logoImg, currentX, centerY - logoH / 2, logoW, logoH);
+    } else {
+      ctx.fillStyle = COLORS.secondary;
+      ctx.font = `bold ${28 * scale}px "Inter", "Segoe UI", sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('CONNECTHUB', currentX, centerY);
+      ctx.textBaseline = 'alphabetic'; // reset
+    }
+    currentX += logoW + gap;
+
+    // Draw Title
+    ctx.fillStyle = COLORS.white;
+    ctx.font = `bold ${36 * scale}px "Inter", "Segoe UI", sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(titleText, currentX, centerY);
+    ctx.textBaseline = 'alphabetic'; // reset
+    currentX += titleW + gap;
+
+    // Draw Badge
+    const badgeY = centerY - (40 * scale) / 2;
+    ctx.fillStyle = COLORS.secondary;
+    drawRoundedRect(ctx, currentX, badgeY, badgeW, 40 * scale, 20 * scale);
+    ctx.fill();
+
+    ctx.fillStyle = COLORS.primaryDark;
+    ctx.font = `bold ${20 * scale}px "Inter", "Segoe UI", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(badgeText, currentX + badgeW / 2, centerY + 2 * scale);
+    ctx.textBaseline = 'alphabetic'; // reset
+  }
 
   // 4. Podium bars
   const barW = format === 'instagram' ? 240 : 210;
@@ -279,9 +340,9 @@ export async function generatePodiumImage(
   const startX = (W - totalW) / 2;
 
   const heights: Record<number, number> = {
-    1: format === 'instagram' ? 380 : 250,
-    2: format === 'instagram' ? 280 : 190,
-    3: format === 'instagram' ? 210 : 150,
+    1: format === 'instagram' ? 520 : 250,
+    2: format === 'instagram' ? 380 : 190,
+    3: format === 'instagram' ? 260 : 150,
   };
 
   // Draw order: 2nd, 3rd, 1st (1st on top / last)

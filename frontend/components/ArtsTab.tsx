@@ -4,13 +4,13 @@ import { getWeeklyRanking, WeeklyWinner } from '../services/ranking.service';
 import { generatePodiumImage, PodiumWinner } from '../utils/podiumCanvas';
 import { Skeleton } from './Skeleton';
 
-// Helper: calcula o número da semana atual no ano
+// Helper: calcula o número da semana atual no ano (1 Jan = Início da Semana 1)
 function getCurrentWeekNumber(): number {
   const now = new Date();
   const start = new Date(now.getFullYear(), 0, 1);
   const diff = now.getTime() - start.getTime();
   const oneWeek = 1000 * 60 * 60 * 24 * 7;
-  return Math.ceil((diff / oneWeek) + start.getDay() / 7);
+  return Math.floor(diff / oneWeek) + 1;
 }
 
 const ArtsTab = () => {
@@ -32,13 +32,14 @@ const ArtsTab = () => {
   // Winners da semana selecionada
   const [winners, setWinners] = useState<WeeklyWinner[]>([]);
 
-  // Gerar opções de semana: apenas semanas ANTERIORES à atual, últimas 5
+  // Gerar opções de semana: mostrar exatamente as 3 anteriores à atual
   const weekOptions = useMemo(() => {
     const startWeek = currentYear === 2026 ? 9 : 1;
-    const lastWeek = currentWeek - 1; // Exclui semana atual
+    const lastPrevWeek = currentWeek - 1; // Exclui semana atual
     const options = [];
-    const firstOption = Math.max(startWeek, lastWeek - 4); // Últimas 5
-    for (let i = lastWeek; i >= firstOption; i--) {
+    
+    // Pega as 3 semanas anteriores (ex: se hoje é 12, pega 11, 10, 9)
+    for (let i = lastPrevWeek; i >= Math.max(startWeek, lastPrevWeek - 2); i--) {
       options.push(i);
     }
     return options;
