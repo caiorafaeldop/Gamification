@@ -47,7 +47,7 @@ export const TOP_STUDENTS: LeaderboardEntry[] = [
 export const ACHIEVEMENTS: Achievement[] = [
   { id: '1', name: 'Bem-vindo a bordo', description: 'Complete seu cadastro inicial.', icon: 'Rocket', points: 100, criteria: 'cadastro' },
   { id: '2', name: 'Primeira Classe', description: 'Receba a nota máxima em um projeto.', icon: 'Award', points: 500 },
-  { id: '3', name: 'Networker', description: 'Participe de 3 projetos simultâneos.', icon: 'Users', points: 300 },
+  { id: '3', name: 'Networker', description: 'Contato de 3 projetos simultâneos.', icon: 'Users', points: 300 },
   { id: '4', name: 'Bug Hunter', description: 'Resolva 10 issues críticas.', icon: 'Bug', points: 1000 },
   
   // 🪙 Milestones

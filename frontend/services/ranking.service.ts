@@ -14,7 +14,9 @@ export const getRankingArts = async (week?: number, year?: number): Promise<Rank
     if (year) params.year = String(year);
     
     const response = await api.get('/ranking/arts', { params });
-    return response.data;
+    // Backend retorna { status: 'success', data: [...] }
+    const result = response.data?.data || response.data;
+    return Array.isArray(result) ? result : [];
   } catch (error) {
     console.error('Error fetching ranking arts:', error);
     return [];
