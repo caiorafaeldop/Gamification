@@ -43,6 +43,7 @@ model User {
   taskAssignments     TaskAssignee[]     @relation("TaskAssignees")
   tier                Tier               @relation(fields: [tierId], references: [id])
   userAchievements    UserAchievement[]
+  weeklyRankings      WeeklyRanking[]
 }
 
 model Project {
@@ -306,4 +307,21 @@ enum EventType {
   MEETING
   WORKSHOP
   EVENT
+}
+
+model WeeklyRanking {
+  id              String   @id @default(uuid())
+  userId          String
+  position        Int
+  week            Int
+  year            Int
+  points          Int
+  postImageUrl    String?
+  isPostGenerated Boolean  @default(false)
+  linkedinShared  Boolean  @default(false)
+  instagramShared Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([week, year, position])
 }
