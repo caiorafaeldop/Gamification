@@ -90,8 +90,8 @@ export const getProjectDetails = async (req: Request, res: Response, next: NextF
             where: { id },
 
             include: {
-                members: { include: { user: { select: { id: true, name: true, avatarColor: true } } } },
-                leader: { select: { id: true, name: true, avatarColor: true } }
+                members: { include: { user: { select: { id: true, name: true, avatarColor: true, avatarUrl: true } } } },
+                leader: { select: { id: true, name: true, avatarColor: true, avatarUrl: true } }
             }
         });
         if (!project) return res.status(404).json({ message: 'Project not found' });
