@@ -21,7 +21,7 @@ const AchievementsScreen = () => {
             onClick={() => setActiveTab('hall_of_fame')}
             className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
               activeTab === 'hall_of_fame' 
-              ? 'bg-white dark:bg-gray-700 text-primary shadow-sm ring-1 ring-gray-200/50 dark:ring-gray-600' 
+              ? 'bg-white dark:bg-gray-700 text-secondary shadow-sm ring-1 ring-gray-200/50 dark:ring-gray-600' 
               : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700/50'
             }`}
           >
@@ -31,7 +31,7 @@ const AchievementsScreen = () => {
             onClick={() => setActiveTab('achievements')}
             className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
               activeTab === 'achievements' 
-              ? 'bg-white dark:bg-gray-700 text-primary shadow-sm ring-1 ring-gray-200/50 dark:ring-gray-600' 
+              ? 'bg-white dark:bg-gray-700 text-secondary shadow-sm ring-1 ring-gray-200/50 dark:ring-gray-600' 
               : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700/50'
             }`}
           >
@@ -41,7 +41,7 @@ const AchievementsScreen = () => {
             onClick={() => setActiveTab('arts')}
             className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
               activeTab === 'arts' 
-              ? 'bg-white dark:bg-gray-700 text-primary shadow-sm ring-1 ring-gray-200/50 dark:ring-gray-600' 
+              ? 'bg-white dark:bg-gray-700 text-secondary shadow-sm ring-1 ring-gray-200/50 dark:ring-gray-600' 
               : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700/50'
             }`}
           >
