@@ -52,9 +52,9 @@ const ArtsTab = () => {
     const top1 = w.find(x => x.position === 1);
     const top1Name = top1 ? top1.user.name : 'Ninguém ainda';
     
-    const insta = `🏆 Destaques da Semana ${week} no Connecta!\n\n🥇 ${w[0]?.user.name || '---'}\n🥈 ${w[1]?.user.name || '---'}\n🥉 ${w[2]?.user.name || '---'}\n\nParabéns aos nossos campeões! O esforço contínuo sempre traz resultados. 💪🚀\n\n#Connecta #Gamification #DestaqueDaSemana #Top3 #Tech`;
+    const insta = `🏆 Destaques da Semana ${week} no ConnectHub!\n\n🥇 ${w[0]?.user.name || '---'}\n🥈 ${w[1]?.user.name || '---'}\n🥉 ${w[2]?.user.name || '---'}\n\nParabéns aos nossos campeões! O esforço contínuo sempre traz resultados. 💪🚀\n\n#ConnectHub #DestaqueDaSemana #Top3 #Tech #Inovação`;
 
-    const linkedin = `Tenho o prazer de compartilhar os destaques da Semana ${week} na plataforma Connecta Gamification! 🏆\n\n🥇 ${w[0]?.user.name || '---'} — ${w[0]?.points || 0} XP\n🥈 ${w[1]?.user.name || '---'} — ${w[1]?.points || 0} XP\n🥉 ${w[2]?.user.name || '---'} — ${w[2]?.points || 0} XP\n\nUma ótima jornada de aprendizado contínuo ao lado de excelentes profissionais!\n\n#Connecta #Gamification #EvoluçãoProfissional #Reconhecimento #Carreira`;
+    const linkedin = `Tenho o prazer de compartilhar os destaques da Semana ${week} na plataforma ConnectHub! 🏆\n\n🥇 ${w[0]?.user.name || '---'} — ${w[0]?.points || 0} XP\n🥈 ${w[1]?.user.name || '---'} — ${w[1]?.points || 0} XP\n🥉 ${w[2]?.user.name || '---'} — ${w[2]?.points || 0} XP\n\nUma ótima jornada de aprendizado contínuo ao lado de excelentes profissionais!\n\n#ConnectHub #EvoluçãoProfissional #Reconhecimento #Carreira`;
 
     return { insta, linkedin };
   }
@@ -67,18 +67,19 @@ const ArtsTab = () => {
         const weekWinners = await getWeeklyRanking(selectedWeek, currentYear);
         setWinners(weekWinners);
 
-        // 2. Preparar dados para o Canvas
+        // 2. Preparar dados para o Canvas (com avatar)
         const podiumWinners: PodiumWinner[] = weekWinners.map(w => ({
           position: w.position,
           name: w.user.name,
           points: w.points,
+          avatarUrl: w.user.avatarUrl,
         }));
 
         // Se não tiver dados, usar placeholder
         const finalWinners = podiumWinners.length > 0 ? podiumWinners : [
-          { position: 1, name: 'Aguardando...', points: 0 },
-          { position: 2, name: 'Aguardando...', points: 0 },
-          { position: 3, name: 'Aguardando...', points: 0 },
+          { position: 1, name: 'Aguardando...', points: 0, avatarUrl: undefined },
+          { position: 2, name: 'Aguardando...', points: 0, avatarUrl: undefined },
+          { position: 3, name: 'Aguardando...', points: 0, avatarUrl: undefined },
         ];
 
         // 3. Gerar imagens via Canvas
