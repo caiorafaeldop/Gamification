@@ -1,26 +1,58 @@
-import React, { useEffect, useState } from 'react';
-import { Download, Copy, Check, Instagram, Linkedin, Image as ImageIcon } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Download, Copy, Check, Instagram, Linkedin, Image as ImageIcon, Pencil, X, ChevronDown } from 'lucide-react';
 import { getRankingArts, RankingArt } from '../services/ranking.service';
 import { Skeleton } from './Skeleton';
+
+// Helper: calcula o número da semana atual no ano
+function getCurrentWeekNumber(): number {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1);
+  const diff = now.getTime() - start.getTime();
+  const oneWeek = 1000 * 60 * 60 * 24 * 7;
+  return Math.ceil((diff / oneWeek) + start.getDay() / 7);
+}
 
 const ArtsTab = () => {
   const [arts, setArts] = useState<RankingArt[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [customTexts, setCustomTexts] = useState<Record<string, string>>({});
+  const [isEditing, setIsEditing] = useState<string | null>(null);
+  
+  const currentYear = new Date().getFullYear();
+  const currentWeek = getCurrentWeekNumber();
+  const [selectedWeek, setSelectedWeek] = useState(currentWeek);
+
+  // Gerar opções de semana (em 2026 começa na 9)
+  const weekOptions = useMemo(() => {
+    const startWeek = currentYear === 2026 ? 9 : 1;
+    const options = [];
+    for (let i = startWeek; i <= 52; i++) {
+      options.push(i);
+    }
+    return options;
+  }, [currentYear]);
 
   useEffect(() => {
     const fetchArts = async () => {
+      setLoading(true);
       try {
-        const data = await getRankingArts();
-        if (data && data.length > 0) {
-          setArts(data);
-        } else {
-          // Mock data to ensure it works beautifully if backend is empty
-          setArts([
-            { id: '1', type: 'instagram', imageUrl: 'https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=400&h=400&fit=crop', text: 'Muito orgulho de ser Destaque da Semana no Connecta! O esforço contínuo sempre traz ótimos resultados. 🏆🚀 #Connecta #Gamification #Tech #DestaqueDaSemana' },
-            { id: '2', type: 'linkedin', imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&h=400&fit=crop', text: 'Feliz em compartilhar que fui reconhecido como Destaque da Semana na plataforma Connecta Gamification.\n\nUma ótima jornada de aprendizado contínuo ao lado de excelentes profissionais! 🚀\n\n#Connecta #Gamification #EvoluçãoProfissional #Reconhecimento #Carreira' }
-          ]);
+        const data = await getRankingArts(selectedWeek, currentYear);
+        let loadedArts = data;
+        
+        if (!data || data.length === 0) {
+          loadedArts = [
+            { id: '1', type: 'instagram', imageUrl: 'https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=400&h=400&fit=crop', text: `🏆 Destaques da Semana ${selectedWeek} no Connecta!\n\nO esforço contínuo sempre traz ótimos resultados. Parabéns aos nossos campeões! 🚀\n\n#Connecta #Gamification #Tech #DestaqueDaSemana` },
+            { id: '2', type: 'linkedin', imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&h=400&fit=crop', text: `Feliz em compartilhar os destaques da Semana ${selectedWeek} na plataforma Connecta Gamification.\n\nUma ótima jornada de aprendizado contínuo ao lado de excelentes profissionais! 🚀\n\n#Connecta #Gamification #EvoluçãoProfissional #Reconhecimento #Carreira` }
+          ];
         }
+        
+        setArts(loadedArts);
+        const initialTexts: Record<string, string> = {};
+        loadedArts.forEach((art: RankingArt) => {
+          initialTexts[art.id || art.type] = art.text;
+        });
+        setCustomTexts(initialTexts);
       } catch (error) {
         console.error('Failed to load arts', error);
       } finally {
@@ -28,7 +60,7 @@ const ArtsTab = () => {
       }
     };
     fetchArts();
-  }, []);
+  }, [selectedWeek, currentYear]);
 
   const handleCopy = (id: string, text: string) => {
     if (navigator.clipboard) {
@@ -47,7 +79,7 @@ const ArtsTab = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `connecta-destaque-${type}.png`;
+      link.download = `connecta-destaque-sem${selectedWeek}-${type}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -75,8 +107,28 @@ const ArtsTab = () => {
   return (
     <div className="p-4 md:p-8 relative z-10 w-full max-w-5xl mx-auto">
       <div className="mb-8 p-6 bg-surface-light/80 dark:bg-surface-dark/80 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm backdrop-blur-sm">
-        <h2 className="text-2xl font-bold text-secondary dark:text-white mb-2">Compartilhe sua Conquista! 🎉</h2>
-        <p className="text-gray-500 dark:text-gray-400">Aqui estão suas artes personalizadas como Destaque da Semana. Baixe as imagens e clique para copiar os textos de exemplo preenchidos com as melhores hashtags.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-secondary dark:text-white mb-2">Compartilhe sua Conquista! 🎉</h2>
+            <p className="text-gray-500 dark:text-gray-400">Baixe as imagens e copie os textos prontos para postar nas redes sociais.</p>
+          </div>
+          
+          {/* Select de Semana */}
+          <div className="relative flex-shrink-0">
+            <select
+              value={selectedWeek}
+              onChange={(e) => setSelectedWeek(Number(e.target.value))}
+              className="appearance-none bg-white dark:bg-gray-800 border-2 border-primary/20 dark:border-primary/30 text-gray-800 dark:text-gray-200 font-bold text-sm rounded-xl pl-4 pr-10 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary cursor-pointer shadow-sm hover:shadow-md transition-all min-w-[180px]"
+            >
+              {weekOptions.map(w => (
+                <option key={w} value={w}>
+                  📅 Semana {w}{w === currentWeek ? ' (Atual)' : ''}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary pointer-events-none" />
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -94,13 +146,39 @@ const ArtsTab = () => {
               </div>
             </div>
             
-            <div className="w-full max-w-[320px] aspect-square bg-gray-50 dark:bg-gray-800/50 rounded-2xl overflow-hidden mb-8 flex items-center justify-center border border-gray-200 dark:border-gray-700/50 shadow-inner group relative">
+            <div className="w-full max-w-[320px] aspect-square bg-gray-50 dark:bg-gray-800/50 rounded-2xl overflow-hidden mb-6 flex items-center justify-center border border-gray-200 dark:border-gray-700/50 shadow-inner group relative">
               {instaArt.imageUrl ? (
                 <img src={instaArt.imageUrl} alt="Instagram Art" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
               ) : (
                 <ImageIcon className="text-gray-300 dark:text-gray-600" size={48} />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-end justify-center pb-4 text-white font-medium">Pré-visualização</div>
+            </div>
+
+            <div className="w-full mb-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700/50 p-4 relative">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Texto da Publicação</span>
+                <button 
+                  onClick={() => setIsEditing(isEditing === 'insta' ? null : 'insta')}
+                  className="text-gray-400 hover:text-primary transition-colors focus:outline-none"
+                  title={isEditing === 'insta' ? 'Fechar Edição' : 'Editar Texto'}
+                >
+                  {isEditing === 'insta' ? <X size={16} /> : <Pencil size={16} />}
+                </button>
+              </div>
+              
+              {isEditing === 'insta' ? (
+                <textarea 
+                  className="w-full h-24 bg-white dark:bg-gray-900 border border-primary/30 rounded-lg p-3 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                  value={customTexts[instaArt.id || 'insta']}
+                  onChange={(e) => setCustomTexts({ ...customTexts, [instaArt.id || 'insta']: e.target.value })}
+                  placeholder="Escreva sua legenda aqui..."
+                />
+              ) : (
+                <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap line-clamp-4">
+                  {customTexts[instaArt.id || 'insta']}
+                </p>
+              )}
             </div>
 
             <div className="w-full space-y-3 mt-auto">
@@ -111,7 +189,7 @@ const ArtsTab = () => {
                 <Download size={20} /> Baixar Imagem
               </button>
               <button 
-                onClick={() => handleCopy(instaArt.id || 'insta', instaArt.text)}
+                onClick={() => handleCopy(instaArt.id || 'insta', customTexts[instaArt.id || 'insta'])}
                 className={`w-full flex items-center justify-center gap-2 py-3.5 border-2 rounded-xl font-bold transition-all active:scale-[0.98] ${copiedId === (instaArt.id || 'insta') ? 'bg-green-50 border-green-500 text-green-600 dark:bg-green-900/20 dark:border-green-500 dark:text-green-400 shadow-sm' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10'}`}
               >
                 {copiedId === (instaArt.id || 'insta') ? (
@@ -137,13 +215,39 @@ const ArtsTab = () => {
               </div>
             </div>
             
-            <div className="w-full aspect-[1.91/1] bg-gray-50 dark:bg-gray-800/50 rounded-2xl overflow-hidden mb-8 flex items-center justify-center border border-gray-200 dark:border-gray-700/50 shadow-inner group relative mt-4 md:mt-12">
+            <div className="w-full aspect-[1.91/1] bg-gray-50 dark:bg-gray-800/50 rounded-2xl overflow-hidden mb-6 flex items-center justify-center border border-gray-200 dark:border-gray-700/50 shadow-inner group relative mt-4 md:mt-12">
               {linkedinArt.imageUrl ? (
                 <img src={linkedinArt.imageUrl} alt="LinkedIn Art" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
               ) : (
                 <ImageIcon className="text-gray-300 dark:text-gray-600" size={48} />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-end justify-center pb-4 text-white font-medium">Pré-visualização</div>
+            </div>
+
+            <div className="w-full mb-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700/50 p-4 relative">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Texto da Publicação</span>
+                <button 
+                  onClick={() => setIsEditing(isEditing === 'linkedin' ? null : 'linkedin')}
+                  className="text-gray-400 hover:text-primary transition-colors focus:outline-none"
+                  title={isEditing === 'linkedin' ? 'Fechar Edição' : 'Editar Texto'}
+                >
+                  {isEditing === 'linkedin' ? <X size={16} /> : <Pencil size={16} />}
+                </button>
+              </div>
+              
+              {isEditing === 'linkedin' ? (
+                <textarea 
+                  className="w-full h-32 bg-white dark:bg-gray-900 border border-primary/30 rounded-lg p-3 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                  value={customTexts[linkedinArt.id || 'linkedin']}
+                  onChange={(e) => setCustomTexts({ ...customTexts, [linkedinArt.id || 'linkedin']: e.target.value })}
+                  placeholder="Escreva sua publicação aqui..."
+                />
+              ) : (
+                <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap line-clamp-4">
+                  {customTexts[linkedinArt.id || 'linkedin']}
+                </p>
+              )}
             </div>
 
             <div className="w-full space-y-3 mt-auto">
@@ -154,7 +258,7 @@ const ArtsTab = () => {
                 <Download size={20} /> Baixar Imagem
               </button>
               <button 
-                onClick={() => handleCopy(linkedinArt.id || 'linkedin', linkedinArt.text)}
+                onClick={() => handleCopy(linkedinArt.id || 'linkedin', customTexts[linkedinArt.id || 'linkedin'])}
                 className={`w-full flex items-center justify-center gap-2 py-3.5 border-2 rounded-xl font-bold transition-all active:scale-[0.98] ${copiedId === (linkedinArt.id || 'linkedin') ? 'bg-green-50 border-green-500 text-green-600 dark:bg-green-900/20 dark:border-green-500 dark:text-green-400 shadow-sm' : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10'}`}
               >
                 {copiedId === (linkedinArt.id || 'linkedin') ? (

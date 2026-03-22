@@ -7,9 +7,13 @@ export interface RankingArt {
   text: string;
 }
 
-export const getRankingArts = async (): Promise<RankingArt[]> => {
+export const getRankingArts = async (week?: number, year?: number): Promise<RankingArt[]> => {
   try {
-    const response = await api.get('/ranking/arts');
+    const params: Record<string, string> = {};
+    if (week) params.week = String(week);
+    if (year) params.year = String(year);
+    
+    const response = await api.get('/ranking/arts', { params });
     return response.data;
   } catch (error) {
     console.error('Error fetching ranking arts:', error);

@@ -73,10 +73,16 @@ export class RankingController {
    */
   async getArts(req: Request, res: Response) {
     try {
-      // Fetch rankings, typically those that need generation or all recently
+      const weekParam = req.query.week as string;
+      const yearParam = req.query.year as string;
       const limit = parseInt(req.query.limit as string) || 20;
 
+      const where: any = {};
+      if (weekParam) where.week = parseInt(weekParam, 10);
+      if (yearParam) where.year = parseInt(yearParam, 10);
+
       const artsRankings = await prisma.weeklyRanking.findMany({
+        where,
         take: limit,
         orderBy: [
           { year: 'desc' },
