@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, User, KeyRound, ShieldCheck, Sparkles } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, User, KeyRound, Code2, Braces, Rocket, Users, Globe } from 'lucide-react';
 import { login, register, resetPassword } from '../services/auth.service';
 import toast from 'react-hot-toast';
 import logo from '../assets/logo.webp';
-import loginScreenLeft from '../assets/login-screen-left.png';
 import { useGoogleLogin } from '@react-oauth/google';
 import api from '../services/api';
 
@@ -190,89 +189,131 @@ const LoginScreen = () => {
 
   return (
     <div className="bg-background-light dark:bg-background-dark text-slate-800 dark:text-gray-100 font-sans min-h-screen flex flex-col md:flex-row">
-      {/* Decorative Side - LEFT */}
-      <div className="hidden md:flex md:w-1/2 lg:w-[45%] relative overflow-hidden">
-        <img
-          src={loginScreenLeft}
-          alt="ConnectaCI"
-          className="absolute inset-0 w-full h-full object-cover scale-105"
+      {/* LEFT - Connecta Hub panel, 50% */}
+      <div className="hidden md:flex md:w-1/2 relative overflow-hidden bg-slate-950 min-h-screen">
+        {/* Deep gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#050b1e] to-[#020617]" />
+
+        {/* Blurred orbs */}
+        <div className="absolute top-1/3 -left-40 w-[30rem] h-[30rem] bg-primary/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 -right-40 w-[30rem] h-[30rem] bg-sky-500/10 rounded-full blur-3xl" />
+
+        {/* Dotted grid */}
+        <div
+          className="absolute inset-0 opacity-[0.08] pointer-events-none"
+          style={{
+            backgroundImage: 'radial-gradient(circle, rgba(56,189,248,0.9) 1px, transparent 1px)',
+            backgroundSize: '28px 28px',
+          }}
         />
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-secondary/90 via-secondary/70 to-primary/60 dark:from-secondary/95 dark:via-secondary/85 dark:to-primary/50" />
 
-        {/* Decorative blurred orbs */}
-        <div className="absolute -top-24 -left-24 w-72 h-72 bg-primary/40 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 -right-16 w-80 h-80 bg-sky-400/30 rounded-full blur-3xl" />
+        {/* Code snippet - top left */}
+        <pre className="absolute top-8 left-8 text-[11px] font-mono text-slate-500/70 leading-relaxed pointer-events-none select-none whitespace-pre">
+{`// connecta hub
+const network = true;
+let ideias = conectar();
 
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-between w-full p-10 lg:p-14 text-white">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <img
-              src={logo}
-              alt="ConnectaCI"
-              className="h-11 w-11 rounded-xl shadow-lg shadow-black/20 ring-1 ring-white/20"
-            />
-            <span className="font-display font-bold text-2xl tracking-tight">
-              Connecta<span className="text-primary">CI</span>
-            </span>
+function transformar() {
+  return impacto;
+}`}
+        </pre>
+
+        {/* Tags - top right */}
+        <div className="absolute top-8 right-8 text-[11px] font-mono text-slate-500/70 text-right leading-relaxed pointer-events-none select-none">
+          <div>&lt;Connecta /&gt;</div>
+          <div>&lt;Hub ativo /&gt;</div>
+          <div>&lt;Inovação /&gt;</div>
+        </div>
+
+        {/* Comments - bottom left */}
+        <div className="absolute bottom-8 left-8 text-[11px] font-mono text-slate-500/70 leading-relaxed pointer-events-none select-none">
+          <div>// networking</div>
+          <div>// inovação</div>
+          <div>// empreendedorismo</div>
+          <div>// código</div>
+          <div>// impacto</div>
+        </div>
+
+        {/* Floating icon badges */}
+        <div className="absolute top-[26%] left-10 w-11 h-11 rounded-lg border border-primary/30 bg-primary/5 backdrop-blur flex items-center justify-center">
+          <Code2 size={18} className="text-primary/80" />
+        </div>
+        <div className="absolute top-[26%] right-10 w-11 h-11 rounded-lg border border-primary/30 bg-primary/5 backdrop-blur flex items-center justify-center">
+          <Braces size={18} className="text-primary/80" />
+        </div>
+        <div className="absolute bottom-[38%] left-10 w-11 h-11 rounded-lg border border-primary/30 bg-primary/5 backdrop-blur flex items-center justify-center">
+          <Rocket size={18} className="text-primary/80" />
+        </div>
+        <div className="absolute bottom-[38%] right-10 w-11 h-11 rounded-lg border border-primary/30 bg-primary/5 backdrop-blur flex items-center justify-center">
+          <Users size={18} className="text-primary/80" />
+        </div>
+
+        {/* Center content */}
+        <div className="relative z-10 flex flex-col items-center justify-center w-full px-12 text-white text-center">
+          <img
+            src={logo}
+            alt="Connecta"
+            className="h-20 w-20 rounded-2xl shadow-2xl shadow-primary/40 ring-1 ring-primary/40 mb-5"
+          />
+          <h1 className="font-display font-extrabold text-5xl tracking-tight mb-10">
+            Connecta<span className="text-primary">CI</span>
+          </h1>
+
+          <p className="text-slate-300 text-base">bem-vindo ao</p>
+          <h2 className="font-display font-bold text-3xl text-primary mb-2 flex items-center gap-2">
+            connecta hub <Globe size={26} />
+          </h2>
+
+          <div className="flex items-center gap-2 my-4">
+            <div className="h-px w-16 bg-primary/40" />
+            <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+            <div className="h-px w-16 bg-primary/40" />
           </div>
 
-          {/* Tagline */}
-          <div className="space-y-6 max-w-md">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold tracking-wide">
-              <Sparkles size={14} className="text-primary" />
-              Gamificação Acadêmica
+          <p className="font-bold text-lg mb-1">Networking acadêmico</p>
+          <p className="text-slate-300 text-sm">
+            onde <span className="text-primary font-semibold">Empresas</span> se conectam com a{' '}
+            <span className="text-primary font-semibold">academia</span>
+          </p>
+
+          {/* Discord CTA */}
+          <a
+            href="https://discord.gg/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-10 w-full max-w-sm flex items-center gap-4 p-4 rounded-2xl border border-primary/30 bg-primary/5 backdrop-blur hover:border-primary/60 hover:bg-primary/10 transition-all duration-200 group"
+          >
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/40">
+              <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="currentColor" aria-hidden="true">
+                <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z" />
+              </svg>
             </div>
-            <h2 className="font-display font-extrabold text-4xl lg:text-5xl leading-tight tracking-tight">
-              Aprenda, conecte e <span className="text-primary">conquiste</span>.
-            </h2>
-            <p className="text-base lg:text-lg text-white/80 leading-relaxed">
-              Transforme sua jornada acadêmica em uma experiência colaborativa com rankings, missões e conquistas.
-            </p>
-
-            {/* Mini stats row */}
-            <div className="flex items-center gap-6 pt-4 border-t border-white/15">
-              <div>
-                <div className="font-display font-bold text-2xl">+500</div>
-                <div className="text-xs text-white/70 uppercase tracking-wider">Alunos</div>
-              </div>
-              <div className="h-10 w-px bg-white/20" />
-              <div>
-                <div className="font-display font-bold text-2xl">+50</div>
-                <div className="text-xs text-white/70 uppercase tracking-wider">Projetos</div>
-              </div>
-              <div className="h-10 w-px bg-white/20" />
-              <div>
-                <div className="font-display font-bold text-2xl">24/7</div>
-                <div className="text-xs text-white/70 uppercase tracking-wider">Ativo</div>
-              </div>
+            <div className="flex-1 text-left">
+              <p className="text-xs text-slate-300">entre também na nossa</p>
+              <p className="font-bold text-sm text-white">
+                <span className="text-primary">comunidade</span> no <span className="text-primary">discord</span>
+              </p>
             </div>
-          </div>
-
-          {/* Footer */}
-          <div className="flex items-center gap-2 text-xs text-white/60">
-            <ShieldCheck size={14} />
-            <span>Plataforma segura e criptografada</span>
-          </div>
+            <ArrowRight size={18} className="text-primary group-hover:translate-x-1 transition-transform" />
+          </a>
         </div>
       </div>
 
-      {/* Form Side - RIGHT */}
-      <div className="w-full md:w-1/2 lg:w-[55%] flex items-center justify-center p-6 sm:p-10 lg:p-12 relative overflow-hidden">
-        {/* Decorative blurs behind form */}
+      {/* RIGHT - Form side, 50% (top-aligned so toggle doesn't jump on view change) */}
+      <div className="w-full md:w-1/2 flex flex-col items-center justify-start p-6 sm:p-10 lg:p-12 relative overflow-hidden min-h-screen">
+        {/* Decorative blurs */}
         <div className="absolute top-0 right-0 w-[30rem] h-[30rem] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-sky-200/40 dark:bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Mobile logo (only visible on small screens) */}
-        <div className="md:hidden absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+        {/* Mobile logo */}
+        <div className="md:hidden flex items-center gap-2 mb-6 z-10">
           <img src={logo} alt="ConnectaCI" className="h-9 w-9 rounded-lg shadow-md" />
           <span className="font-display font-bold text-xl text-secondary dark:text-white">
             Connecta<span className="text-primary">CI</span>
           </span>
         </div>
 
-        <div className="relative z-10 w-full max-w-md">
+        <div className="relative z-10 w-full max-w-md mt-4 md:mt-16">
           {/* Header */}
           <div className="mb-8">
             <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-secondary dark:text-white tracking-tight mb-2">
@@ -562,7 +603,7 @@ const LoginScreen = () => {
           )}
 
           {/* Footer */}
-          <p className="mt-8 text-center text-xs text-slate-400 dark:text-slate-500">
+          <p className="mt-10 text-center text-xs text-slate-400 dark:text-slate-500">
             © {new Date().getFullYear()} ConnectaCI · Todos os direitos reservados
           </p>
         </div>
