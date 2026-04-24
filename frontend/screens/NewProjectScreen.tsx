@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Upload, Type, Hash, Users, Award, ArrowLeft, Rocket, LayoutGrid, Crown, Target, Loader, Check } from 'lucide-react';
 import { createProject, uploadProjectCover, getProjectDetails, updateProject } from '../services/project.service';
 import toast from 'react-hot-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select';
 
 const NewProjectScreen = () => {
   const navigate = useNavigate();
@@ -196,17 +197,21 @@ const NewProjectScreen = () => {
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                   <LayoutGrid size={16} className="text-primary" /> Categoria
                 </label>
-                <select
-                  name="category"
+                <Select
                   value={formData.category}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none">
-                  <option>Desenvolvimento</option>
-                  <option>Design & UX</option>
-                  <option>Pesquisa Acadêmica</option>
-                  <option>Data Science</option>
-                  <option>Marketing</option>
-                </select>
+                  onValueChange={(val) => setFormData({ ...formData, category: val })}
+                >
+                  <SelectTrigger className="w-full h-12 bg-gray-50 dark:bg-background-dark border-gray-200 dark:border-gray-700">
+                    <SelectValue placeholder="Selecione a categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Desenvolvimento">Desenvolvimento</SelectItem>
+                    <SelectItem value="Design & UX">Design & UX</SelectItem>
+                    <SelectItem value="Pesquisa Acadêmica">Pesquisa Acadêmica</SelectItem>
+                    <SelectItem value="Data Science">Data Science</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Type */}
@@ -214,17 +219,21 @@ const NewProjectScreen = () => {
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                   <Target size={16} className="text-primary" /> Tipo
                 </label>
-                <select
-                  name="type"
+                <Select
                   value={formData.type}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none">
-                  <option>Interno</option>
-                  <option>Extensão</option>
-                  <option>Pesquisa</option>
-                  <option>Empresa</option>
-                  <option>Outro</option>
-                </select>
+                  onValueChange={(val) => setFormData({ ...formData, type: val })}
+                >
+                  <SelectTrigger className="w-full h-12 bg-gray-50 dark:bg-background-dark border-gray-200 dark:border-gray-700">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Interno">Interno</SelectItem>
+                    <SelectItem value="Extensão">Extensão</SelectItem>
+                    <SelectItem value="Pesquisa">Pesquisa</SelectItem>
+                    <SelectItem value="Empresa">Empresa</SelectItem>
+                    <SelectItem value="Outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Tags */}

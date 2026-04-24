@@ -1,9 +1,16 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { Download, Copy, Check, Instagram, Linkedin, Image as ImageIcon, Pencil, X, ChevronDown } from 'lucide-react';
+import { Download, Copy, Check, Instagram, Linkedin, Image as ImageIcon, Pencil, X, ChevronDown, Calendar as CalendarIcon } from 'lucide-react';
 import { WeeklyWinner } from '../services/ranking.service';
 import { useWeeklyRanking } from '../hooks/useRanking';
 import { generatePodiumImage, PodiumWinner } from '../utils/podiumCanvas';
 import { Skeleton } from './Skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/Select';
 
 // Helper: calcula o número da semana atual no ano (1 Jan = Início da Semana 1)
 function getCurrentWeekNumber(): number {
@@ -144,19 +151,22 @@ const ArtsTab = () => {
           </div>
           
           {/* Select de Semana — apenas últimas 5 anteriores */}
-          <div className="relative flex-shrink-0">
-            <select
-              value={selectedWeek}
-              onChange={(e) => setSelectedWeek(Number(e.target.value))}
-              className="appearance-none bg-white dark:bg-gray-800 border-2 border-primary/20 dark:border-primary/30 text-gray-800 dark:text-gray-200 font-bold text-sm rounded-xl pl-4 pr-10 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary cursor-pointer shadow-sm hover:shadow-md transition-all min-w-[180px]"
+          <div className="flex-shrink-0">
+            <Select 
+              value={selectedWeek.toString()} 
+              onValueChange={(val) => setSelectedWeek(Number(val))}
             >
-              {weekOptions.map(w => (
-                <option key={w} value={w}>
-                  📅 Semana {w}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary pointer-events-none" />
+              <SelectTrigger className="w-[200px] border-2 border-primary/20 dark:border-primary/30 font-bold">
+                <SelectValue placeholder="Selecionar Semana" />
+              </SelectTrigger>
+              <SelectContent>
+                {weekOptions.map(w => (
+                  <SelectItem key={w} value={w.toString()}>
+                    📅 Semana {w}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>

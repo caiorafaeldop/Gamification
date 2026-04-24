@@ -3,6 +3,7 @@ import { FolderOpen, Edit, Save, X, Search, CheckCircle, AlertCircle } from 'luc
 import { toast } from 'react-hot-toast';
 import { Project, ProjectStatus, statusLabels, statusStyles } from '../types';
 import { useAdminProjects } from '../hooks/useAdmin';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select';
 
 const AdminProjectsScreen = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -61,16 +62,22 @@ const AdminProjectsScreen = () => {
                     />
                 </div>
 
-                <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as any)}
-                    className="px-4 py-2 rounded-lg bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary outline-none text-gray-900 dark:text-white"
-                >
-                    <option value="all">Todos</option>
-                    <option value="active">Ativos</option>
-                    <option value="inactive">Inativos</option>
-                    <option value="archived">Arquivados</option>
-                </select>
+                <div className="w-full md:w-48">
+                    <Select
+                        value={statusFilter}
+                        onValueChange={(val) => setStatusFilter(val as any)}
+                    >
+                        <SelectTrigger className="w-full h-[42px] bg-white dark:bg-surface-dark border-gray-200 dark:border-gray-700">
+                            <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos</SelectItem>
+                            <SelectItem value="active">Ativos</SelectItem>
+                            <SelectItem value="inactive">Inativos</SelectItem>
+                            <SelectItem value="archived">Arquivados</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -147,15 +154,19 @@ const AdminProjectsScreen = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
-                                <select
+                                <Select
                                     value={formData.status}
-                                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                    className="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary outline-none text-center [text-align-last:center]"
+                                    onValueChange={(val) => setFormData({ ...formData, status: val })}
                                 >
-                                    <option value="active">Ativo</option>
-                                    <option value="inactive">Inativo</option>
-                                    <option value="archived">Arquivado</option>
-                                </select>
+                                    <SelectTrigger className="w-full bg-gray-50 dark:bg-black/20 border-gray-200 dark:border-gray-700">
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="active">Ativo</SelectItem>
+                                        <SelectItem value="inactive">Inativo</SelectItem>
+                                        <SelectItem value="archived">Arquivado</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

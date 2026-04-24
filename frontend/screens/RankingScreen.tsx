@@ -1,7 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { Trophy, Calendar, Filter } from 'lucide-react';
+import { Trophy, Calendar, Filter, ChevronDown } from 'lucide-react';
 import { Skeleton } from '../components/Skeleton';
 import ProjectFilterSelect from '../components/ProjectFilterSelect';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/Select';
 import { Link } from 'react-router-dom';
 import { useLeaderboard } from '../hooks/useRanking';
 import { useProfile } from '../hooks/useProfile';
@@ -62,21 +69,20 @@ const RankingScreen = () => {
           </div>
         </div>
 
-        <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide items-center">
-          <Filter size={16} className="text-gray-400 mr-2 flex-shrink-0" />
-          {FILTERS.map((filter) => (
-            <button
-              key={filter.id}
-              onClick={() => setActiveFilter(filter.id)}
-              className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all transform active:scale-95 ${
-                activeFilter === filter.id
-                  ? 'bg-primary text-white shadow-md shadow-primary/20 scale-105'
-                  : 'bg-white dark:bg-surface-dark text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 border border-gray-200 dark:border-gray-700'
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-3">
+          <Filter size={16} className="text-gray-400 flex-shrink-0" />
+          <Select value={activeFilter} onValueChange={setActiveFilter}>
+            <SelectTrigger className="w-[180px] bg-white dark:bg-surface-dark border-gray-200 dark:border-gray-700">
+              <SelectValue placeholder="Selecionar Período" />
+            </SelectTrigger>
+            <SelectContent>
+              {FILTERS.map((filter) => (
+                <SelectItem key={filter.id} value={filter.id}>
+                  {filter.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <ProjectFilterSelect

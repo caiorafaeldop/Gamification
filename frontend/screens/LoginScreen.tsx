@@ -278,7 +278,7 @@ function transformar() {
 
           {/* Discord CTA */}
           <a
-            href="https://discord.gg/"
+            href="https://discord.gg/NfJe4vUdAj"
             target="_blank"
             rel="noopener noreferrer"
             className="mt-10 w-full max-w-sm flex items-center gap-4 p-4 rounded-2xl border border-primary/30 bg-primary/5 backdrop-blur hover:border-primary/60 hover:bg-primary/10 transition-all duration-200 group"

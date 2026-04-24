@@ -1,5 +1,13 @@
 import React from 'react';
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/Select';
+
 interface Project {
   id: string;
   title: string;
@@ -21,47 +29,48 @@ const ProjectFilterSelect: React.FC<ProjectFilterSelectProps> = ({
   if (projects.length === 0) return null;
 
   return (
-    <div className="mt-3 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-2xl p-3">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-          Filtrar por projeto
-        </p>
-        {selectedProjectIds.length > 0 && (
-          <button
-            type="button"
-            onClick={onClear}
-            className="text-xs font-bold text-primary hover:underline"
+    <div className="mt-3 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-2xl p-4 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            Filtrar por projeto
+          </p>
+          <p className="text-[11px] text-gray-400">
+            {selectedProjectIds.length === 0
+              ? 'Exibindo ranking global de todos os projetos.'
+              : 'Exibindo ranking exclusivo do projeto selecionado.'}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Select 
+            value={selectedProjectIds[0] || "all"} 
+            onValueChange={(val) => {
+              if (val === "all") {
+                onClear();
+              } else {
+                // Se já estiver selecionado, não faz nada (ou limpa se quiser toggle)
+                // Mas num Select padrão, mudar o valor é o esperado.
+                // Como o RankingScreen usa setSelectedProjectIds([id]), vamos adaptar.
+                onClear(); // Limpa anterior
+                onToggle(val); // Seleciona novo
+              }
+            }}
           >
-            Limpar
-          </button>
-        )}
+            <SelectTrigger className="w-full sm:w-[250px] bg-gray-50 dark:bg-surface-darker border-gray-200 dark:border-gray-700">
+              <SelectValue placeholder="Selecionar Projeto" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">🌐 Todos os Projetos (Global)</SelectItem>
+              {projects.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-
-      <div className="flex flex-wrap gap-2">
-        {projects.map((project) => {
-          const selected = selectedProjectIds.includes(project.id);
-          return (
-            <button
-              key={project.id}
-              type="button"
-              onClick={() => onToggle(project.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                selected
-                  ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
-                  : 'bg-gray-50 dark:bg-surface-darker text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40'
-              }`}
-            >
-              {project.title}
-            </button>
-          );
-        })}
-      </div>
-
-      <p className="text-[11px] text-gray-400 mt-2">
-        {selectedProjectIds.length === 0
-          ? 'Sem filtro — exibindo ranking global.'
-          : 'Pontuação somada dos projetos selecionados.'}
-      </p>
     </div>
   );
 };

@@ -6,6 +6,7 @@ import { deleteTask, getProjectKanban, updateTaskStatus, toggleTaskCompletion, c
 import { getProfile } from '../services/user.service';
 import { uploadProjectCover, updateProject, leaveProject, transferProjectOwnership, deleteProject, joinProject } from '../services/project.service';
 import { useProjectDetails } from '../hooks/useProjects';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select';
 import { Skeleton } from '../components/Skeleton';
 import TaskModal from '../components/TaskModal';
 import TaskDetailModal from '../components/TaskDetailModal';
@@ -771,24 +772,33 @@ const ProjectDetailsScreen = () => {
                                 <h1 className={`${isHeaderMinimized ? 'text-base truncate max-w-[200px]' : 'text-xl'} transition-all duration-300 font-display font-extrabold text-secondary dark:text-white lg:max-w-none`}>{project.title}</h1>
                                 {!isHeaderMinimized && (
                                     isLeaderOrAdmin ? (
-                                        <select
-                                            value={project.status}
-                                            onChange={async (e) => {
-                                                const newStatus = e.target.value as ProjectStatus;
-                                                try {
-                                                    await updateProject(id!, { status: newStatus });
-                                                    setProject({ ...project, status: newStatus });
-                                                    toast.success(`Status alterado para ${statusLabels[newStatus]}`);
-                                                } catch (err: any) {
-                                                    toast.error(err.response?.data?.message || 'Erro ao alterar status');
-                                                }
-                                            }}
-                                            className={`${statusStyles[project.status as ProjectStatus] || 'bg-gray-100 text-gray-700'} px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-current outline-none cursor-pointer focus:ring-1 focus:ring-primary h-6 text-center [text-align-last:center] flex items-center justify-center`}
-                                        >
-                                            <option value="active">Ativo</option>
-                                            <option value="inactive">Inativo</option>
-                                            <option value="archived">Arquivado</option>
-                                        </select>
+                                        <div className="w-24">
+                                            <Select
+                                                value={project.status}
+                                                onValueChange={async (val) => {
+                                                    const newStatus = val as ProjectStatus;
+                                                    try {
+                                                        await updateProject(id!, { status: newStatus });
+                                                        setProject({ ...project, status: newStatus });
+                                                        toast.success(`Status alterado para ${statusLabels[newStatus]}`);
+                                                    } catch (err: any) {
+                                                        toast.error(err.response?.data?.message || 'Erro ao alterar status');
+                                                    }
+                                                }}
+                                            >
+                                                <SelectTrigger className={cn(
+                                                    "h-7 text-[10px] font-bold uppercase tracking-wide border rounded-full",
+                                                    statusStyles[project.status as ProjectStatus] || 'bg-gray-100 text-gray-700'
+                                                )}>
+                                                    <SelectValue placeholder="Status" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="active">Ativo</SelectItem>
+                                                    <SelectItem value="inactive">Inativo</SelectItem>
+                                                    <SelectItem value="archived">Arquivado</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     ) : (
                                         <span className={`${statusStyles[project.status as ProjectStatus] || 'bg-green-100 text-green-700'} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border border-current inline-flex items-center justify-center min-w-[80px]`}>
                                             {statusLabels[project.status as ProjectStatus] || project.status}

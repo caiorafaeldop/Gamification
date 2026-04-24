@@ -8,6 +8,7 @@ import { getAllUsers, getProfile } from '../services/user.service';
 import MemberSelect from './MemberSelect';
 import toast from 'react-hot-toast';
 import MobileNewTaskScreen from './MobileNewTaskScreen';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/Select';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -427,17 +428,19 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
                   {loadingProjects ? (
                     <div className="h-12 w-full bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"></div>
                   ) : (
-                    <select
+                    <Select
                       value={projectId}
-                      onChange={(e) => setProjectId(e.target.value)}
-                      required
-                      className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white cursor-pointer appearance-none"
+                      onValueChange={(val) => setProjectId(val)}
                     >
-                      <option value="" disabled>Selecione um projeto</option>
-                      {projects.map((project: any) => (
-                        <option key={project.id} value={project.id}>{project.title}</option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full h-12 bg-gray-50 dark:bg-background-dark border-gray-200 dark:border-gray-700">
+                        <SelectValue placeholder="Selecione um projeto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects.map((project: any) => (
+                          <SelectItem key={project.id} value={project.id}>{project.title}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
                 </div>
               )}
