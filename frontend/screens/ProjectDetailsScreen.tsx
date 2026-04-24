@@ -7,6 +7,7 @@ import { getProfile } from '../services/user.service';
 import { uploadProjectCover, updateProject, leaveProject, transferProjectOwnership, deleteProject, joinProject } from '../services/project.service';
 import { useProjectDetails } from '../hooks/useProjects';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select';
+import { cn } from '../utils/cn';
 import { Skeleton } from '../components/Skeleton';
 import TaskModal from '../components/TaskModal';
 import TaskDetailModal from '../components/TaskDetailModal';
