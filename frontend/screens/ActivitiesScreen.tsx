@@ -1,20 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Calendar, Clock, AlertCircle, MapPin, Video, Kanban, Plus, Users, UserCheck, UserPlus, Edit2, Trash2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import api from '../services/api';
-import { getEvents, joinEvent, leaveEvent, deleteEvent, Event } from '../services/event.service';
+import { Event } from '../services/event.service';
 import { Skeleton } from '../components/Skeleton';
 import NewEventModal from '../components/NewEventModal';
 import toast from 'react-hot-toast';
+import { useActivities } from '../hooks/useActivities';
 
 const ActivitiesScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [deadlines, setDeadlines] = useState<any[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingEvents, setLoadingEvents] = useState(true);
+  const {
+    events,
+    deadlines,
+    loadingEvents,
+    loadingDeadlines,
+    joinMutation,
+    leaveMutation,
+    deleteMutation,
+  } = useActivities();
+  const loading = loadingDeadlines;
+  const queryClient = useQueryClient();
+  const loadEvents = () => queryClient.invalidateQueries({ queryKey: ['events'] });
 
   // Estados para UI de Eventos
   const [expandedParticipants, setExpandedParticipants] = useState<string | null>(null);
@@ -51,64 +60,19 @@ const ActivitiesScreen = () => {
     setIsEventModalOpen(true);
   };
 
-  const loadEvents = async () => {
-    setLoadingEvents(true);
-    try {
-      const data = await getEvents();
-      setEvents(data);
-    } catch (err) {
-      console.warn("Could not fetch events", err);
-      setEvents([]);
-    } finally {
-      setLoadingEvents(false);
+  const handleToggleParticipation = (eventId: string, isParticipating: boolean) => {
+    if (isParticipating) {
+      leaveMutation.mutate(eventId);
+    } else {
+      joinMutation.mutate(eventId);
     }
   };
 
-  useEffect(() => {
-    const fetchDeadlines = async () => {
-      try {
-        const response = await api.get('/tasks/my-tasks');
-        setDeadlines(response.data);
-      } catch (err) {
-        console.warn("Could not fetch my-tasks, using fallback or empty", err);
-        setDeadlines([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDeadlines();
-    loadEvents();
-  }, []);
-
-  const handleToggleParticipation = async (eventId: string, isParticipating: boolean) => {
-    try {
-      if (isParticipating) {
-        await leaveEvent(eventId);
-        toast.success('Participação cancelada.');
-      } else {
-        await joinEvent(eventId);
-        toast.success('Participação confirmada! 🎉');
-      }
-      // Refresh events
-      await loadEvents();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Erro ao atualizar participação.');
-    }
-  };
-
-
-  const handleDeleteEvent = async () => {
+  const handleDeleteEvent = () => {
     if (!deleteConfirm.eventId) return;
-
-    try {
-      await deleteEvent(deleteConfirm.eventId);
-      toast.success('Evento excluído com sucesso.');
-      await loadEvents();
-      closeDeleteConfirm();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Erro ao excluir evento.');
-    }
+    deleteMutation.mutate(deleteConfirm.eventId, {
+      onSuccess: () => closeDeleteConfirm(),
+    });
   };
 
 

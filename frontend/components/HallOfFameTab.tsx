@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import api from '../services/api';
+import React, { useMemo } from 'react';
 import { Lock, Crown, Award, Calendar } from 'lucide-react';
+import { useHallOfFame } from '../hooks/useRanking';
 
 interface Winner {
   position: number;
@@ -15,11 +15,11 @@ interface Winner {
   postImageUrl: string | null;
 }
 
-interface WeekSlot {
+type WeekSlot = {
   week: number;
   status: 'pending' | 'calculated';
   winners: Winner[] | null;
-}
+};
 
 // Mapeamento de semana -> mês (aproximado, baseado no início de cada mês em 2026)
 const MONTH_START_WEEKS_2026: Record<number, string> = {
@@ -52,26 +52,9 @@ function getMonthLabel(weekNumber: number, year: number): string | null {
 }
 
 const HallOfFameTab = () => {
-  const [slots, setSlots] = useState<WeekSlot[]>([]);
-  const [loading, setLoading] = useState(true);
   const currentYear = new Date().getFullYear();
-
-  useEffect(() => {
-    const fetchHallOfFame = async () => {
-      try {
-        const response = await api.get(`/ranking/hall-of-fame?year=${currentYear}`);
-        if (response.data?.status === 'success') {
-          setSlots(response.data.data.hallOfFame);
-        }
-      } catch (error) {
-        console.error('Erro ao buscar o Hall da Fama:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHallOfFame();
-  }, [currentYear]);
+  const { data, isLoading: loading } = useHallOfFame(currentYear);
+  const slots = (data ?? []) as WeekSlot[];
 
   // Filtrar slots: Em 2026, começa a partir da semana 9 (Março)
   const filteredSlots = useMemo(() => {

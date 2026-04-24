@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Rocket, Award, Zap, Brain, Users, Bug, MessageSquare, Flame,
   Search, Check, Lock, Trophy, Medal, Star, Target
 } from 'lucide-react';
-import { getAchievements, getMyAchievements } from '../services/achievement.service';
-import { getProfile } from '../services/user.service';
 import { Achievement, UserAchievement, UserProfile } from '../types';
 import { Skeleton } from './Skeleton';
+import { useAchievements, useMyAchievements } from '../hooks/useAchievements';
+import { useProfile } from '../hooks/useProfile';
 
 // Map icons from database string or ID to Lucide components
 const IconsMap: any = {
@@ -26,32 +26,16 @@ const IconsMap: any = {
 };
 
 const AchievementsTab = () => {
-  const [allAchievements, setAllAchievements] = useState<Achievement[]>([]);
-  const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'unlocked' | 'locked'>('all'); // simplified 'in_progress' to locked for now as we lack progress data
+  const [filter, setFilter] = useState<'all' | 'unlocked' | 'locked'>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [all, my, userProfile] = await Promise.all([
-          getAchievements(),
-          getMyAchievements(),
-          getProfile()
-        ]);
-        setAllAchievements(all);
-        setUserAchievements(my);
-        setUser(userProfile);
-      } catch (error) {
-        console.error('Failed to load achievements data', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const { data: allAchievementsRaw, isLoading: loadingAll } = useAchievements();
+  const { data: userAchievementsRaw, isLoading: loadingMy } = useMyAchievements();
+  const { data: user, isLoading: loadingUser } = useProfile();
+
+  const allAchievements: Achievement[] = allAchievementsRaw ?? [];
+  const userAchievements: UserAchievement[] = userAchievementsRaw ?? [];
+  const loading = loadingAll || loadingMy || loadingUser;
 
   if (loading) {
     return (

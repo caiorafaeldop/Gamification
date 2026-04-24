@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { LoginInput, RegisterInput, RefreshTokenInput, ResetPasswordInput } from '../schemas/auth.schema';
-import { registerUser, loginUser, refreshAuthToken, resetPassword as resetUserPassword } from '../services/auth.service';
+import { registerUser, loginUser, refreshAuthToken, resetPassword as resetUserPassword, googleLogin as googleLoginService } from '../services/auth.service';
 
 export const register = async (req: Request<{}, {}, RegisterInput>, res: Response, next: NextFunction) => {
   try {
@@ -33,6 +33,16 @@ export const resetPassword = async (req: Request<{}, {}, ResetPasswordInput>, re
   try {
     const { email, newPassword, secretWord } = req.body;
     const result = await resetUserPassword(email, newPassword, secretWord);
+    res.status(200).json(result);
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+export const googleLogin = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token } = req.body;
+    const result = await googleLoginService(token);
     res.status(200).json(result);
   } catch (error: any) {
     next(error);

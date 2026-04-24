@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, refresh, resetPassword } from '../controllers/auth.controller';
+import { register, login, refresh, resetPassword, googleLogin } from '../controllers/auth.controller';
 import { validate } from '../middlewares/validation.middleware';
 import { loginSchema, registerSchema, refreshTokenSchema, resetPasswordSchema } from '../schemas/auth.schema';
 
@@ -126,5 +126,14 @@ router.post('/refresh', validate(refreshTokenSchema), refresh);
  *         description: Validation error
  */
 router.post('/reset-password', validate(resetPasswordSchema), resetPassword);
+
+/**
+ * @swagger
+ * /auth/google:
+ *   post:
+ *     summary: Login or Register using Google account
+ *     tags: [Auth]
+ */
+router.post('/google', googleLogin);
 
 export default router;

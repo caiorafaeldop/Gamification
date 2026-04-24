@@ -1,14 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-// import { ClerkProvider } from '@clerk/clerk-react';
-// import { ptBR } from '@clerk/localizations';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 
-// const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-// if (!PUBLISHABLE_KEY) {
-//   throw new Error('VITE_CLERK_PUBLISHABLE_KEY não encontrada. Adicione ao arquivo .env');
-// }
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000,
+    },
+  },
+});
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -18,15 +24,10 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    {/* <ClerkProvider
-      publishableKey={PUBLISHABLE_KEY}
-      localization={ptBR}
-      signInUrl="/"
-      signUpUrl="/sign-up"
-      afterSignInUrl="/#/dashboard"
-      afterSignUpUrl="/#/dashboard"
-    > */}
-    <App />
-    {/* </ClerkProvider> */}
+    <QueryClientProvider client={queryClient}>
+      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID || ''}>
+        <App />
+      </GoogleOAuthProvider>
+    </QueryClientProvider>
   </React.StrictMode>
 );

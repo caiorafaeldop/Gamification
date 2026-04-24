@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Trophy, Calendar, Filter } from 'lucide-react';
-import { getLeaderboard } from '../services/leaderboard.service';
-import { getProfile } from '../services/user.service';
-import { getProjects } from '../services/project.service';
 import { Skeleton } from '../components/Skeleton';
 import ProjectFilterSelect from '../components/ProjectFilterSelect';
 import { Link } from 'react-router-dom';
+import { useLeaderboard } from '../hooks/useRanking';
+import { useProfile } from '../hooks/useProfile';
+import { useProjects } from '../hooks/useProjects';
 
 const FILTERS = [
   { id: 'daily', label: 'Diário' },
@@ -16,54 +16,22 @@ const FILTERS = [
 
 const RankingScreen = () => {
   const [activeFilter, setActiveFilter] = useState('all');
-  const [rankingData, setRankingData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
 
-  useEffect(() => {
-    fetchProfile();
-    fetchProjects();
-  }, []);
+  const { data: currentUser } = useProfile();
+  const { projects } = useProjects();
+  const { data: leaderboardRaw, isLoading: loading, error: queryError } = useLeaderboard(
+    activeFilter,
+    100,
+    selectedProjectIds
+  );
 
-  useEffect(() => {
-    fetchLeaderboard();
-  }, [activeFilter, selectedProjectIds]);
+  const rankingData = useMemo(() => {
+    const list = Array.isArray(leaderboardRaw) ? leaderboardRaw : [];
+    return list.map((u: any, i: number) => ({ ...u, rank: i + 1 }));
+  }, [leaderboardRaw]);
 
-  const fetchProjects = async () => {
-    try {
-      const data = await getProjects();
-      setProjects(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Failed to fetch projects in ranking', err);
-    }
-  };
-
-  const fetchProfile = async () => {
-    try {
-      const profile = await getProfile();
-      setCurrentUser(profile);
-    } catch (err) {
-      console.error('Failed to fetch profile in ranking', err);
-    }
-  };
-
-  const fetchLeaderboard = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getLeaderboard(activeFilter, 100, selectedProjectIds);
-      const list = Array.isArray(data) ? data : [];
-      setRankingData(list.map((u: any, i: number) => ({ ...u, rank: i + 1 })));
-    } catch (err: any) {
-      console.error(err);
-      setError('Falha ao carregar ranking.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const error = queryError ? 'Falha ao carregar ranking.' : null;
 
   const toggleProject = (projectId: string) => {
     setSelectedProjectIds((current) =>

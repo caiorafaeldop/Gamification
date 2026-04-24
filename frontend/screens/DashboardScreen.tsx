@@ -1,29 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Sun, CheckSquare, Trophy, Code, Megaphone, ArrowRight, Store, Folder, Star } from 'lucide-react';
-import { getDashboardData } from '../services/dashboard.service';
 import { Skeleton } from '../components/Skeleton';
+import { useDashboard } from '../hooks/useDashboard';
 
 const DashboardScreen = () => {
   const navigate = useNavigate();
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const result = await getDashboardData();
-        setData(result);
-      } catch (err) {
-        console.error(err);
-        setError('Falha ao carregar dados do dashboard.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const { data, loading, error } = useDashboard();
 
   if (loading) return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-8 max-w-7xl mx-auto animate-pulse">

@@ -1,40 +1,44 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getTasks, updateTaskStatus } from '../services/task.service';
 
 export const useTasks = (projectId: string) => {
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchTasks = useCallback(async () => {
-    if (!projectId) return;
-    try {
-      setLoading(true);
-      const data = await getTasks(projectId);
-      setTasks(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch tasks');
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId]);
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['tasks', projectId],
+    queryFn: () => getTasks(projectId),
+    enabled: !!projectId,
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
 
-  useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+  const moveMutation = useMutation({
+    mutationFn: ({ taskId, newStatus }: { taskId: string; newStatus: string }) =>
+      updateTaskStatus(taskId, newStatus),
+    onMutate: async ({ taskId, newStatus }) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks', projectId] });
+      const previous = queryClient.getQueryData<any[]>(['tasks', projectId]);
+      queryClient.setQueryData<any[]>(['tasks', projectId], (old = []) =>
+        old.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(['tasks', projectId], ctx.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+    },
+  });
 
-  const moveTask = async (taskId: string, newStatus: string) => {
-      // Optimistic update
-      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
-      
-      try {
-          await updateTaskStatus(taskId, newStatus);
-      } catch (err) {
-          // Revert if failed
-          fetchTasks();
-          console.error("Failed to update task status", err);
-      }
+  const moveTask = (taskId: string, newStatus: string) =>
+    moveMutation.mutate({ taskId, newStatus });
+
+  return {
+    tasks: data ?? [],
+    loading: isLoading,
+    error: error ? (error as any).message || 'Failed to fetch tasks' : null,
+    refetch,
+    moveTask,
   };
-
-  return { tasks, loading, error, refetch: fetchTasks, moveTask };
 };

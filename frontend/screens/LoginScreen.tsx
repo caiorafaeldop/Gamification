@@ -4,7 +4,8 @@ import { Network, Rocket, Mail, Lock, EyeOff, Loader2 } from 'lucide-react';
 import { login, register, resetPassword } from '../services/auth.service';
 import toast from 'react-hot-toast';
 import logo from '../assets/logo.webp';
-// import { useClerk, useSignIn, useSignUp, useAuth } from '@clerk/clerk-react';
+import { useGoogleLogin } from '@react-oauth/google';
+import api from '../services/api';
 
 const LoginScreen = () => {
   const navigate = useNavigate();
@@ -40,6 +41,26 @@ const LoginScreen = () => {
   const [secretWord, setSecretWord] = useState('');
 
   const [loading, setLoading] = useState(false);
+
+  const handleGoogleSuccess = async (tokenResponse: any) => {
+    setLoading(true);
+    try {
+      const { data } = await api.post('/auth/google', { token: tokenResponse.access_token });
+      localStorage.setItem('token', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      navigate('/dashboard');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erro ao entrar com Google.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+    onError: () => toast.error('Falha no login com Google.'),
+  });
 
   const resetForm = () => {
     setEmail('');
@@ -197,11 +218,11 @@ const LoginScreen = () => {
           {view === 'login' && (
             <div className="space-y-6">
 
-              {/* Botão Google Login - Comentado */}
-              {/* <button
+              <button
                 type="button"
-                onClick={handleGoogleLogin}
-                className="w-full flex justify-center items-center gap-2 py-3.5 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-surface-dark text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all"
+                onClick={() => googleLogin()}
+                disabled={loading}
+                className="w-full flex justify-center items-center gap-2 py-3.5 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-surface-dark text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all disabled:opacity-50"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -209,7 +230,7 @@ const LoginScreen = () => {
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.26.81-.58z" fill="#FBBC05" />
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                 </svg>
-                Google
+                Continuar com Google
               </button>
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -218,7 +239,7 @@ const LoginScreen = () => {
                 <div className="relative flex justify-center text-sm">
                   <span className="px-2 bg-background-light dark:bg-background-dark text-gray-500">Ou continue com</span>
                 </div>
-              </div> */}
+              </div>
 
               <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-4">
@@ -278,11 +299,11 @@ const LoginScreen = () => {
           {view === 'register' && (
             <div className="space-y-6">
 
-              {/* Botão Google Registro - Comentado */}
-              {/* <button
+              <button
                 type="button"
-                onClick={handleGoogleRegister}
-                className="w-full flex justify-center items-center gap-2 py-3.5 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-surface-dark text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all"
+                onClick={() => googleLogin()}
+                disabled={loading}
+                className="w-full flex justify-center items-center gap-2 py-3.5 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-surface-dark text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all disabled:opacity-50"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -290,7 +311,7 @@ const LoginScreen = () => {
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.26.81-.58z" fill="#FBBC05" />
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                 </svg>
-                Google
+                Registrar com Google
               </button>
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -299,7 +320,7 @@ const LoginScreen = () => {
                 <div className="relative flex justify-center text-sm">
                   <span className="px-2 bg-background-light dark:bg-background-dark text-gray-500">Ou registre-se com</span>
                 </div>
-              </div> */}
+              </div>
 
               <form onSubmit={handleRegister} className="space-y-6">
                 <div className="space-y-4">

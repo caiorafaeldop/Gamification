@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     User,
     Mail,
@@ -24,8 +25,9 @@ import {
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { getProfile, getUserById, updateUser, uploadAvatar } from '../services/user.service';
+import { updateUser, uploadAvatar } from '../services/user.service';
 import toast from 'react-hot-toast';
+import { useProfile, useUserProfile } from '../hooks/useProfile';
 
 import { Skeleton } from '../components/Skeleton';
 
@@ -34,11 +36,17 @@ const ProfileScreen = () => {
     const isMyProfile = !id;
     const navigate = useNavigate();
     const { logout } = useAuth();
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
+
+    const myProfileQuery = useProfile();
+    const otherUserQuery = useUserProfile(id);
+    const activeQuery = id ? otherUserQuery : myProfileQuery;
+    const loading = activeQuery.isLoading;
+    const user = activeQuery.data;
+
     const [saving, setSaving] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [uploading, setUploading] = useState(false);
-    const [user, setUser] = useState<any>(null);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -54,34 +62,25 @@ const ProfileScreen = () => {
     });
 
     useEffect(() => {
-        fetchProfile();
-    }, []);
-
-    const fetchProfile = async () => {
-        try {
-            setLoading(true);
-            const data = id ? await getUserById(id) : await getProfile();
-            setUser(data);
-            if (isMyProfile) {
-                setFormData({
-                    name: data.name || '',
-                    email: data.email || '',
-                    course: data.course || '',
-                    bio: data.bio || '',
-                    skills: (data.skills || []).join(', '),
-                    avatarColor: data.avatarColor || '#3B82F6',
-                    avatarUrl: data.avatarUrl || '',
-                    contactEmail: data.contactEmail || '',
-                    linkedinUrl: data.linkedinUrl || '',
-                    githubUrl: data.githubUrl || ''
-                });
-            }
-        } catch (error) {
-            toast.error('Erro ao carregar perfil');
-            console.error(error);
-        } finally {
-            setLoading(false);
+        if (user && isMyProfile) {
+            setFormData({
+                name: user.name || '',
+                email: user.email || '',
+                course: user.course || '',
+                bio: user.bio || '',
+                skills: (user.skills || []).join(', '),
+                avatarColor: user.avatarColor || '#3B82F6',
+                avatarUrl: user.avatarUrl || '',
+                contactEmail: user.contactEmail || '',
+                linkedinUrl: user.linkedinUrl || '',
+                githubUrl: user.githubUrl || ''
+            });
         }
+    }, [user, isMyProfile]);
+
+    const refreshProfile = () => {
+        queryClient.invalidateQueries({ queryKey: ['profile'] });
+        if (id) queryClient.invalidateQueries({ queryKey: ['user', id] });
     };
 
     const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,10 +96,9 @@ const ProfileScreen = () => {
             setUploading(true);
             try {
                 const response = await uploadAvatar(file);
-                // After upload, update the user profile with the new avatarUrl
                 await updateUser(user.id, { avatarUrl: response.url });
                 setFormData({ ...formData, avatarUrl: response.url });
-                setUser({ ...user, avatarUrl: response.url });
+                refreshProfile();
                 toast.success('Foto de perfil atualizada!');
             } catch (error) {
                 console.error('Error upload:', error);
@@ -138,7 +136,7 @@ const ProfileScreen = () => {
 
             toast.success('Perfil atualizado com sucesso!');
             setIsEditing(false);
-            fetchProfile(); // Refresh data
+            refreshProfile();
         } catch (error: any) {
             toast.error('Erro ao atualizar perfil: ' + (error.response?.data?.message || 'Erro desconhecido'));
         } finally {

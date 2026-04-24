@@ -16,6 +16,7 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
+  GOOGLE_CLIENT_ID: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -33,6 +34,7 @@ export const config = {
   port: parsedEnv.data.PORT,
   corsOrigin: parsedEnv.data.CORS_ORIGIN,
   nodeEnv: parsedEnv.data.NODE_ENV,
+  googleClientId: parsedEnv.data.GOOGLE_CLIENT_ID,
 };
 
 // DEBUG: Adicionando logs para verificar o JWT_SECRET

@@ -1,36 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { getAdminProjects, updateProject } from '../services/admin.service';
+import React, { useState } from 'react';
 import { FolderOpen, Edit, Save, X, Search, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Project, ProjectStatus, statusLabels, statusStyles } from '../types';
+import { useAdminProjects } from '../hooks/useAdmin';
 
 const AdminProjectsScreen = () => {
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [formData, setFormData] = useState<any>({});
     const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
 
-
-    const fetchData = async () => {
-        try {
-            setLoading(true);
-            const data = await getAdminProjects();
-            console.log(data);
-            // Backend returns { projects: [], total }
-            setProjects(Array.isArray(data) ? data : data.projects || []);
-        } catch (error) {
-            console.error(error);
-            toast.error('Erro ao carregar projetos.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchData();
-    }, []);
+    const query = useAdminProjects();
+    const rawData = query.data;
+    const projects: Project[] = Array.isArray(rawData) ? rawData : rawData?.projects ?? [];
+    const loading = query.isLoading;
 
     const handleEdit = (project: any) => {
         setEditingProject(project);
@@ -43,17 +26,12 @@ const AdminProjectsScreen = () => {
         });
     };
 
-    const handleSave = async () => {
+    const handleSave = () => {
         if (!editingProject) return;
-        try {
-            await updateProject(editingProject.id, formData);
-            toast.success('Projeto atualizado!');
-            setEditingProject(null);
-            fetchData();
-        } catch (error) {
-            console.error(error);
-            toast.error('Erro ao salvar projeto.');
-        }
+        query.updateMutation.mutate(
+            { projectId: editingProject.id, data: formData },
+            { onSuccess: () => setEditingProject(null) }
+        );
     };
 
     const filteredProjects = (Array.isArray(projects) ? projects : []).filter((p: any) => {

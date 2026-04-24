@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Download, Copy, Check, Instagram, Linkedin, Image as ImageIcon, Pencil, X, ChevronDown } from 'lucide-react';
-import { getWeeklyRanking, WeeklyWinner } from '../services/ranking.service';
+import { WeeklyWinner } from '../services/ranking.service';
+import { useWeeklyRanking } from '../hooks/useRanking';
 import { generatePodiumImage, PodiumWinner } from '../utils/podiumCanvas';
 import { Skeleton } from './Skeleton';
 
@@ -14,23 +15,18 @@ function getCurrentWeekNumber(): number {
 }
 
 const ArtsTab = () => {
-  const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState<string | null>(null);
-  
+  const [generating, setGenerating] = useState(true);
+
   const currentYear = new Date().getFullYear();
   const currentWeek = getCurrentWeekNumber();
 
-  // Imagens geradas via Canvas
   const [instaImageUrl, setInstaImageUrl] = useState<string>('');
   const [linkedinImageUrl, setLinkedinImageUrl] = useState<string>('');
-  
-  // Textos dinâmicos
+
   const [instaText, setInstaText] = useState('');
   const [linkedinText, setLinkedinText] = useState('');
-
-  // Winners da semana selecionada
-  const [winners, setWinners] = useState<WeeklyWinner[]>([]);
 
   // Gerar opções de semana: mostrar exatamente as 3 anteriores à atual
   const weekOptions = useMemo(() => {
@@ -63,15 +59,14 @@ const ArtsTab = () => {
     return { insta, linkedin };
   }
 
-  useEffect(() => {
-    const fetchAndGenerate = async () => {
-      setLoading(true);
-      try {
-        // 1. Buscar dados reais do Top 3
-        const weekWinners = await getWeeklyRanking(selectedWeek, currentYear);
-        setWinners(weekWinners);
+  const { data: weekWinnersData, isLoading: loadingWinners } = useWeeklyRanking(selectedWeek, currentYear);
+  const weekWinners = weekWinnersData ?? [];
+  const loading = loadingWinners || generating;
 
-        // 2. Preparar dados para o Canvas (com avatar)
+  useEffect(() => {
+    const generate = async () => {
+      setGenerating(true);
+      try {
         const podiumWinners: PodiumWinner[] = weekWinners.map(w => ({
           position: w.position,
           name: w.user.name,
@@ -103,11 +98,11 @@ const ArtsTab = () => {
       } catch (error) {
         console.error('Failed to generate arts', error);
       } finally {
-        setLoading(false);
+        setGenerating(false);
       }
     };
-    fetchAndGenerate();
-  }, [selectedWeek, currentYear]);
+    if (!loadingWinners) generate();
+  }, [selectedWeek, currentYear, weekWinnersData, loadingWinners]);
 
   const handleCopy = (id: string, text: string) => {
     if (navigator.clipboard) {

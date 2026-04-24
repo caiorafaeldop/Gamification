@@ -33,6 +33,25 @@ export const getRankingArts = async (week?: number, year?: number): Promise<Rank
   }
 };
 
+export interface HallOfFameSlot {
+  week: number;
+  status: 'pending' | 'calculated';
+  winners: WeeklyWinner[] | null;
+}
+
+export const getHallOfFame = async (year: number): Promise<HallOfFameSlot[]> => {
+  try {
+    const response = await api.get(`/ranking/hall-of-fame?year=${year}`);
+    if (response.data?.status === 'success') {
+      return response.data.data.hallOfFame ?? [];
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching hall of fame:', error);
+    return [];
+  }
+};
+
 export const getWeeklyRanking = async (week: number, year: number): Promise<WeeklyWinner[]> => {
   try {
     const response = await api.get(`/ranking/hall-of-fame?year=${year}`);

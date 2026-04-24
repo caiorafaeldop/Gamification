@@ -1,94 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { getAdminUsers, updateUserPoints, getAdminLogs } from '../services/admin.service';
+import React, { useState } from 'react';
 import { User, Edit, Save, X, Search, History } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { UserProfile } from '@/types';
+import { useAdminUsers, useAdminLogs } from '../hooks/useAdmin';
 
 const USERS_PER_PAGE = 10;
 
 const AdminUsersScreen = () => {
-    // Users
-    const [users, setUsers] = useState<UserProfile[]>([]);
-    const [totalUsers, setTotalUsers] = useState(0);
     const [page, setPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
-    const [loading, setLoading] = useState(true);
+    const [logFilters, setLogFilters] = useState({ date: '', user: '' });
 
-    // Logs
-    const [logs, setLogs] = useState<any[]>([]);
-    const [logFilters, setLogFilters] = useState({
-        date: '',
-        user: ''
-    });
-
-    // Edit
     const [editingUser, setEditingUser] = useState<any>(null);
     const [newPoints, setNewPoints] = useState<number>(0);
 
+    const usersQuery = useAdminUsers({
+        page,
+        limit: USERS_PER_PAGE,
+        search: searchTerm,
+        all: false,
+    });
+    const users: UserProfile[] = usersQuery.data?.users ?? [];
+    const totalUsers: number = usersQuery.data?.total ?? 0;
+    const loading = usersQuery.isLoading;
+
+    const logsQuery = useAdminLogs({
+        all: true,
+        search: logFilters.user,
+        date: logFilters.date,
+    });
+    const logs = logsQuery.data?.logs ?? [];
+
     const totalPages = Math.ceil(totalUsers / USERS_PER_PAGE);
 
-    // Users
-    const fetchUsers = async () => {
-        try {
-            setLoading(true);
-
-            const data = await getAdminUsers({
-                page,
-                limit: USERS_PER_PAGE,
-                search: searchTerm,
-                all: false
-            });
-
-            setUsers(data.users || []);
-            setTotalUsers(data.total || 0);
-        } catch {
-            toast.error('Erro ao carregar usuários.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchUsers();
-    }, [page, searchTerm]);
-
-    // Logs
-    const fetchLogs = async () => {
-        try {
-            const data = await getAdminLogs({
-                all: true,
-                search: logFilters.user,
-                date: logFilters.date
-            });
-
-            setLogs(data.logs || []);
-        } catch {
-            toast.error('Erro ao carregar logs.');
-        }
-    };
-
-    // Carrega logs apenas ao montar a tela
-    useEffect(() => {
-        fetchLogs();
-    }, []);
-
-    // Edit
     const handleEditPoints = (user: any) => {
         setEditingUser(user);
         setNewPoints(user.connectaPoints);
     };
 
-    const handleSavePoints = async () => {
+    const handleSavePoints = () => {
         if (!editingUser) return;
-
-        try {
-            await updateUserPoints(editingUser.id, Number(newPoints));
-            toast.success('Pontos atualizados com sucesso!');
-            setEditingUser(null);
-            fetchUsers();
-        } catch {
-            toast.error('Erro ao atualizar pontos.');
-        }
+        usersQuery.pointsMutation.mutate(
+            { userId: editingUser.id, points: Number(newPoints) },
+            { onSuccess: () => setEditingUser(null) }
+        );
     };
 
     return (
@@ -244,7 +199,7 @@ const AdminUsersScreen = () => {
                     />
 
                     <button
-                        onClick={fetchLogs}
+                        onClick={() => logsQuery.refetch()}
                         className="px-4 py-2 bg-primary text-white rounded-lg"
                     >
                         Filtrar

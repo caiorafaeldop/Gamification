@@ -1,50 +1,44 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getProjects, getProjectDetails } from '../services/project.service';
 
 export const useProjects = () => {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['projects'],
+    queryFn: getProjects,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
-    try {
-      setLoading(true);
-      const data = await getProjects();
-      setProjects(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch projects');
-    } finally {
-      setLoading(false);
-    }
+  return {
+    projects: data ?? [],
+    loading: isLoading,
+    error: error ? (error as any).message || 'Failed to fetch projects' : null,
+    refetch,
   };
-
-  return { projects, loading, error, refetch: fetchProjects };
 };
 
 export const useProjectDetails = (id: string) => {
-    const [project, setProject] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['project', id],
+    queryFn: () => getProjectDetails(id),
+    enabled: !!id,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
 
-    useEffect(() => {
-        if (id) fetchDetails();
-    }, [id]);
+  const setProject = (updater: any) => {
+    queryClient.setQueryData(
+      ['project', id],
+      typeof updater === 'function' ? updater : updater
+    );
+  };
 
-    const fetchDetails = async () => {
-        try {
-            setLoading(true);
-            const data = await getProjectDetails(id);
-            setProject(data);
-        } catch (err: any) {
-            setError(err.message || 'Failed to fetch project details');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return { project, setProject, loading, error, refetch: fetchDetails };
+  return {
+    project: data ?? null,
+    setProject,
+    loading: isLoading,
+    error: error ? (error as any).message || 'Failed to fetch project details' : null,
+    refetch,
+  };
 };
