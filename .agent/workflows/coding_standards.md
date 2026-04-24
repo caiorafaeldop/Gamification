@@ -2,7 +2,7 @@
 description: Padrões de codificação - DRY, KISS e YAGNI
 ---
 
-# Padrões de Codificação do Projeto
+# Padrões de Codificação do Projeto.
 
 Aplique SEMPRE estes princípios ao desenvolver código neste projeto:
 
