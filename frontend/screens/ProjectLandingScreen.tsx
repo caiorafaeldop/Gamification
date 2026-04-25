@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Rocket, Users, Target, ArrowLeft, Star, Heart, CheckCircle, Calendar, ListTodo, CheckSquare, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { getProjectDetails } from '../services/project.service';
 import { registerProjectInterest } from '../services/explore.service';
 import { PageHero, EmptyState } from '../components/ui';
@@ -27,10 +28,31 @@ const ProjectLandingScreen = () => {
             toast.success('Interesse registrado! O líder foi notificado.', { icon: '🙌' });
         },
         onError: (err: any) => {
-            // Se a API retornar que já faz parte ou algo assim
             toast.error(err.response?.data?.error || 'Erro ao registrar interesse');
         }
     });
+
+    const membersPerPage = 4;
+    const totalMembers = project?.members?.length || 0;
+    const canGoNext = carouselIndex + membersPerPage < totalMembers;
+    const canGoPrev = carouselIndex > 0;
+
+    const nextMembers = React.useCallback(() => {
+        const length = project?.members?.length || 0;
+        if (carouselIndex + membersPerPage < length) {
+            setCarouselIndex(prev => prev + 1);
+        } else {
+            setCarouselIndex(0);
+        }
+    }, [carouselIndex, project?.members?.length, membersPerPage]);
+
+    // Auto-play do Carrossel
+    React.useEffect(() => {
+        if (totalMembers <= membersPerPage) return;
+        const timer = setInterval(nextMembers, 5000);
+        return () => clearInterval(timer);
+    }, [nextMembers, totalMembers, membersPerPage]);
+
 
     if (isLoading) {
         return (
@@ -57,29 +79,10 @@ const ProjectLandingScreen = () => {
 
     const color = project.Group?.color || project.color || '#29B6F6';
 
-    const membersPerPage = 4;
-    const totalMembers = project.members?.length || 0;
-    const canGoNext = carouselIndex + membersPerPage < totalMembers;
-    const canGoPrev = carouselIndex > 0;
-
-    const nextMembers = React.useCallback(() => {
-        if (carouselIndex + membersPerPage < (project.members?.length || 0)) {
-            setCarouselIndex(prev => prev + 1);
-        } else {
-            setCarouselIndex(0);
-        }
-    }, [carouselIndex, project.members?.length, membersPerPage]);
-
     const prevMembers = () => {
         if (canGoPrev) setCarouselIndex(prev => prev - 1);
     };
 
-    // Auto-play do Carrossel
-    React.useEffect(() => {
-        if (totalMembers <= membersPerPage) return;
-        const timer = setInterval(nextMembers, 5000);
-        return () => clearInterval(timer);
-    }, [nextMembers, totalMembers, membersPerPage]);
 
     return (
         <div className="min-h-full bg-background-light dark:bg-background-dark pb-20">
