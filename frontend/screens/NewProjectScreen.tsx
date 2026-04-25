@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Upload, Type, Hash, Users, Award, ArrowLeft, Rocket, LayoutGrid, Crown, Target, Loader, Check } from 'lucide-react';
+import { Upload, Type, Hash, Users, Award, ArrowLeft, Rocket, LayoutGrid, Crown, Target, Loader, Check, Eye } from 'lucide-react';
 import { createProject, uploadProjectCover, getProjectDetails, updateProject } from '../services/project.service';
 import toast from 'react-hot-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select';
@@ -19,7 +19,8 @@ const NewProjectScreen = () => {
     tags: '',
     maxMembers: 4,
     rewardPoints: 1500,
-    coverUrl: ''
+    coverUrl: '',
+    visibility: 'PUBLIC_LIKE' as 'PRIVATE' | 'PUBLIC_VIEW' | 'PUBLIC_LIKE',
   });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -41,7 +42,8 @@ const NewProjectScreen = () => {
           tags: (project as any).tags || '',
           maxMembers: project.maxMembers || 4,
           rewardPoints: project.rewardPoints || 1500,
-          coverUrl: project.coverUrl || ''
+          coverUrl: project.coverUrl || '',
+          visibility: (project as any).visibility || 'PUBLIC_LIKE',
         });
       } catch (err: any) {
         toast.error('Erro ao carregar projeto');
@@ -64,7 +66,8 @@ const NewProjectScreen = () => {
           title: formData.name,
           description: formData.description,
           category: formData.category,
-          coverUrl: formData.coverUrl
+          coverUrl: formData.coverUrl,
+          visibility: formData.visibility as any,
         });
         toast.success('Projeto atualizado com sucesso! ✓');
         navigate(`/project-details/${id}`);
@@ -78,7 +81,8 @@ const NewProjectScreen = () => {
           tags: formData.tags,
           maxMembers: Number(formData.maxMembers),
           rewardPoints: Number(formData.rewardPoints),
-          coverUrl: formData.coverUrl
+          coverUrl: formData.coverUrl,
+          visibility: formData.visibility as any,
         });
         toast.success('Projeto criado com sucesso! 🚀');
         navigate('/projects');
@@ -251,7 +255,28 @@ const NewProjectScreen = () => {
                 />
               </div>
             </div>
-          </div>
+
+              {/* Visibility */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <Eye size={16} className="text-primary" /> Visibilidade
+                </label>
+                <Select
+                  value={formData.visibility}
+                  onValueChange={(val) => setFormData({ ...formData, visibility: val as any })}
+                >
+                  <SelectTrigger className="w-full h-12 bg-gray-50 dark:bg-background-dark border-gray-200 dark:border-gray-700">
+                    <SelectValue placeholder="Selecione a visibilidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PRIVATE">Privado (só meu grupo)</SelectItem>
+                    <SelectItem value="PUBLIC_VIEW">Público — apenas leitura</SelectItem>
+                    <SelectItem value="PUBLIC_LIKE">Público — aceita curtidas</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-400 mt-1">Define quem pode ver e interagir com seu projeto.</p>
+              </div>
+            </div>
 
           <div className="flex items-center justify-end gap-4 pt-2">
             <button

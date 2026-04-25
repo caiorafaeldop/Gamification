@@ -42,12 +42,22 @@ const groupInclude = {
 } as const;
 
 export const listGroups = async () => {
-  return prisma.group.findMany({
-    orderBy: { createdAt: 'desc' },
+  const groups = await prisma.group.findMany({
     include: {
       _count: { select: { GroupMember: true, Project: true } },
+      Project: { select: { likeCount: true } },
     },
   });
+
+  const withLikes = groups.map((g) => {
+    const totalLikes = g.Project.reduce((sum, p) => sum + p.likeCount, 0);
+    const { Project: _projects, ...rest } = g;
+    return { ...rest, totalLikes };
+  });
+
+  withLikes.sort((a, b) => b.totalLikes - a.totalLikes);
+
+  return withLikes;
 };
 
 export const getGroupDetails = async (id: string) => {

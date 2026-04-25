@@ -3,6 +3,7 @@ import prisma from '../utils/prisma';
 import { Role, TaskStatus } from '@prisma/client';
 
 import { createNewProject, addMemberToProject, leaveProject as leaveProjectService, transferProjectOwnership, deleteProjectById, registerInterestInProject } from '../services/project.service';
+import { getCatalogForUser } from '../services/catalog.service';
 
 export const getProjects = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -38,7 +39,7 @@ export const getProjects = async (req: Request, res: Response, next: NextFunctio
 export const createProject = async (req: Request, res: Response, next: NextFunction) => {
     try {
         console.log('[CONTROLLER] createProject hit');
-        const { title, name, description, category, type, coverUrl } = req.body;
+        const { title, name, description, category, type, coverUrl, visibility } = req.body;
         const userId = req.user!.userId;
 
         const project = await createNewProject({
@@ -47,6 +48,7 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
             category,
             type,
             coverUrl,
+            visibility,
             leaderId: userId,
             memberIds: [userId]
         }, userId);
@@ -86,6 +88,7 @@ export const joinProject = async (req: Request, res: Response, next: NextFunctio
 export const getProjectDetails = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
+        const userId = req.user?.userId;
         const project = await prisma.project.findUnique({
             where: { id },
             include: {
@@ -97,6 +100,14 @@ export const getProjectDetails = async (req: Request, res: Response, next: NextF
             }
         });
         if (!project) return res.status(404).json({ message: 'Project not found' });
+
+        let liked = false;
+        if (userId) {
+            const likeRecord = await prisma.projectLike.findUnique({
+                where: { userId_projectId: { userId, projectId: id } },
+            });
+            liked = !!likeRecord;
+        }
 
         const membersWithScores = project.members.map((member: any) => {
             const memberLogs = project.activityLogs.filter((log: any) => log.userId === member.userId);
@@ -116,6 +127,8 @@ export const getProjectDetails = async (req: Request, res: Response, next: NextF
         const formattedProject = {
             ...project,
             members: membersWithScores,
+            likeCount: project.likeCount,
+            liked,
             stats: {
                 tasksCount,
                 tasksCompleted,
@@ -162,6 +175,7 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
         if (xpReward !== undefined) data.xpReward = xpReward;
         if (pointsPerOpenTask !== undefined) data.pointsPerOpenTask = pointsPerOpenTask;
         if (pointsPerCompletedTask !== undefined) data.pointsPerCompletedTask = pointsPerCompletedTask;
+        if (req.body.visibility !== undefined) data.visibility = req.body.visibility;
 
         console.log(`[UPDATE PROJECT] Updating project ${id} with data:`, data);
 
@@ -209,7 +223,7 @@ export const getExploreProjects = async (_req: Request, res: Response, next: Nex
         const projects = await prisma.project.findMany({
             where: {
                 status: { not: 'archived' },
-                visibility: 'PUBLIC',
+                visibility: { in: ['PUBLIC_VIEW', 'PUBLIC_LIKE'] },
             },
             include: {
                 members: { select: { userId: true } },
@@ -233,6 +247,16 @@ export const getExploreProjects = async (_req: Request, res: Response, next: Nex
         });
 
         res.json(formatted);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getCatalog = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user!.userId;
+        const catalog = await getCatalogForUser(userId);
+        res.json(catalog);
     } catch (error) {
         next(error);
     }

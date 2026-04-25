@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Plus, FlaskConical, BookOpen, Sparkles, ArrowRight, Search } from 'lucide-react';
+import { Users, Plus, FlaskConical, BookOpen, Sparkles, ArrowRight, Search, Heart } from 'lucide-react';
 import { useGroups } from '../hooks/useGroups';
 import { Skeleton } from '../components/Skeleton';
 import { PageHero, EmptyState } from '../components/ui';
@@ -11,10 +11,12 @@ const GroupsHubScreen = () => {
   const { groups, loading } = useGroups();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredGroups = groups.filter((g) =>
-    g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    g.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredGroups = groups
+    .filter((g) =>
+      g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => (b.totalLikes ?? 0) - (a.totalLikes ?? 0));
 
   const heroActions = (
     <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
@@ -93,6 +95,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, onClick }) => {
   const color = group.color || '#29B6F6';
   const memberCount = group._count?.GroupMember || 0;
   const projectCount = group._count?.Project || 0;
+  const totalLikes = group.totalLikes ?? 0;
 
   return (
     <article
@@ -158,6 +161,10 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, onClick }) => {
           <div className="flex items-center gap-1.5">
             <BookOpen size={14} style={{ color }} />
             {projectCount} {projectCount === 1 ? 'projeto' : 'projetos'}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Heart size={14} style={{ color }} />
+            {totalLikes} {totalLikes === 1 ? 'like' : 'likes'}
           </div>
         </div>
 

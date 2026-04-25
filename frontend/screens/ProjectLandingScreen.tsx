@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Rocket, Users, Target, ArrowLeft, Star, Heart, CheckCircle, Calendar, ListTodo, CheckSquare, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { getProjectDetails } from '../services/project.service';
 import { registerProjectInterest } from '../services/explore.service';
 import { PageHero, EmptyState } from '../components/ui';
 import { Skeleton } from '../components/Skeleton';
+import { LikeButton } from '../components/LikeButton';
 import toast from 'react-hot-toast';
 
 const ProjectLandingScreen = () => {
@@ -67,10 +67,10 @@ const ProjectLandingScreen = () => {
         return (
             <div className="mx-auto max-w-[1000px] p-4 sm:p-6 lg:p-8">
                 <button 
-                    onClick={() => navigate('/explore')} 
+                    onClick={() => navigate('/projects')} 
                     className="mb-6 flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
                 >
-                    <ArrowLeft size={16} /> Voltar para Explorar
+                    <ArrowLeft size={16} /> Voltar para Projetos
                 </button>
                 <EmptyState icon={Target} title="Projeto não encontrado" description="O projeto pode ter sido removido ou tornado privado." />
             </div>
@@ -101,11 +101,11 @@ const ProjectLandingScreen = () => {
                         icon={Target}
                         tagLabel={
                             <button 
-                                onClick={() => navigate('/explore')}
+                                onClick={() => navigate('/projects')}
                                 className="group flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-surface-dark px-4 py-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 shadow-sm hover:border-gray-400 hover:text-gray-900 dark:hover:text-white transition-all mr-2"
                             >
                                 <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> 
-                                Voltar para Explorar
+                                Voltar para Projetos
                             </button>
                         }
                         title={project.title}
@@ -131,6 +131,14 @@ const ProjectLandingScreen = () => {
                         }
                         actionButtons={
                             <>
+                                <LikeButton
+                                    projectId={id!}
+                                    initialLiked={project.liked ?? false}
+                                    initialCount={project.likeCount ?? 0}
+                                    visibility={project.visibility}
+                                    variant="inline"
+                                />
+
                                 {project.isJoiningOpen ? (
                                     <button
                                         onClick={() => interestMutation.mutate()}
@@ -251,20 +259,20 @@ const ProjectLandingScreen = () => {
                             )}
                         </div>
                                   <div className="relative overflow-hidden group/carousel">
-                            <motion.div 
+                            <div 
                                 className="flex gap-6 py-4"
-                                animate={{ 
-                                    x: totalMembers > 4 ? [0, -((totalMembers * 300) + (totalMembers * 24))] : 0 
+                                style={{
+                                    width: 'max-content',
+                                    animation: totalMembers > 4 ? `scroll-carousel ${totalMembers * 5}s linear infinite` : 'none',
                                 }}
-                                transition={{ 
-                                    duration: totalMembers * 5, 
-                                    ease: "linear", 
-                                    repeat: Infinity 
-                                }}
-                                style={{ width: 'max-content' }}
                             >
-                                {/* Dobro a lista para criar o efeito de loop infinito perfeitamente suave */}
-                                {[...project.members, ...project.members].map((m: any, idx: number) => {
+                                <style>{`
+                                    @keyframes scroll-carousel {
+                                        0% { transform: translateX(0); }
+                                        100% { transform: translateX(-50%); }
+                                    }
+                                `}</style>
+                                {(totalMembers > 4 ? [...project.members, ...project.members] : project.members).map((m: any, idx: number) => {
                                     const isTop3 = (idx % totalMembers) < 3 && (m.projectScore > 0 || (idx % totalMembers) === 0);
                                     
                                     const rankStyles = [
@@ -280,20 +288,13 @@ const ProjectLandingScreen = () => {
                                                 ${isTop3 ? 'before:absolute before:inset-0 before:p-[2px] before:rounded-[2rem] before:bg-gradient-to-r ' + rankStyles.bg + ' before:opacity-20 group-hover:before:opacity-100 before:transition-opacity before:-z-10' : ''}
                                             `}
                                         >
-                                            {/* Glow Background */}
                                             <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-br ${rankStyles.bg} -z-20`} />
-                                            
-                                            {/* Background Decorator */}
                                             <div className="absolute -top-10 -right-10 w-24 h-24 bg-gradient-to-br from-primary/5 to-transparent rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
-                                            
-                                            {/* Rank Badge */}
                                             {isTop3 && (
                                                 <div className={`absolute top-4 left-4 w-7 h-7 rounded-full bg-gradient-to-br ${rankStyles.bg} flex items-center justify-center text-white text-[10px] font-black shadow-lg border-2 border-white dark:border-surface-dark z-20`}>
                                                     {(idx % totalMembers) + 1}
                                                 </div>
                                             )}
-
-                                            {/* Avatar with Halo */}
                                             <div className="relative mb-5">
                                                 <div className={`absolute inset-0 rounded-full blur-md opacity-0 group-hover:opacity-60 transition-opacity duration-500 bg-gradient-to-tr ${rankStyles.bg}`} />
                                                 <div className={`w-20 h-20 rounded-full p-1.5 bg-white dark:bg-gray-800 shadow-inner relative z-10 ring-1 ${rankStyles.ring} group-hover:ring-4 transition-all duration-500`}>
@@ -308,14 +309,10 @@ const ProjectLandingScreen = () => {
                                                     </div>
                                                 </div>
                                             </div>
-
-                                            {/* Info */}
                                             <div className="relative z-10 w-full mb-4">
                                                 <p className="text-sm font-black text-secondary dark:text-white line-clamp-1 group-hover:text-primary transition-colors duration-300">{m.user.name}</p>
                                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Colaborador</p>
                                             </div>
-
-                                            {/* XP Pill */}
                                             <div className="mt-auto relative z-10">
                                                 <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 shadow-sm group-hover:bg-white dark:group-hover:bg-white/10 transition-colors">
                                                     <Zap size={12} className="text-yellow-500 fill-yellow-500 animate-pulse" />
@@ -328,7 +325,7 @@ const ProjectLandingScreen = () => {
                                         </div>
                                     );
                                 })}
-                            </motion.div>
+                            </div>
                             
                             {/* Overlay Gradient para suavizar as bordas do carrossel infinito */}
                             <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-background-light dark:from-background-dark to-transparent z-10 pointer-events-none" />

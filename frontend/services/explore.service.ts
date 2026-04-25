@@ -8,7 +8,7 @@ export interface ExploreProject {
   coverUrl: string | null;
   color: string | null;
   status: string;
-  visibility: 'PUBLIC' | 'PRIVATE' | null;
+  visibility: 'PRIVATE' | 'PUBLIC_VIEW' | 'PUBLIC_LIKE' | null;
   isJoiningOpen: boolean | null;
   progress: number;
   leader: { id: string; name: string; avatarUrl?: string | null; avatarColor?: string | null };

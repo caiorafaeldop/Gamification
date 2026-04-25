@@ -15,7 +15,8 @@ import {
     Moon,
     Network,
     LogOut,
-    User
+    User,
+    Briefcase
 } from 'lucide-react';
 import logo from '../assets/logo.webp';
 import { getProfile } from '../services/user.service';
@@ -186,8 +187,9 @@ const Layout = () => {
                 <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1 custom-scrollbar">
                     <p className="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Menu</p>
                     <SidebarItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-                    <SidebarItem to="/explore" icon={FolderOpen} label="Projetos" />
+                    <SidebarItem to="/projects" icon={FolderOpen} label="Projetos" />
                     <SidebarItem to="/groups" icon={Network} label="Grupos" />
+                    <SidebarItem to="/jobs" icon={Briefcase} label="Vagas" />
                     <SidebarItem to="/achievements" icon={Medal} label="Conquistas" />
                     <SidebarItem to="/activities" icon={Calendar} label="Atividades" />
                     <SidebarItem to="/profile" icon={User} label="Perfil" />
@@ -287,7 +289,8 @@ const Layout = () => {
                 <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 flex items-center justify-around px-2 z-50">
                     <BottomNavItem to="/dashboard" icon={LayoutDashboard} label="Home" />
                     <BottomNavItem to="/projects" icon={FolderOpen} label="Projetos" />
-                    <BottomNavItem to="/activities" icon={Calendar} label="Ativ" />
+                    <BottomNavItem to="/groups" icon={Network} label="Grupos" />
+                    <BottomNavItem to="/jobs" icon={Briefcase} label="Vagas" />
                     <BottomNavItem to="/profile" icon={User} label="Perfil" />
                 </nav>
             </div>

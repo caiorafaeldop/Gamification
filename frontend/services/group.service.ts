@@ -7,7 +7,7 @@ export interface GroupProjectSummary {
   category: string | null;
   coverUrl: string | null;
   status: string;
-  visibility: 'PUBLIC' | 'PRIVATE' | null;
+  visibility: 'PRIVATE' | 'PUBLIC_VIEW' | 'PUBLIC_LIKE' | null;
   isJoiningOpen: boolean | null;
   leader: { id: string; name: string; avatarUrl?: string | null };
   _count?: { members: number; tasks: number };
@@ -29,6 +29,7 @@ export interface Group {
   logoUrl: string | null;
   bannerUrl: string | null;
   totalXp: number | null;
+  totalLikes?: number;
   createdAt: string;
   updatedAt: string;
   GroupMember?: GroupMemberSummary[];

@@ -39,6 +39,8 @@ model User {
   orders              Order[]
   leaderOfProjects    Project[]          @relation("ProjectLeader")
   memberOfProjects    ProjectMember[]
+  projectLikes        ProjectLike[]
+  jobPostings         JobPosting[]
   assignedTasks       Task[]             @relation("AssignedTasks")
   createdTasks        Task[]             @relation("CreatedTasks")
   taskAssignments     TaskAssignee[]     @relation("TaskAssignees")
@@ -65,12 +67,14 @@ model Project {
   status                 ProjectStatus   @default(active)
   groupId                String?
   isJoiningOpen          Boolean?        @default(false)
-  visibility             Visibility?     @default(PUBLIC)
+  visibility             Visibility?     @default(PUBLIC_LIKE)
+  likeCount              Int             @default(0)
   activityLogs           ActivityLog[]
   KanbanColumn           KanbanColumn[]
   Group                  Group?          @relation(fields: [groupId], references: [id], onUpdate: NoAction)
   leader                 User            @relation("ProjectLeader", fields: [leaderId], references: [id], onDelete: Cascade)
   members                ProjectMember[]
+  likes                  ProjectLike[]
   tasks                  Task[]
 }
 
@@ -291,6 +295,7 @@ model Group {
   updatedAt   DateTime?     @default(now()) @db.Timestamptz(6)
   GroupMember GroupMember[]
   Project     Project[]
+  jobPostings JobPosting[]
 }
 
 model GroupMember {
@@ -302,6 +307,36 @@ model GroupMember {
   User     User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([userId, groupId])
+}
+
+model ProjectLike {
+  userId    String
+  projectId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([userId, projectId])
+  @@index([projectId, createdAt])
+  @@index([createdAt])
+}
+
+model JobPosting {
+  id          String           @id @default(uuid())
+  title       String
+  description String
+  contact     String
+  status      JobPostingStatus @default(OPEN)
+  authorId    String
+  groupId     String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  author      User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  group       Group?           @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([groupId])
+  @@index([authorId])
 }
 
 enum AssigneeType {
@@ -370,6 +405,13 @@ enum GroupRole {
 }
 
 enum Visibility {
-  PUBLIC
   PRIVATE
+  PUBLIC_VIEW
+  PUBLIC_LIKE
+}
+
+enum JobPostingStatus {
+  OPEN
+  CLOSED
+  FILLED
 }

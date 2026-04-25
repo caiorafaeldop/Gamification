@@ -4,7 +4,6 @@ import { HashRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import LoginScreen from './screens/LoginScreen';
 import DashboardScreen from './screens/DashboardScreen';
-import ProjectListScreen from './screens/ProjectListScreen';
 import ProjectDetailsScreen from './screens/ProjectDetailsScreen';
 import RankingScreen from './screens/RankingScreen';
 import AchievementsScreen from './screens/AchievementsScreen';
@@ -18,11 +17,13 @@ import AdminUsersScreen from './screens/AdminUsersScreen';
 import AdminProjectsScreen from './screens/AdminProjectsScreen';
 import SignUpScreen from './screens/SignUpScreen';
 
-import ExploreProjectsScreen from './screens/ExploreProjectsScreen';
 import ProjectLandingScreen from './screens/ProjectLandingScreen';
 import GroupsHubScreen from './screens/GroupsHubScreen';
 import NewGroupScreen from './screens/NewGroupScreen';
 import GroupDetailScreen from './screens/GroupDetailScreen';
+import ProjectsScreen from './screens/ProjectsScreen';
+import JobsBoardScreen from './screens/JobsBoardScreen';
+import NewJobPostingScreen from './screens/NewJobPostingScreen';
 
 import { Toaster } from 'react-hot-toast';
 import { BrandingProvider } from './contexts/BrandingContext';
@@ -49,9 +50,9 @@ const App = () => {
 
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<DashboardScreen />} />
-          <Route path="/projects" element={<ProjectListScreen />} />
+          <Route path="/projects" element={<ProjectsScreen />} />
           <Route path="/project-details/:id" element={<ProjectDetailsScreen />} />
-          <Route path="/kanban/:id" element={<ProjectDetailsScreen />} /> {/* Reusing details for kanban view */}
+          <Route path="/kanban/:id" element={<ProjectDetailsScreen />} />{/* Reusing details for kanban view */}
           <Route path="/ranking" element={<RankingScreen />} />
           <Route path="/achievements" element={<AchievementsScreen />} />
           <Route path="/activities" element={<ActivitiesScreen />} />
@@ -66,11 +67,12 @@ const App = () => {
           <Route path="/profile" element={<ProfileScreen />} />
           <Route path="/profile/:id" element={<ProfileScreen />} />
 
-          <Route path="/explore" element={<ExploreProjectsScreen />} />
           <Route path="/project-landing/:id" element={<ProjectLandingScreen />} />
           <Route path="/groups" element={<GroupsHubScreen />} />
           <Route path="/groups/new" element={<NewGroupScreen />} />
           <Route path="/groups/:id" element={<GroupDetailScreen />} />
+          <Route path="/jobs" element={<JobsBoardScreen />} />
+          <Route path="/jobs/new" element={<NewJobPostingScreen />} />
 
           {/* Admin Routes */}
           <Route path="/admin/users" element={<AdminUsersScreen />} />

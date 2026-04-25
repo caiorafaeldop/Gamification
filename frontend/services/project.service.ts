@@ -18,6 +18,9 @@ export interface Project {
   tags?: string;
   maxMembers?: number;
   rewardPoints?: number;
+  visibility?: 'PRIVATE' | 'PUBLIC_VIEW' | 'PUBLIC_LIKE' | null;
+  likeCount?: number;
+  liked?: boolean;
 }
 
 export const getProjects = async () => {

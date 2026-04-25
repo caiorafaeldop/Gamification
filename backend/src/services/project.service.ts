@@ -29,6 +29,7 @@ export const createNewProject = async (data: CreateProjectInput, creatorId: stri
       xpReward: data.xpReward,
       progress: data.progress || 0,
       coverUrl: data.coverUrl,
+      visibility: (data as any).visibility || undefined,
       leader: { connect: { id: data.leaderId } },
       members: {
         create: Array.from(uniqueMemberIds).map(userId => ({ userId })),
@@ -286,7 +287,7 @@ export const registerInterestInProject = async (projectId: string, userId: strin
   if (!project.isJoiningOpen) {
     throw { statusCode: 403, message: 'Este projeto não está aceitando interessados no momento.' };
   }
-  if (project.visibility !== 'PUBLIC') {
+  if (project.visibility === 'PRIVATE') {
     throw { statusCode: 403, message: 'Este projeto não está disponível no marketplace.' };
   }
 
