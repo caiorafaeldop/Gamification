@@ -186,38 +186,7 @@ const Layout = () => {
                 <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1 custom-scrollbar">
                     <p className="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Menu</p>
                     <SidebarItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-                    
-                    <div className="px-3 py-4 space-y-3">
-                        <div className="flex items-center gap-2 text-gray-400 dark:text-gray-500 px-1">
-                            <FolderOpen size={16} />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Projetos</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                            <button 
-                                onClick={() => navigate('/projects')}
-                                className={`py-2 px-1 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all border
-                                    ${location.pathname === '/projects' 
-                                        ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' 
-                                        : 'bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-white/5 hover:bg-gray-100 dark:hover:bg-white/10'
-                                    }
-                                `}
-                            >
-                                Board
-                            </button>
-                            <button 
-                                onClick={() => navigate('/explore')}
-                                className={`py-2 px-1 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all border
-                                    ${location.pathname === '/explore' 
-                                        ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' 
-                                        : 'bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-white/5 hover:bg-gray-100 dark:hover:bg-white/10'
-                                    }
-                                `}
-                            >
-                                Detalhes
-                            </button>
-                        </div>
-                    </div>
-
+                    <SidebarItem to="/explore" icon={FolderOpen} label="Projetos" />
                     <SidebarItem to="/groups" icon={Network} label="Grupos" />
                     <SidebarItem to="/ranking" icon={Trophy} label="Ranking" />
                     <SidebarItem to="/achievements" icon={Medal} label="Conquistas" />
