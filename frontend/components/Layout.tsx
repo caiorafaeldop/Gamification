@@ -52,9 +52,9 @@ const ThemeToggle = () => {
     );
 };
 
-const SidebarItem = ({ to, icon: Icon, label }: { to: string; icon: any; label: string }) => {
+const SidebarItem = ({ to, icon: Icon, label, active }: { to: string; icon: any; label: string; active?: boolean }) => {
     const location = useLocation();
-    const isActive = location.pathname === to || location.pathname.startsWith(to + '/');
+    const isActive = active !== undefined ? active : (location.pathname === to || location.pathname.startsWith(to + '/'));
 
     return (
         <Link
@@ -68,6 +68,26 @@ const SidebarItem = ({ to, icon: Icon, label }: { to: string; icon: any; label: 
         >
             <Icon size={20} />
             <span className="font-medium text-sm">{label}</span>
+        </Link>
+    );
+};
+
+const SidebarSubItem = ({ to, label }: { to: string; label: string }) => {
+    const location = useLocation();
+    const isActive = location.pathname === to;
+
+    return (
+        <Link
+            to={to}
+            className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200
+                ${isActive
+                    ? 'text-primary font-bold bg-primary/5'
+                    : 'text-gray-400 dark:text-gray-500 hover:text-primary dark:hover:text-primary hover:bg-gray-50 dark:hover:bg-white/5'
+                }
+            `}
+        >
+            <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-primary animate-pulse' : 'bg-gray-300 dark:bg-gray-700'}`} />
+            <span className="text-xs uppercase tracking-widest font-black">{label}</span>
         </Link>
     );
 };
@@ -166,9 +186,19 @@ const Layout = () => {
                 <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1 custom-scrollbar">
                     <p className="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Menu</p>
                     <SidebarItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-                    <SidebarItem to="/explore" icon={Rocket} label="Explorar Projetos" />
-                    <SidebarItem to="/groups" icon={Network} label="Grupos " />
-                    <SidebarItem to="/projects" icon={FolderOpen} label="Meus Projetos" />
+                    
+                    <div className="space-y-1 py-2">
+                        <div className="flex items-center gap-3 px-3 py-2 text-gray-400 dark:text-gray-500">
+                            <FolderOpen size={18} />
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Projetos</span>
+                        </div>
+                        <div className="pl-4 space-y-0.5">
+                            <SidebarSubItem to="/projects" label="Board" />
+                            <SidebarSubItem to="/explore" label="Detalhes" />
+                        </div>
+                    </div>
+
+                    <SidebarItem to="/groups" icon={Network} label="Grupos" />
                     <SidebarItem to="/ranking" icon={Trophy} label="Ranking" />
                     <SidebarItem to="/achievements" icon={Medal} label="Conquistas" />
                     <SidebarItem to="/activities" icon={Calendar} label="Atividades" />
