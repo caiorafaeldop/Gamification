@@ -45,7 +45,7 @@ const GroupsHubScreen = () => {
         icon={FlaskConical}
         tagLabel="Laboratórios & Coletivos"
         title="Grupos & Iniciativas"
-        description="Encontre laboratórios, grupos de estudo e coletivos ativos. Cada grupo tem identidade visual própria e reúne projetos em torno de uma temática."
+        description=" Cada grupo tem identidade visual própria e reúne projetos em torno de uma temática."
         actionButtons={heroActions}
       />
 
@@ -97,11 +97,11 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, onClick }) => {
   return (
     <article
       onClick={onClick}
-      className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-gray-100 bg-surface-light shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl dark:border-gray-800 dark:bg-surface-dark"
+      className="group relative flex cursor-pointer flex-col rounded-2xl border border-gray-100 bg-surface-light shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl dark:border-gray-800 dark:bg-surface-dark"
       style={{ ['--group-color' as any]: color }}
     >
       <div
-        className="relative h-32"
+        className="relative h-32 overflow-hidden rounded-t-2xl"
         style={{
           background: `linear-gradient(135deg, ${color} 0%, ${color}CC 100%)`,
         }}
@@ -120,22 +120,22 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, onClick }) => {
             <Sparkles size={10} /> Grupo
           </span>
         </div>
+      </div>
 
-        <div className="absolute -bottom-6 left-5 z-20">
-          <div
-            className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border-4 border-surface-light bg-surface-light shadow-lg dark:border-surface-dark dark:bg-surface-dark"
-          >
-            {group.logoUrl ? (
-              <img src={group.logoUrl} alt={group.name} className="h-full w-full object-cover" />
-            ) : (
-              <div
-                className="flex h-full w-full items-center justify-center text-white"
-                style={{ backgroundColor: color }}
-              >
-                <FlaskConical size={22} />
-              </div>
-            )}
-          </div>
+      <div className="absolute top-[104px] left-5 z-30">
+        <div
+          className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border-4 border-surface-light bg-surface-light shadow-lg dark:border-surface-dark dark:bg-surface-dark group-hover:scale-105 transition-transform duration-300"
+        >
+          {group.logoUrl ? (
+            <img src={group.logoUrl} alt={group.name} className="h-full w-full object-cover" />
+          ) : (
+            <div
+              className="flex h-full w-full items-center justify-center text-white"
+              style={{ backgroundColor: color }}
+            >
+              <FlaskConical size={22} />
+            </div>
+          )}
         </div>
       </div>
 

@@ -16,6 +16,7 @@ import { Camera, Loader, Edit } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../components/ConfirmationModal';
 import MembersListModal from '../components/MembersListModal';
+import { ProjectMembersCarousel } from '../components/ProjectMembersCarousel';
 import { COLUMN_COLORS } from '../constants';
 import { ProjectStatus, statusLabels, statusStyles } from '../types';
 import ProjectDetailsScreenMobile from './ProjectDetailsScreenMobile';
@@ -816,6 +817,13 @@ const ProjectDetailsScreen = () => {
                                 <p className="text-gray-600 dark:text-gray-300 text-xs line-clamp-2">
                                     {project.description}
                                 </p>
+                            )}
+                            
+                            {/* Project Members Carousel */}
+                            {!isHeaderMinimized && project.members && (
+                                <div className="mt-4 max-w-[800px]">
+                                    <ProjectMembersCarousel members={project.members} />
+                                </div>
                             )}
                         </div>
 

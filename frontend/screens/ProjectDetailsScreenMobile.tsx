@@ -5,6 +5,7 @@ import { Skeleton } from '../components/Skeleton';
 import MobileNewTaskModal from '../components/MobileNewTaskModal';
 import TaskDetailModal from '../components/TaskDetailModal';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { ProjectMembersCarousel } from '../components/ProjectMembersCarousel';
 import { COLUMN_COLORS } from '../constants';
 import { ArrowLeft, MoreVertical, Plus, Filter, Search, Calendar, User, CheckCircle2, Circle, Edit, Trash2, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -173,6 +174,12 @@ const isProjectMember = user && project?.members?.some((m: any) => m.user?.id ==
 
             {/* Task List (Body) */}
             <div className="flex-1 overflow-y-auto bg-gray-50/50 dark:bg-black/20 p-4 space-y-3 pb-24">
+                {project.members && project.members.length > 0 && (
+                    <div className="mb-6 -mx-2">
+                        <ProjectMembersCarousel members={project.members} />
+                    </div>
+                )}
+
                 {activeColumn?.tasks?.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
                         <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
