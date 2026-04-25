@@ -96,7 +96,6 @@ const ExploreProjectsScreen = () => {
             <ExploreProjectCard
               key={project.id}
               project={project}
-              onClick={() => navigate(`/project-landing/${project.id}`)}
             />
           ))}
         </div>
@@ -105,12 +104,13 @@ const ExploreProjectsScreen = () => {
   );
 };
 
-const ExploreProjectCard: React.FC<{ project: ExploreProject; onClick: () => void }> = ({ project, onClick }) => {
+const ExploreProjectCard: React.FC<{ project: ExploreProject }> = ({ project }) => {
+  const navigate = useNavigate();
   const color = project.Group?.color || project.color || '#29B6F6';
 
   return (
     <article
-      onClick={onClick}
+      onClick={() => navigate(`/project-landing/${project.id}`)}
       className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-gray-100 bg-surface-light shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl dark:border-gray-800 dark:bg-surface-dark"
     >
       <div className="relative h-44 overflow-hidden bg-gray-200">
@@ -198,12 +198,19 @@ const ExploreProjectCard: React.FC<{ project: ExploreProject; onClick: () => voi
           </div>
         </div>
 
-        <div className="mt-auto border-t border-gray-100 pt-4 dark:border-gray-700">
+        <div className="mt-auto border-t border-gray-100 pt-4 dark:border-gray-700 grid grid-cols-2 gap-2">
           <button
-            className="flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
-            style={{ backgroundColor: color, boxShadow: `0 8px 20px -8px ${color}88` }}
+            onClick={(e) => { e.stopPropagation(); navigate(`/kanban/${project.id}`); }}
+            className="flex items-center justify-center gap-1.5 rounded-lg py-2 text-[10px] font-black uppercase tracking-wider bg-white dark:bg-white/10 text-secondary dark:text-white border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/20 transition-all"
           >
-            Ver detalhes <ArrowRight size={14} />
+            Kanban
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); navigate(`/project-landing/${project.id}`); }}
+            className="flex items-center justify-center gap-1.5 rounded-lg py-2 text-[10px] font-black uppercase tracking-wider text-white shadow-lg transition-transform hover:scale-[1.02]"
+            style={{ backgroundColor: color, boxShadow: `0 4px 12px ${color}55` }}
+          >
+            Detalhes
           </button>
         </div>
       </div>
