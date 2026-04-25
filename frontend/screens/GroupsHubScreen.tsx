@@ -101,7 +101,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, onClick }) => {
       style={{ ['--group-color' as any]: color }}
     >
       <div
-        className="relative h-32 overflow-hidden"
+        className="relative h-32"
         style={{
           background: `linear-gradient(135deg, ${color} 0%, ${color}CC 100%)`,
         }}
@@ -121,7 +121,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, onClick }) => {
           </span>
         </div>
 
-        <div className="absolute -bottom-6 left-5 z-10">
+        <div className="absolute -bottom-6 left-5 z-20">
           <div
             className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border-4 border-surface-light bg-surface-light shadow-lg dark:border-surface-dark dark:bg-surface-dark"
           >

@@ -36,6 +36,7 @@ const DashboardScreen = () => {
 
   const { user, activeTaskCount, projects, recentActivity } = data;
   const firstName = user?.name?.split(' ')[0] || 'Estudante';
+  const activeProjects = projects.filter((p: any) => p.status !== 'archived');
 
   const heroHighlight = (
     <div className="w-full rounded-2xl border border-white/40 bg-white/70 p-5 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-black/20 lg:w-80">
@@ -86,7 +87,7 @@ const DashboardScreen = () => {
           <section className="space-y-6">
             <SectionHeader
               icon={<Folder size={22} />}
-              title="Projetos que você participa"
+              title="Seus projetos ativos no momento"
               description="Continue colaborando nos projetos em andamento."
               action={
                 <Link
@@ -99,11 +100,11 @@ const DashboardScreen = () => {
               }
             />
 
-            {projects.length === 0 ? (
+            {activeProjects.length === 0 ? (
               <EmptyState
                 icon={Folder}
                 title="Ainda sem projetos"
-                description="Você ainda não participa de nenhum projeto. Explore a lista e encontre algo que te inspire."
+                description={projects.length > 0 ? "Você não tem projetos ativos no momento. Explore seus projetos arquivados ou procure novos." : "Você ainda não participa de nenhum projeto. Explore a lista e encontre algo que te inspire."}
                 action={
                   <Link
                     to="/projects"
@@ -116,7 +117,7 @@ const DashboardScreen = () => {
               />
             ) : (
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {projects.map((project: any) => (
+                {activeProjects.map((project: any) => (
                   <article
                     key={project.id}
                     onClick={() => navigate(`/project-details/${project.id}`)}
