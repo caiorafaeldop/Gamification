@@ -1,17 +1,17 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Star, LogIn, Loader, Check, Filter, ChevronDown } from 'lucide-react';
+import { Plus, Search, Star, Check, Filter, ChevronDown, FolderOpen, Compass } from 'lucide-react';
 import { useProjects } from '../hooks/useProjects';
 import { useAuth } from '../hooks/useAuth';
 import { joinProject } from '../services/project.service';
-import api from '../services/api';
 import { Skeleton } from '../components/Skeleton';
+import { PageHero, EmptyState } from '../components/ui';
 import toast from 'react-hot-toast';
 
 const ProjectListScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { projects, loading, error, refetch } = useProjects();
+  const { projects, loading, refetch } = useProjects();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortOrder, setSortOrder] = useState('newest');
@@ -24,7 +24,6 @@ const ProjectListScreen = () => {
         setIsFilterOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -41,228 +40,202 @@ const ProjectListScreen = () => {
 
   const filteredProjects = projects
     .filter((p: any) => {
-      // Hide archived projects (though normally handled by backend)
       if (p.status === 'archived') return false;
-
-      const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesSearch =
+        p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.description?.toLowerCase().includes(searchTerm.toLowerCase());
-
       if (!matchesSearch) return false;
-
-      if (filterStatus === 'joined') {
-        return p.members?.some((m: any) => m.userId === user?.id);
-      }
-      if (filterStatus === 'notJoined') {
-        return !p.members?.some((m: any) => m.userId === user?.id);
-      }
+      if (filterStatus === 'joined') return p.members?.some((m: any) => m.userId === user?.id);
+      if (filterStatus === 'notJoined') return !p.members?.some((m: any) => m.userId === user?.id);
       return true;
     })
     .sort((a: any, b: any) => {
-      // 1. Prioritize status: Inactive projects go to the end
       if (a.status === 'inactive' && b.status !== 'inactive') return 1;
       if (a.status !== 'inactive' && b.status === 'inactive') return -1;
-
-      // 2. Apply user-selected sort order
-      if (sortOrder === 'alpha') {
-        return a.title.localeCompare(b.title);
-      }
-      if (sortOrder === 'oldest') {
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      }
-      // Default: Newest first
+      if (sortOrder === 'alpha') return a.title.localeCompare(b.title);
+      if (sortOrder === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
-  if (loading) return (
-    <div className="min-h-full">
-      {/* Header Skeleton */}
-      <div className="relative pt-12 pb-12 px-4 sm:px-6 lg:px-8 bg-surface-light dark:bg-surface-dark overflow-hidden rounded-3xl mx-4 sm:mx-8 mt-4 shadow-sm border border-gray-100 dark:border-gray-800">
-        <div className="flex flex-col md:flex-row justify-between items-end gap-6 relative z-10">
-          <div className="w-full">
-            <Skeleton width={120} height={24} className="mb-4 rounded-full" />
-            <Skeleton width={300} height={48} className="mb-2" />
-            <Skeleton width="60%" height={24} />
-          </div>
-          <div className="flex gap-3 w-full md:w-auto">
-            <Skeleton width={256} height={44} className="rounded-lg" />
-            <Skeleton width={100} height={44} className="rounded-lg" />
-          </div>
-        </div>
+  const heroActions = (
+    <>
+      <div className="relative w-full sm:w-64">
+        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+          <Search className="text-gray-400" size={18} />
+        </span>
+        <input
+          className="h-11 w-full rounded-xl border border-gray-200 bg-surface-light py-2.5 pl-10 pr-4 text-sm text-gray-700 focus:border-primary focus:ring-primary dark:border-gray-700 dark:bg-surface-darker dark:text-gray-200"
+          placeholder="Buscar projetos..."
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
-      <section className="py-10 px-4 sm:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden h-full flex flex-col">
-              <Skeleton height={128} className="w-full rounded-none" />
-              <div className="p-5 flex-1 flex flex-col space-y-3">
-                <Skeleton width="70%" height={28} />
-                <Skeleton width="100%" height={16} />
-                <Skeleton width="90%" height={16} />
-                <Skeleton width="60%" height={16} />
-                <div className="mt-auto pt-4">
-                  <Skeleton width="100%" height={40} className="rounded-lg" />
-                </div>
-              </div>
+      <div className="relative" ref={filterRef}>
+        <button
+          onClick={() => setIsFilterOpen(!isFilterOpen)}
+          className="flex h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-surface-light px-4 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-surface-dark dark:text-gray-200 dark:hover:bg-gray-800"
+        >
+          <Filter size={16} />
+          <span>Filtrar</span>
+          <ChevronDown size={14} className={`transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {isFilterOpen && (
+          <div className="absolute right-0 z-[100] mt-2 max-h-[60vh] w-56 overflow-y-auto rounded-xl border border-gray-100 bg-surface-light py-2 shadow-xl dark:border-gray-700 dark:bg-surface-dark animate-in fade-in zoom-in duration-200">
+            <div className="mb-1 px-3 py-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Status</span>
             </div>
-          ))}
-        </div>
-      </section>
+            {[
+              { id: 'all', label: 'Todos os projetos' },
+              { id: 'joined', label: 'Já participo' },
+              { id: 'notJoined', label: 'Não participo' },
+            ].map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => { setFilterStatus(opt.id); setIsFilterOpen(false); }}
+                className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm transition-colors hover:bg-primary/5 ${
+                  filterStatus === opt.id ? 'font-bold text-primary' : 'text-gray-600 dark:text-gray-300'
+                }`}
+              >
+                {opt.label}
+                {filterStatus === opt.id && <Check size={14} />}
+              </button>
+            ))}
+
+            <div className="my-2 h-px bg-gray-100 dark:bg-gray-700" />
+
+            <div className="mb-1 px-3 py-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Ordenação</span>
+            </div>
+            {[
+              { id: 'newest', label: 'Mais recentes' },
+              { id: 'oldest', label: 'Mais antigos' },
+              { id: 'alpha', label: 'Ordem Alfabética' },
+            ].map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => { setSortOrder(opt.id); setIsFilterOpen(false); }}
+                className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm transition-colors hover:bg-primary/5 ${
+                  sortOrder === opt.id ? 'font-bold text-primary' : 'text-gray-600 dark:text-gray-300'
+                }`}
+              >
+                {opt.label}
+                {sortOrder === opt.id && <Check size={14} />}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <button
+        onClick={() => navigate('/new-project')}
+        className="flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-colors hover:bg-sky-500"
+      >
+        <Plus size={16} /> Novo
+      </button>
+    </>
+  );
+
+  if (loading) return (
+    <div className="mx-auto max-w-[1480px] space-y-8 p-4 sm:p-6 lg:p-8">
+      <Skeleton height="220px" className="w-full rounded-3xl" />
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-surface-light shadow-sm dark:border-gray-800 dark:bg-surface-dark">
+            <Skeleton height={160} className="w-full rounded-none" />
+            <div className="flex flex-1 flex-col space-y-3 p-5">
+              <Skeleton width="70%" height={24} />
+              <Skeleton width="100%" height={16} />
+              <Skeleton width="90%" height={16} />
+              <Skeleton width="100%" height={40} className="mt-auto rounded-lg" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 
   return (
-    <div className="min-h-full">
-      <div className="relative z-30 pt-12 pb-12 px-4 sm:px-6 lg:px-8 bg-surface-light dark:bg-surface-dark rounded-3xl mx-4 sm:mx-8 mt-4 shadow-sm border border-gray-100 dark:border-gray-800">
-        <div className="absolute inset-0 z-0 bg-network-pattern opacity-100 dark:opacity-30 overflow-hidden rounded-3xl"></div>
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-end gap-6">
-          <div>
-            <span className="inline-block py-1 px-3 rounded-full bg-primary/10 dark:bg-primary/20 text-primary font-bold text-xs mb-4 uppercase tracking-wider border border-primary/20">Explore & Colabore</span>
-            <h1 className="text-3xl md:text-5xl font-display font-extrabold text-secondary dark:text-white mb-2">
-              Projetos Disponíveis
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 max-w-xl text-lg">
-              Encontre o projeto ideal para desenvolver suas habilidades, ganhar 🪙 e conectar-se com outros estudantes.
-            </p>
-          </div>
-          <div className="flex flex-wrap md:flex-nowrap gap-3 w-full md:w-auto items-stretch">
-            <div className="relative w-full md:w-64">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                <Search className="text-gray-400" size={20} />
-              </span>
-              <input
-                className="w-full py-2.5 pl-10 pr-4 rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-surface-darker text-gray-700 dark:text-gray-200 focus:ring-primary focus:border-primary"
-                placeholder="Buscar projetos..."
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+    <div className="mx-auto max-w-[1480px] space-y-8 p-4 sm:p-6 lg:p-8">
+      <PageHero
+        icon={Compass}
+        tagLabel="Explore & Colabore"
+        title="Projetos Disponíveis"
+        description="Encontre o projeto ideal para desenvolver suas habilidades, ganhar 🪙 e conectar-se com outros estudantes."
+        actionButtons={heroActions}
+      />
 
-            <div className="flex gap-3 flex-1 md:flex-none">
-              <div className="relative flex-1 md:w-auto" ref={filterRef}>
-                <button
-                  onClick={() => setIsFilterOpen(!isFilterOpen)}
-                  className="w-full h-full bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
-                >
-                  <Filter size={16} />
-                  <span>Filtrar</span>
-                  <ChevronDown size={14} className={`transform transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {isFilterOpen && (
-                  <div className="absolute left-0 md:left-auto md:right-0 mt-2 w-56 bg-white dark:bg-surface-dark rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-[100] py-2 animate-in fade-in zoom-in duration-200 overflow-y-auto max-h-[60vh] md:max-h-none">
-                    <div className="px-3 py-1 mb-1">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status de Participação</span>
-                    </div>
-                    <button
-                      onClick={() => { setFilterStatus('all'); setIsFilterOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${filterStatus === 'all' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                    >
-                      Todos os projetos
-                      {filterStatus === 'all' && <Check size={14} />}
-                    </button>
-                    <button
-                      onClick={() => { setFilterStatus('joined'); setIsFilterOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${filterStatus === 'joined' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                    >
-                      Já participo
-                      {filterStatus === 'joined' && <Check size={14} />}
-                    </button>
-                    <button
-                      onClick={() => { setFilterStatus('notJoined'); setIsFilterOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${filterStatus === 'notJoined' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                    >
-                      Não participo
-                      {filterStatus === 'notJoined' && <Check size={14} />}
-                    </button>
-
-                    <div className="h-px bg-gray-100 dark:bg-gray-700 my-2"></div>
-
-                    <div className="px-3 py-1 mb-1">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ordenação</span>
-                    </div>
-                    <button
-                      onClick={() => { setSortOrder('alpha'); setIsFilterOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${sortOrder === 'alpha' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                    >
-                      Ordem Alfabética
-                      {sortOrder === 'alpha' && <Check size={14} />}
-                    </button>
-                    <button
-                      onClick={() => { setSortOrder('newest'); setIsFilterOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${sortOrder === 'newest' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                    >
-                      Mais recentes
-                      {sortOrder === 'newest' && <Check size={14} />}
-                    </button>
-                    <button
-                      onClick={() => { setSortOrder('oldest'); setIsFilterOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-primary/5 transition-colors flex items-center justify-between ${sortOrder === 'oldest' ? 'text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                    >
-                      Mais antigos
-                      {sortOrder === 'oldest' && <Check size={14} />}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <button onClick={() => navigate('/new-project')} className="flex-1 md:flex-none justify-center bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:bg-sky-500 transition-colors flex items-center gap-2 whitespace-nowrap">
-                <Plus size={16} /> Novo
+      <section>
+        {filteredProjects.length === 0 ? (
+          <EmptyState
+            icon={FolderOpen}
+            title="Nenhum projeto encontrado"
+            description={searchTerm ? `Nenhum resultado para "${searchTerm}". Tente outra busca.` : 'Ajuste os filtros ou crie um novo projeto.'}
+            action={
+              <button
+                onClick={() => navigate('/new-project')}
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-sky-500"
+              >
+                <Plus size={16} /> Criar Projeto
               </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <section className="py-10 px-4 sm:px-8">
-        <div className="space-y-12">
-          {/* Grid of Projects */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredProjects.length === 0 ? (
-              <p className="col-span-3 text-center text-gray-500">Nenhum projeto encontrado.</p>
-            ) : filteredProjects.map((project: any) => (
-              <article key={project.id} onClick={() => navigate(`/project-details/${project.id}`)} className="cursor-pointer bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full group">
-                <div className="h-48 bg-gray-200 relative overflow-hidden">
+            }
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {filteredProjects.map((project: any) => (
+              <article
+                key={project.id}
+                onClick={() => navigate(`/project-details/${project.id}`)}
+                className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-gray-100 bg-surface-light shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/5 dark:border-gray-800 dark:bg-surface-dark"
+              >
+                <div className="relative h-48 overflow-hidden bg-gray-200">
                   {project.coverUrl ? (
                     <img
                       src={project.coverUrl}
                       alt={project.title}
-                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-transparent flex items-center justify-center">
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-transparent">
                       <Star size={48} className="text-primary/20" />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                  <div className="absolute bottom-3 left-4 z-10">
-                    <span className="bg-primary text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">{project.category || 'Geral'}</span>
-                    {project.type && <span className="ml-2 bg-purple-500 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">{project.type}</span>}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute bottom-3 left-4 z-10 flex gap-2">
+                    <span className="rounded bg-primary px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+                      {project.category || 'Geral'}
+                    </span>
+                    {project.type && (
+                      <span className="rounded bg-purple-500 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+                        {project.type}
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div className="p-5 flex-1 flex flex-col">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="text-lg font-display font-bold text-secondary dark:text-white leading-tight group-hover:text-primary transition-colors">{project.title}</h4>
-                  </div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 mb-4">
-                    {project.description}
-                  </p>
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] text-primary font-bold border border-primary/20">
+                <div className="flex flex-1 flex-col p-5">
+                  <h4 className="text-lg font-display font-bold leading-tight text-secondary transition-colors group-hover:text-primary dark:text-white">
+                    {project.title}
+                  </h4>
+                  <p className="mt-2 line-clamp-3 text-sm text-gray-600 dark:text-gray-400">{project.description}</p>
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-[10px] font-bold text-primary">
                       {project.leader?.name?.charAt(0) || 'L'}
                     </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">Líder: <span className="font-semibold text-gray-700 dark:text-gray-200">{project.leader?.name || 'Desconhecido'}</span></span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Líder: <span className="font-semibold text-gray-700 dark:text-gray-200">{project.leader?.name || 'Desconhecido'}</span>
+                    </span>
                   </div>
-                  <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
+                  <div className="mt-auto border-t border-gray-100 pt-4 dark:border-gray-700">
                     {project.members?.some((m: any) => m.userId === user?.id) ? (
-                      <div className="w-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold py-2 rounded-lg text-sm flex items-center justify-center gap-2 border border-emerald-500/20">
+                      <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 py-2 text-sm font-bold text-emerald-600 dark:text-emerald-400">
                         <Check size={16} /> Você já participa
                       </div>
                     ) : (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleJoin(project.id); }}
-                        className="w-full bg-primary/10 hover:bg-primary text-primary hover:text-white font-bold py-2 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary/10 py-2 text-sm font-bold text-primary transition-colors hover:bg-primary hover:text-white"
                       >
                         Entrar no projeto
                       </button>
@@ -272,7 +245,7 @@ const ProjectListScreen = () => {
               </article>
             ))}
           </div>
-        </div>
+        )}
       </section>
     </div>
   );

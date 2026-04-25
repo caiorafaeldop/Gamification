@@ -18,11 +18,19 @@ import AdminUsersScreen from './screens/AdminUsersScreen';
 import AdminProjectsScreen from './screens/AdminProjectsScreen';
 import SignUpScreen from './screens/SignUpScreen';
 
+import ExploreProjectsScreen from './screens/ExploreProjectsScreen';
+import ProjectLandingScreen from './screens/ProjectLandingScreen';
+import GroupsHubScreen from './screens/GroupsHubScreen';
+import NewGroupScreen from './screens/NewGroupScreen';
+import GroupDetailScreen from './screens/GroupDetailScreen';
+
 import { Toaster } from 'react-hot-toast';
+import { BrandingProvider } from './contexts/BrandingContext';
 
 const App = () => {
   return (
     <HashRouter>
+      <BrandingProvider>
       <Toaster
         position="top-center"
         reverseOrder={false}
@@ -58,11 +66,18 @@ const App = () => {
           <Route path="/profile" element={<ProfileScreen />} />
           <Route path="/profile/:id" element={<ProfileScreen />} />
 
+          <Route path="/explore" element={<ExploreProjectsScreen />} />
+          <Route path="/project-landing/:id" element={<ProjectLandingScreen />} />
+          <Route path="/groups" element={<GroupsHubScreen />} />
+          <Route path="/groups/new" element={<NewGroupScreen />} />
+          <Route path="/groups/:id" element={<GroupDetailScreen />} />
+
           {/* Admin Routes */}
           <Route path="/admin/users" element={<AdminUsersScreen />} />
           <Route path="/admin/projects" element={<AdminProjectsScreen />} />
         </Route>
       </Routes>
+      </BrandingProvider>
     </HashRouter>
   );
 };

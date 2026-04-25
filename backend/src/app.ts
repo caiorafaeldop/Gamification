@@ -19,6 +19,7 @@ import commentRoutes from './routes/comment.routes';
 import uploadRoutes from './routes/upload.routes';
 import statsRoutes from './routes/stats.routes';
 import rankingRoutes from './routes/ranking.routes';
+import groupRoutes from './routes/group.routes';
 import { initWeeklyRankingJob } from './jobs/weekly-ranking.job';
 import { errorHandler } from './middlewares/error.middleware';
 
@@ -53,6 +54,7 @@ app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/stats', statsRoutes);
 app.use('/api/v1/ranking', rankingRoutes);
+app.use('/api/v1/groups', groupRoutes);
 
 // Initialize Cron Jobs
 initWeeklyRankingJob();

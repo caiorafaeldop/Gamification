@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../utils/prisma';
 import { Role, TaskStatus } from '@prisma/client';
 
-import { createNewProject, addMemberToProject, leaveProject as leaveProjectService, transferProjectOwnership, deleteProjectById } from '../services/project.service';
+import { createNewProject, addMemberToProject, leaveProject as leaveProjectService, transferProjectOwnership, deleteProjectById, registerInterestInProject } from '../services/project.service';
 
 export const getProjects = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -88,14 +88,44 @@ export const getProjectDetails = async (req: Request, res: Response, next: NextF
         const { id } = req.params;
         const project = await prisma.project.findUnique({
             where: { id },
-
             include: {
                 members: { include: { user: { select: { id: true, name: true, avatarColor: true, avatarUrl: true } } } },
-                leader: { select: { id: true, name: true, avatarColor: true, avatarUrl: true } }
+                leader: { select: { id: true, name: true, avatarColor: true, avatarUrl: true } },
+                tasks: { select: { status: true } },
+                activityLogs: { select: { userId: true, pointsChange: true }, where: { pointsChange: { not: null } } },
+                Group: { select: { id: true, name: true, logoUrl: true, color: true } }
             }
         });
         if (!project) return res.status(404).json({ message: 'Project not found' });
-        res.json(project);
+
+        const membersWithScores = project.members.map((member: any) => {
+            const memberLogs = project.activityLogs.filter((log: any) => log.userId === member.userId);
+            const projectScore = memberLogs.reduce((sum: number, log: any) => sum + (log.pointsChange || 0), 0);
+            return {
+                ...member,
+                projectScore
+            };
+        });
+        
+        membersWithScores.sort((a: any, b: any) => b.projectScore - a.projectScore);
+
+        const projectTotalPoints = project.activityLogs.reduce((sum: number, log: any) => sum + (log.pointsChange || 0), 0);
+        const tasksCount = project.tasks.length;
+        const tasksCompleted = project.tasks.filter((t: any) => t.status === TaskStatus.done).length;
+
+        const formattedProject = {
+            ...project,
+            members: membersWithScores,
+            stats: {
+                tasksCount,
+                tasksCompleted,
+                totalPoints: projectTotalPoints
+            }
+        };
+        
+        delete (formattedProject as any).activityLogs;
+
+        res.json(formattedProject);
     } catch (error) {
         next(error);
     }
@@ -169,6 +199,51 @@ export const transferOwnership = async (req: Request, res: Response, next: NextF
         const updatedProject = await transferProjectOwnership(id, newLeaderId, userId);
 
         res.json(updatedProject);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getExploreProjects = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+        const projects = await prisma.project.findMany({
+            where: {
+                status: { not: 'archived' },
+                visibility: 'PUBLIC',
+            },
+            include: {
+                members: { select: { userId: true } },
+                leader: { select: { id: true, name: true, avatarUrl: true, avatarColor: true } },
+                Group: { select: { id: true, name: true, color: true, logoUrl: true } },
+                tasks: { select: { status: true } },
+                _count: { select: { members: true, tasks: true } },
+            },
+            orderBy: [
+                { isJoiningOpen: 'desc' },
+                { createdAt: 'desc' },
+            ],
+        });
+
+        const formatted = projects.map((p: any) => {
+            const totalTasks = p.tasks.length;
+            const completedTasks = p.tasks.filter((t: any) => t.status === TaskStatus.done).length;
+            const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+            const { tasks, ...rest } = p;
+            return { ...rest, progress };
+        });
+
+        res.json(formatted);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const registerInterest = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user!.userId;
+        const result = await registerInterestInProject(id, userId);
+        res.status(201).json(result);
     } catch (error) {
         next(error);
     }

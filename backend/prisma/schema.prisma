@@ -28,12 +28,13 @@ model User {
   bio                 String?
   skills              String[]           @default([])
   contactEmail        String?
-  linkedinUrl         String?
   githubUrl           String?
+  linkedinUrl         String?
   activityLogs        ActivityLog[]
   comments            Comment[]
   createdEvents       Event[]            @relation("CreatedEvents")
   eventParticipations EventParticipant[]
+  GroupMember         GroupMember[]
   notifications       Notification[]
   orders              Order[]
   leaderOfProjects    Project[]          @relation("ProjectLeader")
@@ -62,11 +63,15 @@ model Project {
   pointsPerCompletedTask Int?            @default(50)
   type                   String?         @default("Interno")
   status                 ProjectStatus   @default(active)
+  groupId                String?
+  isJoiningOpen          Boolean?        @default(false)
+  visibility             Visibility?     @default(PUBLIC)
+  activityLogs           ActivityLog[]
   KanbanColumn           KanbanColumn[]
+  Group                  Group?          @relation(fields: [groupId], references: [id], onUpdate: NoAction)
   leader                 User            @relation("ProjectLeader", fields: [leaderId], references: [id], onDelete: Cascade)
   members                ProjectMember[]
   tasks                  Task[]
-  activityLogs           ActivityLog[]
 }
 
 model ProjectMember {
@@ -80,18 +85,18 @@ model ProjectMember {
 }
 
 model Task {
-  id                   String         @id @default(uuid())
+  id                   String          @id @default(uuid())
   title                String
   description          String?
-  status               TaskStatus     @default(todo)
+  status               TaskStatus      @default(todo)
   pointsReward         Int
   estimatedTimeMinutes Int?
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
   dueDate              DateTime?
   completedAt          DateTime?
-  tags                 String[]       @default([])
-  isExternalDemand     Boolean        @default(false)
+  tags                 String[]        @default([])
+  isExternalDemand     Boolean         @default(false)
   createdById          String
   assignedToId         String?
   requiredTierId       String?
@@ -101,12 +106,13 @@ model Task {
   attachmentUrl        String?
   durationMinutes      Int?
   startDate            DateTime?
+  complexity           TaskComplexity? @default(REGULAR)
   comments             Comment[]
-  assignedTo           User?          @relation("AssignedTasks", fields: [assignedToId], references: [id])
-  KanbanColumn         KanbanColumn?  @relation(fields: [columnId], references: [id])
-  createdBy            User           @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: Cascade)
-  project              Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  requiredTier         Tier?          @relation("RequiredTier", fields: [requiredTierId], references: [id])
+  assignedTo           User?           @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  KanbanColumn         KanbanColumn?   @relation(fields: [columnId], references: [id])
+  createdBy            User            @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: Cascade)
+  project              Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  requiredTier         Tier?           @relation("RequiredTier", fields: [requiredTierId], references: [id])
   assignees            TaskAssignee[]
 }
 
@@ -125,13 +131,13 @@ model Tier {
 model ActivityLog {
   id           String       @id @default(uuid())
   userId       String
-  projectId    String?
   type         ActivityType
   description  String
   pointsChange Int?
   createdAt    DateTime     @default(now())
+  projectId    String?
+  project      Project?     @relation(fields: [projectId], references: [id])
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project      Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([projectId])
   @@index([userId, projectId, createdAt])
@@ -256,6 +262,48 @@ model TaskAssignee {
   @@unique([taskId, userId, type])
 }
 
+model WeeklyRanking {
+  id              String   @id @default(uuid())
+  userId          String
+  position        Int
+  week            Int
+  year            Int
+  points          Int
+  postImageUrl    String?
+  isPostGenerated Boolean  @default(false)
+  linkedinShared  Boolean  @default(false)
+  instagramShared Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([week, year, position])
+}
+
+model Group {
+  id          String        @id
+  name        String        @unique
+  description String?
+  color       String?       @default("#38bdf8")
+  logoUrl     String?
+  bannerUrl   String?
+  totalXp     Int?          @default(0)
+  createdAt   DateTime?     @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime?     @default(now()) @db.Timestamptz(6)
+  GroupMember GroupMember[]
+  Project     Project[]
+}
+
+model GroupMember {
+  userId   String
+  groupId  String
+  role     GroupRole? @default(MEMBER)
+  joinedAt DateTime?  @default(now()) @db.Timestamptz(6)
+  Group    Group      @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  User     User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, groupId])
+}
+
 enum AssigneeType {
   CREATOR
   IMPLEMENTER
@@ -309,19 +357,19 @@ enum EventType {
   EVENT
 }
 
-model WeeklyRanking {
-  id              String   @id @default(uuid())
-  userId          String
-  position        Int
-  week            Int
-  year            Int
-  points          Int
-  postImageUrl    String?
-  isPostGenerated Boolean  @default(false)
-  linkedinShared  Boolean  @default(false)
-  instagramShared Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+enum TaskComplexity {
+  TRIVIAL
+  REGULAR
+  COMPLEX
+  EPIC
+}
 
-  @@unique([week, year, position])
+enum GroupRole {
+  ADMIN
+  MEMBER
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
 }

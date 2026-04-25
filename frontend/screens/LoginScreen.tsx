@@ -137,17 +137,17 @@ const LoginScreen = () => {
   };
 
   const inputBase =
-    'w-full rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 shadow-sm focus:border-primary focus:ring-4 focus:ring-primary/15 focus:outline-none transition-all duration-200 text-sm';
-  const inputWithIcon = `${inputBase} pl-11 pr-4 py-3.5`;
-  const inputWithTrailing = `${inputBase} pl-11 pr-11 py-3.5`;
-  const labelBase = 'block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2';
+    'w-full rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 shadow-sm focus:border-primary focus:ring-4 focus:ring-primary/15 focus:outline-none transition-all duration-200 text-[11px]';
+  const inputWithIcon = `${inputBase} pl-9 pr-4 py-1.5`;
+  const inputWithTrailing = `${inputBase} pl-9 pr-9 py-1.5`;
+  const labelBase = 'block text-[9px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1';
 
   const GoogleButton = ({ label }: { label: string }) => (
     <button
       type="button"
       onClick={() => googleLogin()}
       disabled={loading}
-      className="cursor-pointer w-full flex justify-center items-center gap-3 py-3.5 px-4 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-sm font-semibold text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 focus:outline-none focus:ring-4 focus:ring-primary/15 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="cursor-pointer w-full flex justify-center items-center gap-3 py-2 px-4 border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-[10px] font-semibold text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 focus:outline-none focus:ring-4 focus:ring-primary/15 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -160,7 +160,7 @@ const LoginScreen = () => {
   );
 
   const Divider = ({ text }: { text: string }) => (
-    <div className="relative my-1">
+    <div className="relative my-0.5">
       <div className="absolute inset-0 flex items-center">
         <div className="w-full border-t border-slate-200 dark:border-white/10"></div>
       </div>
@@ -172,7 +172,7 @@ const LoginScreen = () => {
 
   const PrimaryButton = ({ children }: { children: React.ReactNode }) => (
     <button
-      className="cursor-pointer w-full group relative flex justify-center items-center gap-2 py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-primary to-sky-500 hover:from-sky-500 hover:to-primary shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 focus:outline-none focus:ring-4 focus:ring-primary/30 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
+      className="cursor-pointer w-full group relative flex justify-center items-center gap-2 py-2 px-4 rounded-xl text-[11px] font-bold text-white bg-gradient-to-r from-primary to-sky-500 hover:from-sky-500 hover:to-primary shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 focus:outline-none focus:ring-4 focus:ring-primary/30 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
       type="submit"
       disabled={loading}
     >
@@ -300,7 +300,7 @@ function transformar() {
       </div>
 
       {/* RIGHT - Form side, 50% (top-aligned so toggle doesn't jump on view change) */}
-      <div className="w-full md:w-1/2 flex flex-col items-center justify-start p-6 sm:p-10 lg:p-12 relative overflow-hidden min-h-screen">
+      <div className="w-full md:w-1/2 flex flex-col items-center justify-start p-6 sm:p-8 lg:p-10 lg:pt-2 relative overflow-hidden min-h-screen">
         {/* Decorative blurs */}
         <div className="absolute top-0 right-0 w-[30rem] h-[30rem] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-sky-200/40 dark:bg-primary/5 rounded-full blur-3xl pointer-events-none" />
@@ -313,15 +313,15 @@ function transformar() {
           </span>
         </div>
 
-        <div className="relative z-10 w-full max-w-md mt-4 md:mt-16">
+        <div className="relative z-10 w-full max-w-md mt-4 md:mt-2">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-secondary dark:text-white tracking-tight mb-2">
+          <div className="mb-5">
+            <h1 className="font-display font-extrabold text-xl sm:text-2xl text-secondary dark:text-white tracking-tight mb-1">
               {view === 'login' && 'Bem-vindo de volta'}
               {view === 'register' && 'Crie sua conta'}
               {view === 'forgot-password' && 'Recuperar senha'}
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
+            <p className="text-slate-500 dark:text-slate-400 text-[11px]">
               {view === 'login' && 'Acesse sua conta para continuar sua jornada.'}
               {view === 'register' && 'Preencha os dados abaixo para começar.'}
               {view === 'forgot-password' && 'Use sua palavra secreta para redefinir.'}
@@ -330,11 +330,11 @@ function transformar() {
 
           {/* Segmented toggle - only for login/register */}
           {view !== 'forgot-password' && (
-            <div className="relative flex p-1 mb-7 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+            <div className="relative flex p-1 mb-5 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
               <button
                 type="button"
                 onClick={() => switchView('login')}
-                className={`cursor-pointer relative z-10 flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors duration-200 ${view === 'login'
+                className={`cursor-pointer relative z-10 flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors duration-200 ${view === 'login'
                     ? 'text-white'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                   }`}
@@ -344,7 +344,7 @@ function transformar() {
               <button
                 type="button"
                 onClick={() => switchView('register')}
-                className={`cursor-pointer relative z-10 flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors duration-200 ${view === 'register'
+                className={`cursor-pointer relative z-10 flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors duration-200 ${view === 'register'
                     ? 'text-white'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                   }`}
@@ -359,15 +359,15 @@ function transformar() {
           )}
 
           {view === 'login' && (
-            <div className="space-y-5">
+            <div className="space-y-4">
               <GoogleButton label="Continuar com Google" />
               <Divider text="Ou com email" />
 
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-3">
                 <div>
                   <label className={labelBase} htmlFor="email">Email ou usuário</label>
                   <div className="relative">
-                    <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       className={inputWithIcon}
                       id="email"
@@ -381,18 +381,18 @@ function transformar() {
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-1.5">
                     <label className={`${labelBase} mb-0`} htmlFor="password">Senha</label>
                     <button
                       type="button"
                       onClick={() => switchView('forgot-password')}
-                      className="cursor-pointer text-xs font-semibold text-primary hover:text-sky-600 dark:hover:text-sky-300 transition-colors"
+                      className="cursor-pointer text-[9px] font-semibold text-primary hover:text-sky-600 dark:hover:text-sky-300 transition-colors"
                     >
                       Esqueceu?
                     </button>
                   </div>
                   <div className="relative">
-                    <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       className={inputWithTrailing}
                       id="password"
@@ -409,12 +409,12 @@ function transformar() {
                       className="cursor-pointer absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                       aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                     >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-1">
                   <PrimaryButton>Entrar na Plataforma</PrimaryButton>
                 </div>
               </form>
@@ -426,12 +426,12 @@ function transformar() {
               <GoogleButton label="Registrar com Google" />
               <Divider text="Ou com email" />
 
-              <form onSubmit={handleRegister} className="space-y-4">
+              <form onSubmit={handleRegister} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className={labelBase}>Nome</label>
                     <div className="relative">
-                      <User size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input
                         className={inputWithIcon}
                         placeholder="Nome"
@@ -445,7 +445,7 @@ function transformar() {
                   <div>
                     <label className={labelBase}>Sobrenome</label>
                     <div className="relative">
-                      <User size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input
                         className={inputWithIcon}
                         placeholder="Sobrenome"
@@ -461,7 +461,7 @@ function transformar() {
                 <div>
                   <label className={labelBase}>Email ou usuário</label>
                   <div className="relative">
-                    <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       className={inputWithIcon}
                       placeholder="seu@email.com"
@@ -477,7 +477,7 @@ function transformar() {
                   <div>
                     <label className={labelBase}>Senha (6+)</label>
                     <div className="relative">
-                      <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input
                         className={inputWithTrailing}
                         type={showPassword ? 'text' : 'password'}
@@ -493,7 +493,7 @@ function transformar() {
                         className="cursor-pointer absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                         aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                       >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
                   </div>
@@ -501,7 +501,7 @@ function transformar() {
                   <div>
                     <label className={labelBase}>Confirmar</label>
                     <div className="relative">
-                      <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input
                         className={inputWithTrailing}
                         type={showConfirmPassword ? 'text' : 'password'}
@@ -517,13 +517,13 @@ function transformar() {
                         className="cursor-pointer absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                         aria-label={showConfirmPassword ? 'Ocultar senha' : 'Mostrar senha'}
                       >
-                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-1">
                   <PrimaryButton>Criar minha conta</PrimaryButton>
                 </div>
               </form>
@@ -531,11 +531,11 @@ function transformar() {
           )}
 
           {view === 'forgot-password' && (
-            <form onSubmit={handleResetPassword} className="space-y-4">
+            <form onSubmit={handleResetPassword} className="space-y-3.5">
               <div>
                 <label className={labelBase}>Email ou usuário</label>
                 <div className="relative">
-                  <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     className={inputWithIcon}
                     placeholder="seu@email.com"
@@ -550,7 +550,7 @@ function transformar() {
               <div>
                 <label className={labelBase}>Nova senha</label>
                 <div className="relative">
-                  <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     className={inputWithTrailing}
                     type={showNewPassword ? 'text' : 'password'}
@@ -566,7 +566,7 @@ function transformar() {
                     className="cursor-pointer absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                     aria-label={showNewPassword ? 'Ocultar senha' : 'Mostrar senha'}
                   >
-                    {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
@@ -574,7 +574,7 @@ function transformar() {
               <div>
                 <label className={labelBase}>Palavra secreta</label>
                 <div className="relative">
-                  <KeyRound size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <KeyRound size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     className={inputWithIcon}
                     placeholder="Pergunte a um diretor"
@@ -583,20 +583,20 @@ function transformar() {
                     required
                   />
                 </div>
-                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-[9px] text-slate-500 dark:text-slate-400">
                   A palavra secreta é fornecida pela direção da instituição.
                 </p>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-1">
                 <PrimaryButton>Redefinir senha</PrimaryButton>
               </div>
 
-              <div className="text-center pt-2">
+              <div className="text-center pt-1">
                 <button
                   type="button"
                   onClick={() => switchView('login')}
-                  className="cursor-pointer text-sm font-semibold text-primary hover:text-sky-600 dark:hover:text-sky-300 transition-colors"
+                  className="cursor-pointer text-xs font-semibold text-primary hover:text-sky-600 dark:hover:text-sky-300 transition-colors"
                 >
                   ← Voltar para o login
                 </button>
@@ -605,7 +605,7 @@ function transformar() {
           )}
 
           {/* Footer */}
-          <p className="mt-10 text-center text-xs text-slate-400 dark:text-slate-500">
+          <p className="mt-6 text-center text-[10px] text-slate-400 dark:text-slate-500">
             © {new Date().getFullYear()} ConnectaCI · Todos os direitos reservados
           </p>
         </div>

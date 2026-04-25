@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { Calendar, Clock, AlertCircle, MapPin, Video, Kanban, Plus, Users, UserCheck, UserPlus, Edit2, Trash2 } from 'lucide-react';
+import { Calendar, Clock, AlertCircle, MapPin, Video, Kanban, Plus, Users, UserCheck, UserPlus, Edit2, Trash2, CheckSquare, CalendarDays } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { Event } from '../services/event.service';
 import { Skeleton } from '../components/Skeleton';
 import NewEventModal from '../components/NewEventModal';
-import toast from 'react-hot-toast';
+import { PageHero, SectionHeader, SurfaceCard, EmptyState } from '../components/ui';
 import { useActivities } from '../hooks/useActivities';
 
 const ActivitiesScreen = () => {
@@ -25,97 +24,63 @@ const ActivitiesScreen = () => {
   const queryClient = useQueryClient();
   const loadEvents = () => queryClient.invalidateQueries({ queryKey: ['events'] });
 
-  // Estados para UI de Eventos
   const [expandedParticipants, setExpandedParticipants] = useState<string | null>(null);
-
   const toggleParticipantsList = (eventId: string) => {
-    setExpandedParticipants(prev => prev === eventId ? null : eventId);
+    setExpandedParticipants((prev) => (prev === eventId ? null : eventId));
   };
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; eventId: string | null; eventTitle: string }>({
     show: false,
     eventId: null,
-    eventTitle: ''
+    eventTitle: '',
   });
+  const openDeleteConfirm = (eventId: string, eventTitle: string) => setDeleteConfirm({ show: true, eventId, eventTitle });
+  const closeDeleteConfirm = () => setDeleteConfirm({ show: false, eventId: null, eventTitle: '' });
 
-  const openDeleteConfirm = (eventId: string, eventTitle: string) => {
-    setDeleteConfirm({ show: true, eventId, eventTitle });
-  };
-
-  const closeDeleteConfirm = () => {
-    setDeleteConfirm({ show: false, eventId: null, eventTitle: '' });
-  };
-
-  // Modal State
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
-
   const openNewEventModal = () => {
     setEditingEventId(null);
     setIsEventModalOpen(true);
   };
-
   const openEditModal = (id: string) => {
     setEditingEventId(id);
     setIsEventModalOpen(true);
   };
 
   const handleToggleParticipation = (eventId: string, isParticipating: boolean) => {
-    if (isParticipating) {
-      leaveMutation.mutate(eventId);
-    } else {
-      joinMutation.mutate(eventId);
-    }
+    if (isParticipating) leaveMutation.mutate(eventId);
+    else joinMutation.mutate(eventId);
   };
 
   const handleDeleteEvent = () => {
     if (!deleteConfirm.eventId) return;
-    deleteMutation.mutate(deleteConfirm.eventId, {
-      onSuccess: () => closeDeleteConfirm(),
-    });
+    deleteMutation.mutate(deleteConfirm.eventId, { onSuccess: () => closeDeleteConfirm() });
   };
-
 
   return (
     <>
-      {/* Modal de Confirmação de Exclusão */}
       {deleteConfirm.show && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-surface-dark rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-2xl bg-surface-light p-6 shadow-2xl dark:bg-surface-dark animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center">
-              {/* Icon */}
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center mb-4 shadow-lg shadow-red-500/30">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-rose-600 shadow-lg shadow-red-500/30">
                 <Trash2 className="text-white" size={28} />
               </div>
-
-              {/* Title */}
-              <h3 className="text-xl font-bold text-secondary dark:text-white mb-2">
-                Excluir Evento
-              </h3>
-
-              {/* Description */}
-              <p className="text-gray-600 dark:text-gray-300 mb-2">
-                Tem certeza que deseja excluir o evento:
-              </p>
-              <p className="font-bold text-secondary dark:text-white mb-6">
-                "{deleteConfirm.eventTitle}"
-              </p>
-
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                Esta ação não pode ser desfeita.
-              </p>
-
-              {/* Buttons */}
-              <div className="flex gap-3 w-full">
+              <h3 className="mb-2 text-xl font-bold text-secondary dark:text-white">Excluir Evento</h3>
+              <p className="mb-2 text-gray-600 dark:text-gray-300">Tem certeza que deseja excluir o evento:</p>
+              <p className="mb-6 font-bold text-secondary dark:text-white">"{deleteConfirm.eventTitle}"</p>
+              <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">Esta ação não pode ser desfeita.</p>
+              <div className="flex w-full gap-3">
                 <button
                   onClick={closeDeleteConfirm}
-                  className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                  className="flex-1 rounded-xl border border-gray-200 px-4 py-3 font-bold text-gray-700 transition-all hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleDeleteEvent}
-                  className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white font-bold shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-[1.02] transition-all"
+                  className="flex-1 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 px-4 py-3 font-bold text-white shadow-lg shadow-red-500/30 transition-all hover:scale-[1.02] hover:shadow-red-500/50"
                 >
                   Excluir
                 </button>
@@ -125,131 +90,156 @@ const ActivitiesScreen = () => {
         </div>
       )}
 
-      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-        <header className="mb-8">
-          <h1 className="text-3xl font-display font-extrabold text-secondary dark:text-white mb-2">
-            Atividades & Agenda
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Acompanhe seus prazos iminentes e os próximos eventos da comunidade Connecta.
-          </p>
-        </header>
+      <div className="mx-auto max-w-[1480px] space-y-8 p-4 sm:p-6 lg:p-8">
+        <PageHero
+          icon={CalendarDays}
+          tagLabel="Central de Atividades"
+          title="Atividades & Agenda"
+          description="Acompanhe seus prazos iminentes e os próximos eventos da comunidade Connecta."
+          actionButtons={
+            <button
+              onClick={openNewEventModal}
+              className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-sky-500"
+            >
+              <Plus size={16} /> Novo Evento
+            </button>
+          }
+        />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-          {/* Section: Deadlines (Integrated from DEV branch logic) */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-red-100 dark:bg-red-900/20 p-2 rounded-lg text-red-600 dark:text-red-400">
-                <AlertCircle size={20} />
-              </div>
-              <h2 className="text-xl font-bold text-secondary dark:text-white">Minhas Tarefas</h2>
-            </div>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+          <section className="space-y-6">
+            <SectionHeader
+              icon={
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                  <AlertCircle size={20} />
+                </div>
+              }
+              title="Minhas Tarefas"
+              description="Prazos que precisam da sua atenção."
+              titleClassName="text-xl"
+            />
 
             <div className="space-y-4">
               {loading ? (
                 Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="bg-white dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row gap-4 relative overflow-hidden">
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gray-200 dark:bg-gray-700"></div>
+                  <SurfaceCard key={i} padding="md" className="relative flex flex-col gap-4 overflow-hidden sm:flex-row">
+                    <div className="absolute bottom-0 left-0 top-0 w-1 bg-gray-200 dark:bg-gray-700" />
                     <div className="flex-1 space-y-2">
                       <Skeleton className="h-6 w-3/4" />
                       <Skeleton className="h-4 w-1/2" />
-                      <div className="flex gap-2 mt-2">
-                        <Skeleton className="h-4 w-20" />
-                        <Skeleton className="h-4 w-20" />
-                      </div>
                     </div>
                     <Skeleton className="h-10 w-28 rounded-xl" />
-                  </div>
+                  </SurfaceCard>
                 ))
               ) : deadlines.length === 0 ? (
-                <div className="text-center py-10 text-gray-400 bg-white dark:bg-surface-dark rounded-2xl border border-gray-100 dark:border-gray-800">
-                  <p>Nenhuma tarefa pendente encontrada.</p>
-                </div>
+                <EmptyState
+                  icon={CheckSquare}
+                  title="Sem tarefas pendentes"
+                  description="Você está em dia! Nenhuma tarefa aberta no momento."
+                  compact
+                />
               ) : deadlines.map((item: any) => (
-                <div key={item.id} className="bg-white dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-md transition-shadow relative overflow-hidden group">
-                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${item.priority === 'HIGH' ? 'bg-red-500' :
-                    item.priority === 'MEDIUM' ? 'bg-orange-500' : 'bg-green-500'
-                    }`}></div>
-
+                <SurfaceCard key={item.id} padding="md" className="group relative flex flex-col gap-4 overflow-hidden transition-shadow hover:shadow-md sm:flex-row sm:items-center">
+                  <div
+                    className={`absolute bottom-0 left-0 top-0 w-1 ${
+                      item.priority === 'HIGH'
+                        ? 'bg-red-500'
+                        : item.priority === 'MEDIUM'
+                        ? 'bg-orange-500'
+                        : 'bg-green-500'
+                    }`}
+                  />
                   <div className="flex-1">
-                    <h4 className="font-bold text-secondary dark:text-white mb-1">{item.title}</h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{item.project?.title || 'Projeto Desconhecido'}</p>
-
+                    <h4 className="mb-1 font-bold text-secondary dark:text-white">{item.title}</h4>
+                    <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">{item.project?.title || 'Projeto Desconhecido'}</p>
                     <div className="flex items-center gap-2 text-sm font-semibold">
                       <Clock size={14} className="text-gray-400" />
-                      <span className="text-gray-600 dark:text-gray-300">{item.dueDate ? new Date(item.dueDate).toLocaleDateString() : 'Sem data'}</span>
+                      <span className="text-gray-600 dark:text-gray-300">
+                        {item.dueDate ? new Date(item.dueDate).toLocaleDateString() : 'Sem data'}
+                      </span>
                     </div>
                   </div>
-
                   <button
                     onClick={() => navigate(`/project-details/${item.projectId}`)}
-                    className="px-4 py-2 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-primary hover:text-white text-gray-500 dark:text-gray-400 transition-all text-xs font-bold flex items-center justify-center gap-2 group/btn whitespace-nowrap"
+                    className="flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gray-50 px-4 py-2 text-xs font-bold text-gray-500 transition-all hover:bg-primary hover:text-white dark:bg-white/5 dark:text-gray-400"
                   >
                     <Kanban size={14} /> Ver Board
                   </button>
-                </div>
+                </SurfaceCard>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* Section: Agenda Connecta (Using Dynamic Events from HEAD) */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-primary/10 p-2 rounded-lg text-primary">
-                <Calendar size={20} />
-              </div>
-              <h2 className="text-xl font-bold text-secondary dark:text-white">Agenda Connecta</h2>
-            </div>
+          <section className="space-y-6">
+            <SectionHeader
+              icon={
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Calendar size={20} />
+                </div>
+              }
+              title="Agenda Connecta"
+              description="Próximos encontros, workshops e eventos da comunidade."
+              titleClassName="text-xl"
+            />
 
             <div className="space-y-4">
               {loadingEvents ? (
                 Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="bg-white dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex gap-4">
-                    <Skeleton className="w-14 h-14 rounded-xl flex-shrink-0" />
+                  <SurfaceCard key={i} padding="md" className="flex gap-4">
+                    <Skeleton className="h-14 w-14 flex-shrink-0 rounded-xl" />
                     <div className="flex-1 space-y-2">
                       <Skeleton className="h-4 w-20 rounded-full" />
                       <Skeleton className="h-6 w-3/4" />
                       <Skeleton className="h-4 w-full" />
                     </div>
-                  </div>
+                  </SurfaceCard>
                 ))
               ) : events.length === 0 ? (
-                <div className="text-center py-10 text-gray-400 bg-white dark:bg-surface-dark rounded-2xl border border-gray-100 dark:border-gray-800">
-                  <p>Nenhum evento agendado.</p>
-                  <p className="text-xs mt-2">Clique no botão abaixo para criar o primeiro evento!</p>
-                </div>
+                <EmptyState
+                  icon={Calendar}
+                  title="Nenhum evento agendado"
+                  description="Crie o primeiro evento e convide a comunidade!"
+                  action={
+                    <button
+                      onClick={openNewEventModal}
+                      className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-sky-500"
+                    >
+                      <Plus size={16} /> Criar Evento
+                    </button>
+                  }
+                />
               ) : (
                 events.map((event) => {
                   const eventDate = new Date(event.date);
                   const day = eventDate.getUTCDate();
                   const month = eventDate.toLocaleDateString('pt-BR', { month: 'short', timeZone: 'UTC' }).replace('.', '');
-                  const isParticipating = event.participants?.some(p => p.userId === user?.id) || false;
+                  const isParticipating = event.participants?.some((p) => p.userId === user?.id) || false;
                   const participantCount = event.participants?.length || 0;
 
                   return (
-                    <div key={event.id} className="bg-white dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 group hover:border-primary/30 transition-colors">
+                    <SurfaceCard key={event.id} padding="md" className="group transition-colors hover:border-primary/30">
                       <div className="flex gap-4">
-                        {/* Date Box */}
-                        <div className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 text-center flex-shrink-0">
-                          <span className="text-xs font-bold text-gray-400 uppercase">{month}</span>
+                        <div className="flex h-14 w-14 flex-shrink-0 flex-col items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-center dark:border-gray-700 dark:bg-background-dark">
+                          <span className="text-xs font-bold uppercase text-gray-400">{month}</span>
                           <span className="text-xl font-black text-secondary dark:text-white">{day}</span>
                         </div>
-
                         <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide mb-2 inline-block ${event.type === 'MEETING' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
-                              event.type === 'WORKSHOP' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
-                                'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                              }`}>
+                          <div className="flex items-start justify-between">
+                            <span
+                              className={`mb-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                event.type === 'MEETING'
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                  : event.type === 'WORKSHOP'
+                                  ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                                  : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                              }`}
+                            >
                               {event.type === 'MEETING' ? 'Reunião' : event.type === 'WORKSHOP' ? 'Workshop' : 'Evento'}
                             </span>
                           </div>
-
-                          <h4 className="font-bold text-secondary dark:text-white mb-1 group-hover:text-primary transition-colors">{event.title}</h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{event.description}</p>
-
-                          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mb-3">
+                          <h4 className="mb-1 font-bold text-secondary transition-colors group-hover:text-primary dark:text-white">{event.title}</h4>
+                          <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">{event.description}</p>
+                          <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                             <div className="flex items-center gap-1">
                               <Clock size={12} /> {event.time}
                             </div>
@@ -263,87 +253,69 @@ const ActivitiesScreen = () => {
                               <Users size={12} /> {participantCount} participante{participantCount !== 1 ? 's' : ''}
                             </div>
                           </div>
-
-                          {/* Botão de participação */}
                           <div className="flex flex-wrap gap-2">
                             <button
                               onClick={() => handleToggleParticipation(event.id, isParticipating)}
-                              className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${isParticipating
-                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 hover:bg-red-100 hover:text-red-700 dark:hover:bg-red-900/30 dark:hover:text-red-300'
-                                : 'bg-primary/10 text-primary hover:bg-primary hover:text-white'
-                                }`}
+                              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-bold transition-all ${
+                                isParticipating
+                                  ? 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-700 dark:bg-green-900/30 dark:text-green-300 dark:hover:bg-red-900/30 dark:hover:text-red-300'
+                                  : 'bg-primary/10 text-primary hover:bg-primary hover:text-white'
+                              }`}
                             >
-                              {isParticipating ? (
-                                <>
-                                  <UserCheck size={14} />
-                                  Participando
-                                </>
-                              ) : (
-                                <>
-                                  <UserPlus size={14} />
-                                  Participar
-                                </>
-                              )}
+                              {isParticipating ? (<><UserCheck size={14} />Participando</>) : (<><UserPlus size={14} />Participar</>)}
                             </button>
                           </div>
 
-
-                          {/* Botões de editar e deletar - apenas para criador */}
                           {event.createdById === user?.id && (
                             <>
-                              <div className="flex flex-wrap gap-2 mt-3 p-2 bg-gray-50 dark:bg-white/5 rounded-lg">
+                              <div className="mt-3 flex flex-wrap gap-2 rounded-lg bg-gray-50 p-2 dark:bg-white/5">
                                 <button
                                   onClick={() => openEditModal(event.id)}
-                                  className="px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-primary transition-all shadow-sm"
+                                  className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-bold text-gray-600 shadow-sm transition-all hover:text-primary dark:bg-gray-800 dark:text-gray-300"
                                 >
-                                  <Edit2 size={12} />
-                                  Editar
+                                  <Edit2 size={12} /> Editar
                                 </button>
                                 <button
                                   onClick={() => openDeleteConfirm(event.id, event.title)}
-                                  className="px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-red-600 transition-all shadow-sm"
+                                  className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-bold text-gray-600 shadow-sm transition-all hover:text-red-600 dark:bg-gray-800 dark:text-gray-300"
                                 >
-                                  <Trash2 size={12} />
-                                  Excluir
+                                  <Trash2 size={12} /> Excluir
                                 </button>
                                 <button
                                   onClick={() => toggleParticipantsList(event.id)}
-                                  className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm ${expandedParticipants === event.id
-                                    ? 'bg-primary text-white'
-                                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-primary'
-                                    }`}
+                                  className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold shadow-sm transition-all ${
+                                    expandedParticipants === event.id
+                                      ? 'bg-primary text-white'
+                                      : 'bg-white text-gray-600 hover:text-primary dark:bg-gray-800 dark:text-gray-300'
+                                  }`}
                                 >
-                                  <Users size={12} />
-                                  Participantes
+                                  <Users size={12} /> Participantes
                                 </button>
                               </div>
 
-                              {/* Lista de Participantes Expandível */}
                               {expandedParticipants === event.id && (
-                                <div className="mt-4 p-4 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 animate-in slide-in-from-top-2 duration-200">
-                                  <h5 className="text-sm font-bold text-secondary dark:text-white mb-3 flex items-center gap-2">
+                                <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-background-dark animate-in slide-in-from-top-2 duration-200">
+                                  <h5 className="mb-3 flex items-center gap-2 text-sm font-bold text-secondary dark:text-white">
                                     <Users size={14} className="text-primary" />
                                     Participantes ({participantCount})
                                   </h5>
                                   {participantCount === 0 ? (
-                                    <p className="text-sm text-gray-400 italic">Nenhum participante ainda.</p>
+                                    <p className="text-sm italic text-gray-400">Nenhum participante ainda.</p>
                                   ) : (
-                                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                                    <div className="max-h-48 space-y-2 overflow-y-auto">
                                       {event.participants?.map((participant) => (
                                         <div
                                           key={participant.id}
-                                          className="flex items-center gap-3 p-2 rounded-lg bg-white dark:bg-surface-dark border border-gray-100 dark:border-gray-800"
+                                          className="flex items-center gap-3 rounded-lg border border-gray-100 bg-surface-light p-2 dark:border-gray-800 dark:bg-surface-dark"
                                         >
-                                          {/* Avatar */}
                                           <div
-                                            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                                            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
                                             style={{ backgroundColor: participant.user.avatarColor || '#6366f1' }}
                                           >
                                             {participant.user.name?.charAt(0).toUpperCase() || '?'}
                                           </div>
-                                          {/* Info */}
-                                          <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-secondary dark:text-white truncate">
+                                          <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-semibold text-secondary dark:text-white">
                                               {participant.user.name}
                                             </p>
                                             <p className="text-xs text-gray-400">
@@ -360,27 +332,15 @@ const ActivitiesScreen = () => {
                           )}
                         </div>
                       </div>
-                    </div>
+                    </SurfaceCard>
                   );
                 })
               )}
             </div>
-
-            {/* Botão para criar novo evento */}
-            <button
-              onClick={openNewEventModal}
-              className="w-full mt-4 px-4 py-3 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:bg-sky-500 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
-              style={{ marginBottom: 'calc(env(safe-area-inset-bottom, 20px) + 32px)' }}
-            >
-              <Plus size={18} />
-              Criar Novo Evento
-            </button>
-          </div>
-
+          </section>
         </div>
       </div>
 
-      {/* New Event Modal */}
       <NewEventModal
         isOpen={isEventModalOpen}
         onClose={() => setIsEventModalOpen(false)}

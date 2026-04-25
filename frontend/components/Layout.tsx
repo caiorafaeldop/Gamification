@@ -166,7 +166,9 @@ const Layout = () => {
                 <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1 custom-scrollbar">
                     <p className="px-3 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Menu</p>
                     <SidebarItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-                    <SidebarItem to="/projects" icon={FolderOpen} label="Projetos" />
+                    <SidebarItem to="/explore" icon={Rocket} label="Explorar Projetos" />
+                    <SidebarItem to="/groups" icon={Network} label="Grupos " />
+                    <SidebarItem to="/projects" icon={FolderOpen} label="Meus Projetos" />
                     <SidebarItem to="/ranking" icon={Trophy} label="Ranking" />
                     <SidebarItem to="/achievements" icon={Medal} label="Conquistas" />
                     <SidebarItem to="/activities" icon={Calendar} label="Atividades" />

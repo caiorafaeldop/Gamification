@@ -278,6 +278,44 @@ export const leaveProject = async (projectId: string, userId: string) => {
 
 
 
+export const registerInterestInProject = async (projectId: string, userId: string) => {
+  const project = await findProjectById(projectId);
+  if (!project) {
+    throw { statusCode: 404, message: 'Project not found.' };
+  }
+  if (!project.isJoiningOpen) {
+    throw { statusCode: 403, message: 'Este projeto não está aceitando interessados no momento.' };
+  }
+  if (project.visibility !== 'PUBLIC') {
+    throw { statusCode: 403, message: 'Este projeto não está disponível no marketplace.' };
+  }
+
+  const alreadyMember = await isUserProjectMember(projectId, userId);
+  if (alreadyMember) {
+    throw { statusCode: 409, message: 'Você já participa deste projeto.' };
+  }
+
+  const interested = await findUserById(userId);
+  if (!interested) {
+    throw { statusCode: 404, message: 'Usuário não encontrado.' };
+  }
+
+  if (project.leaderId === userId) {
+    throw { statusCode: 409, message: 'Você é o líder deste projeto.' };
+  }
+
+  await prisma.notification.create({
+    data: {
+      userId: project.leaderId,
+      title: 'Novo interessado no seu projeto',
+      message: `${interested.name} demonstrou interesse em entrar no projeto "${project.title}". Abra o perfil dele para adicioná-lo.`,
+      type: 'PROJECT_INTEREST',
+    },
+  });
+
+  return { message: 'Seu interesse foi enviado ao líder do projeto.' };
+};
+
 export const transferProjectOwnership = async (projectId: string, newLeaderId: string, requestingUserId: string) => {
   const project = await findProjectById(projectId);
   if (!project) {
