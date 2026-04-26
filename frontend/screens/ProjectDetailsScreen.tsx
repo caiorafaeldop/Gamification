@@ -16,9 +16,11 @@ import { Camera, Loader, Edit } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../components/ConfirmationModal';
 import MembersListModal from '../components/MembersListModal';
+import ProjectRequestsModal from '../components/ProjectRequestsModal';
 import { COLUMN_COLORS } from '../constants';
 import { ProjectStatus, statusLabels, statusStyles } from '../types';
 import ProjectDetailsScreenMobile from './ProjectDetailsScreenMobile';
+import api from '@/services/api';
 
 const ProjectDetailsScreen = () => {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
@@ -210,6 +212,22 @@ const ProjectDetailsScreen = () => {
     // Project Deletion State
     const [isDeleteProjectModalOpen, setIsDeleteProjectModalOpen] = useState(false);
     const [isDeletingProject, setIsDeletingProject] = useState(false);
+    const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false);
+    const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+
+    const fetchRequestsCount = async () => {
+        if (!id || !isLeaderOrAdmin) return;
+        try {
+            const response = await api.get(`/projects/${id}/join-requests`);
+            setPendingRequestsCount(response.data.length);
+        } catch (err) {
+            console.error("Failed to fetch requests count", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchRequestsCount();
+    }, [id, isLeaderOrAdmin]);
 
     useEffect(() => {
         if (id) fetchKanban();
@@ -744,6 +762,28 @@ const ProjectDetailsScreen = () => {
     return (
         <div className="flex-1 flex flex-col relative h-full">
             <div className="absolute inset-0 z-0 bg-network-pattern opacity-30 pointer-events-none"></div>
+
+            {/* Pending Requests Banner */}
+            {isLeaderOrAdmin && pendingRequestsCount > 0 && (
+                <div className="bg-primary/10 border-b border-primary/20 px-4 py-2 flex items-center justify-between animate-in slide-in-from-top duration-500 relative z-20">
+                    <div className="flex items-center gap-2 text-primary">
+                        <div className="bg-primary text-white p-1 rounded-lg">
+                            <span className="material-icons text-sm">group_add</span>
+                        </div>
+                        <span className="text-sm font-bold">
+                            {pendingRequestsCount === 1 
+                                ? "Existe 1 pessoa querendo entrar no projeto!" 
+                                : `Existem ${pendingRequestsCount} pessoas querendo entrar no projeto!`}
+                        </span>
+                    </div>
+                    <button 
+                        onClick={() => setIsRequestsModalOpen(true)}
+                        className="bg-primary text-white px-4 py-1.5 rounded-xl text-xs font-bold hover:bg-sky-500 transition-all shadow-lg shadow-primary/20"
+                    >
+                        Ver Solicitações
+                    </button>
+                </div>
+            )}
 
             {/* Header Section */}
             <div
@@ -1625,6 +1665,15 @@ const ProjectDetailsScreen = () => {
                 message={`Tem certeza que deseja excluir permanentemente o projeto "${project.title}"? Esta ação não pode ser desfeita e todos os dados relacionados (tarefas, comentários, etc.) serão perdidos.`}
                 confirmText={isDeletingProject ? "Excluindo..." : "Excluir Permanentemente"}
                 type="danger"
+            />
+
+            <ProjectRequestsModal 
+                isOpen={isRequestsModalOpen}
+                onClose={() => {
+                    setIsRequestsModalOpen(false);
+                    fetchRequestsCount();
+                }}
+                projectId={id!}
             />
         </div>
     );

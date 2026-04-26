@@ -4,6 +4,7 @@ import { useProjectKanban } from '../hooks/useProjectKanban';
 import { Skeleton } from '../components/Skeleton';
 import MobileNewTaskModal from '../components/MobileNewTaskModal';
 import TaskDetailModal from '../components/TaskDetailModal';
+import ProjectRequestsModal from '../components/ProjectRequestsModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { ProjectMembersCarousel } from '../components/ProjectMembersCarousel';
 import { COLUMN_COLORS } from '../constants';
@@ -21,7 +22,8 @@ const ProjectDetailsScreenMobile = () => {
         refetchKanban,
         handleAddColumn,
         handleMoveTask, handleToggleCompletion,
-        handleDeleteTask, confirmDeleteTask, taskToDelete, setTaskToDelete
+        handleDeleteTask, confirmDeleteTask, taskToDelete, setTaskToDelete,
+        isRequestsModalOpen, setIsRequestsModalOpen, pendingRequestsCount, fetchRequestsCount
     } = useProjectKanban(id!);
 
     const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
@@ -100,6 +102,24 @@ const isProjectMember = user && project?.members?.some((m: any) => m.user?.id ==
 
     return (
         <div className="flex flex-col h-[100dvh] bg-surface-light dark:bg-background-dark overflow-hidden">
+            {/* Pending Requests Banner */}
+            {pendingRequestsCount > 0 && (
+                <div className="bg-primary/10 border-b border-primary/20 px-4 py-2 flex items-center justify-between animate-in slide-in-from-top duration-500 relative z-20">
+                    <div className="flex items-center gap-2 text-primary">
+                        <span className="material-icons text-sm">group_add</span>
+                        <span className="text-[11px] font-bold">
+                            {pendingRequestsCount} {pendingRequestsCount === 1 ? 'solicitação pendente' : 'solicitações pendentes'}
+                        </span>
+                    </div>
+                    <button 
+                        onClick={() => setIsRequestsModalOpen(true)}
+                        className="bg-primary text-white px-3 py-1 rounded-lg text-[10px] font-bold transition-all active:scale-95"
+                    >
+                        Ver
+                    </button>
+                </div>
+            )}
+            
             {/* Mobile Header */}
             <header className="bg-white dark:bg-surface-dark border-b border-gray-100 dark:border-gray-800 p-4 flex items-center justify-between shrink-0 z-20">
                 <div className="flex items-center gap-3 overflow-hidden">
@@ -343,6 +363,15 @@ const isProjectMember = user && project?.members?.some((m: any) => m.user?.id ==
                 task={selectedTask}
                 projectMembers={project?.members}
                 columns={columns}
+            />
+
+            <ProjectRequestsModal 
+                isOpen={isRequestsModalOpen}
+                onClose={() => {
+                    setIsRequestsModalOpen(false);
+                    fetchRequestsCount();
+                }}
+                projectId={id!}
             />
 
             {/* Project Management Menu */}

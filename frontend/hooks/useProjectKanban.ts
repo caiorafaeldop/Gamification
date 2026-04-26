@@ -5,6 +5,7 @@ import {
     getProjectKanban, updateTaskStatus, createColumn, updateColumn, 
     deleteColumn, reorderColumns, createQuickTask, deleteTask, toggleTaskCompletion
 } from '../services/task.service';
+import api from '../services/api';
 import { getProfile } from '../services/user.service';
 import { uploadProjectCover, updateProject, transferProjectOwnership } from '../services/project.service';
 import { useProjectDetails } from '../hooks/useProjects';
@@ -52,10 +53,32 @@ export const useProjectKanban = (id: string) => {
     const [columnToDelete, setColumnToDelete] = useState<string | null>(null);
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
     const [initialColumnId, setInitialColumnId] = useState<string | undefined>(undefined);
+    const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false);
+    const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 
     // Refs
     const kanbanRef = useRef<HTMLDivElement>(null);
     const togglingTaskIds = useRef<Set<string>>(new Set());
+
+    const isLeaderOrAdmin = user && (
+        project?.leaderId === user.id ||
+        project?.leader?.id === user.id ||
+        user.role === 'ADMIN'
+    );
+
+    const fetchRequestsCount = async () => {
+        if (!id || !isLeaderOrAdmin) return;
+        try {
+            const response = await api.get(`/projects/${id}/join-requests`);
+            setPendingRequestsCount(response.data.length);
+        } catch (err) {
+            console.error("Failed to fetch requests count", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchRequestsCount();
+    }, [id, isLeaderOrAdmin]);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -375,6 +398,7 @@ export const useProjectKanban = (id: string) => {
         initialColumnId, setInitialColumnId,
         selectedTask, setSelectedTask, isTaskDetailsOpen, setIsTaskDetailsOpen,
         refetchKanban: fetchKanban, kanbanRef, handleMoveTask, handleToggleCompletion,
-        allColumns: columns // Export raw columns without filter for the move menu
+        allColumns: columns, // Export raw columns without filter for the move menu
+        isRequestsModalOpen, setIsRequestsModalOpen, pendingRequestsCount, fetchRequestsCount
     };
 };
