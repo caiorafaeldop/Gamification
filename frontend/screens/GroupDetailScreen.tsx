@@ -117,7 +117,7 @@ const GroupDetailScreen = () => {
               <>
                 {isAdmin && (
                   <button
-                    onClick={() => navigate(`/groups/${group.id}/settings`)}
+                    onClick={() => navigate(`/groups/${group.id}/edit`)}
                     className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-surface-dark dark:text-gray-200 dark:hover:bg-gray-800"
                   >
                     <Settings size={14} /> Editar

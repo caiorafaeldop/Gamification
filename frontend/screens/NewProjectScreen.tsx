@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Upload, Type, Hash, Users, Award, ArrowLeft, Rocket, LayoutGrid, Crown, Target, Loader, Check, Eye } from 'lucide-react';
+import {
+  Upload, Type, Hash, Users, Award, ArrowLeft, Rocket, LayoutGrid, Crown,
+  Target, Loader, Check, Eye, Sparkles
+} from 'lucide-react';
 import { createProject, uploadProjectCover, getProjectDetails, updateProject } from '../services/project.service';
 import toast from 'react-hot-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select';
+import { PageHero, SurfaceCard, SectionHeader } from '../components/ui';
 
 const NewProjectScreen = () => {
   const navigate = useNavigate();
@@ -11,7 +15,6 @@ const NewProjectScreen = () => {
   const isEditing = Boolean(id);
 
   const [formData, setFormData] = useState({
-
     name: '',
     description: '',
     category: 'Desenvolvimento',
@@ -26,7 +29,6 @@ const NewProjectScreen = () => {
   const [uploading, setUploading] = useState(false);
   const [loadingProject, setLoadingProject] = useState(false);
 
-  // Carregar dados do projeto se estiver editando
   useEffect(() => {
     const fetchProject = async () => {
       if (!id) return;
@@ -61,7 +63,6 @@ const NewProjectScreen = () => {
     setLoading(true);
     try {
       if (isEditing && id) {
-        // Atualizar projeto existente
         await updateProject(id, {
           title: formData.name,
           description: formData.description,
@@ -72,7 +73,6 @@ const NewProjectScreen = () => {
         toast.success('Projeto atualizado com sucesso! ✓');
         navigate(`/project-details/${id}`);
       } else {
-        // Criar novo projeto
         await createProject({
           title: formData.name,
           description: formData.description,
@@ -95,7 +95,7 @@ const NewProjectScreen = () => {
   };
 
   const handleChange = (e: any) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value }); // Note: name attribute needed on inputs
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,197 +116,199 @@ const NewProjectScreen = () => {
 
   if (loadingProject) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex flex-1 items-center justify-center p-10">
         <Loader className="animate-spin text-primary" size={40} />
       </div>
     );
   }
 
+  const submitForm = () => {
+    const form = document.querySelector('form');
+    if (form) form.requestSubmit();
+  };
+
   return (
-    <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-primary mb-6 transition-colors text-sm font-bold"
-      >
-        <ArrowLeft size={16} /> Voltar
-      </button>
-
-      <header className="mb-8">
-        <h1 className="text-3xl font-display font-extrabold text-secondary dark:text-white mb-2">
-          {isEditing ? 'Editar Projeto' : 'Criar Novo Projeto'}
-        </h1>
-        <p className="text-gray-600 dark:text-gray-300">
-          {isEditing
-            ? 'Atualize as informações do seu projeto.'
-            : 'Inicie uma nova jornada acadêmica. Defina objetivos claros e recrute sua equipe.'}
-        </p>
-      </header>
-
-      <form className="grid grid-cols-1 lg:grid-cols-3 gap-8" onSubmit={handleSubmit}>
-
-        {/* Main Form Column */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100 dark:border-gray-800 space-y-6">
-
-            <h3 className="text-lg font-bold text-secondary dark:text-white border-b border-gray-100 dark:border-gray-700 pb-4 mb-6">
-              Informações Básicas
-            </h3>
-
-            {/* Leader Info (Visual only) */}
-            <div className="bg-primary/5 dark:bg-primary/10 p-4 rounded-xl flex items-center gap-4 border border-primary/10">
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
-                <Crown size={20} />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-primary uppercase tracking-wide">Líder do Projeto</p>
-                <p className="text-sm font-bold text-secondary dark:text-white">Você</p>
-              </div>
-            </div>
-
-            {/* Project Name */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                <Type size={16} className="text-primary" /> Nome do Projeto
-              </label>
-              <input
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                type="text"
-                required
-                className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400 font-medium"
-                placeholder="Ex: App de Realidade Aumentada para Biologia"
-              />
-            </div>
-
-            {/* Description & Objectives */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                <Target size={16} className="text-primary" /> Objetivos do Projeto
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                required
-                rows={5}
-                className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400 resize-none"
-                placeholder="Descreva os objetivos principais..."
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Category */}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <LayoutGrid size={16} className="text-primary" /> Categoria
-                </label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(val) => setFormData({ ...formData, category: val })}
-                >
-                  <SelectTrigger className="w-full h-12 bg-gray-50 dark:bg-background-dark border-gray-200 dark:border-gray-700">
-                    <SelectValue placeholder="Selecione a categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Desenvolvimento">Desenvolvimento</SelectItem>
-                    <SelectItem value="Design & UX">Design & UX</SelectItem>
-                    <SelectItem value="Pesquisa Acadêmica">Pesquisa Acadêmica</SelectItem>
-                    <SelectItem value="Data Science">Data Science</SelectItem>
-                    <SelectItem value="Marketing">Marketing</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Type */}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <Target size={16} className="text-primary" /> Tipo
-                </label>
-                <Select
-                  value={formData.type}
-                  onValueChange={(val) => setFormData({ ...formData, type: val })}
-                >
-                  <SelectTrigger className="w-full h-12 bg-gray-50 dark:bg-background-dark border-gray-200 dark:border-gray-700">
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Interno">Interno</SelectItem>
-                    <SelectItem value="Extensão">Extensão</SelectItem>
-                    <SelectItem value="Pesquisa">Pesquisa</SelectItem>
-                    <SelectItem value="Empresa">Empresa</SelectItem>
-                    <SelectItem value="Outro">Outro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Tags */}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <Hash size={16} className="text-primary" /> Tags
-                </label>
-                <input
-                  name="tags"
-                  value={formData.tags}
-                  onChange={handleChange}
-                  type="text"
-                  className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
-                  placeholder="react, python, ia..."
-                />
-              </div>
-            </div>
-
-              {/* Visibility */}
-              <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <Eye size={16} className="text-primary" /> Visibilidade
-                </label>
-                <Select
-                  value={formData.visibility}
-                  onValueChange={(val) => setFormData({ ...formData, visibility: val as any })}
-                >
-                  <SelectTrigger className="w-full h-12 bg-gray-50 dark:bg-background-dark border-gray-200 dark:border-gray-700">
-                    <SelectValue placeholder="Selecione a visibilidade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PRIVATE">Privado (só meu grupo)</SelectItem>
-                    <SelectItem value="PUBLIC_VIEW">Público — apenas leitura</SelectItem>
-                    <SelectItem value="PUBLIC_LIKE">Público — aceita curtidas</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-gray-400 mt-1">Define quem pode ver e interagir com seu projeto.</p>
-              </div>
-            </div>
-
-          <div className="flex items-center justify-end gap-4 pt-2">
+    <div className="mx-auto max-w-[1480px] space-y-8 p-4 sm:p-6 lg:p-8">
+      <PageHero
+        icon={Rocket}
+        tagLabel={
+          <button
+            onClick={() => navigate(-1)}
+            className="group inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary transition-all hover:bg-primary/20"
+          >
+            <ArrowLeft size={12} className="transition-transform group-hover:-translate-x-1" />
+            Voltar
+          </button>
+        }
+        title={isEditing ? 'Editar Projeto' : 'Criar Novo Projeto'}
+        description={
+          isEditing
+            ? 'Atualize as informações do seu projeto e mantenha sua equipe alinhada.'
+            : 'Inicie uma nova jornada acadêmica. Defina objetivos claros e recrute sua equipe.'
+        }
+        actionButtons={
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="px-6 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+              className="rounded-xl border border-slate-200 bg-white/50 px-4 py-2.5 text-sm font-bold text-slate-600 transition-all hover:bg-slate-100 dark:border-slate-700 dark:bg-surface-dark dark:text-slate-400 dark:hover:bg-white/5"
               disabled={loading}
             >
               Cancelar
             </button>
             <button
-              type="submit"
+              onClick={submitForm}
               disabled={loading}
-              className="px-8 py-3 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:bg-blue-600 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-blue-600 disabled:opacity-50"
             >
-              {loading ? <Loader className="animate-spin" size={20} /> : (isEditing ? <Check size={20} /> : <Rocket size={20} />)}
+              {loading ? <Loader className="animate-spin" size={18} /> : (isEditing ? <Check size={18} /> : <Rocket size={18} />)}
               {isEditing ? 'Salvar Alterações' : 'Lançar Projeto'}
             </button>
           </div>
+        }
+      />
+
+      <form className="grid grid-cols-1 gap-8 lg:grid-cols-3" onSubmit={handleSubmit}>
+        <div className="space-y-6 lg:col-span-2">
+          <SurfaceCard padding="lg">
+            <SectionHeader
+              icon={<Sparkles size={22} />}
+              title="Informações Básicas"
+              description="Conte o que o projeto faz e como ele aparece para outras pessoas."
+            />
+
+            <div className="mt-5 space-y-5">
+              <div className="flex items-center gap-4 rounded-xl border border-primary/10 bg-primary/5 p-4 dark:bg-primary/10">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white">
+                  <Crown size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Líder do Projeto</p>
+                  <p className="text-sm font-bold text-secondary dark:text-white">Você</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                  <Type size={16} className="text-primary" /> Nome do Projeto
+                </label>
+                <input
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  type="text"
+                  required
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
+                  placeholder="Ex: App de Realidade Aumentada para Biologia"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                  <Target size={16} className="text-primary" /> Objetivos do Projeto
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  required
+                  rows={5}
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
+                  placeholder="Descreva os objetivos principais..."
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                    <LayoutGrid size={16} className="text-primary" /> Categoria
+                  </label>
+                  <Select
+                    value={formData.category}
+                    onValueChange={(val) => setFormData({ ...formData, category: val })}
+                  >
+                    <SelectTrigger className="h-12 w-full border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-background-dark">
+                      <SelectValue placeholder="Selecione a categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Desenvolvimento">Desenvolvimento</SelectItem>
+                      <SelectItem value="Design & UX">Design & UX</SelectItem>
+                      <SelectItem value="Pesquisa Acadêmica">Pesquisa Acadêmica</SelectItem>
+                      <SelectItem value="Data Science">Data Science</SelectItem>
+                      <SelectItem value="Marketing">Marketing</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                    <Target size={16} className="text-primary" /> Tipo
+                  </label>
+                  <Select
+                    value={formData.type}
+                    onValueChange={(val) => setFormData({ ...formData, type: val })}
+                  >
+                    <SelectTrigger className="h-12 w-full border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-background-dark">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Interno">Interno</SelectItem>
+                      <SelectItem value="Extensão">Extensão</SelectItem>
+                      <SelectItem value="Pesquisa">Pesquisa</SelectItem>
+                      <SelectItem value="Empresa">Empresa</SelectItem>
+                      <SelectItem value="Outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                    <Hash size={16} className="text-primary" /> Tags
+                  </label>
+                  <input
+                    name="tags"
+                    value={formData.tags}
+                    onChange={handleChange}
+                    type="text"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
+                    placeholder="react, python, ia..."
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                    <Eye size={16} className="text-primary" /> Visibilidade
+                  </label>
+                  <Select
+                    value={formData.visibility}
+                    onValueChange={(val) => setFormData({ ...formData, visibility: val as any })}
+                  >
+                    <SelectTrigger className="h-12 w-full border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-background-dark">
+                      <SelectValue placeholder="Selecione a visibilidade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PRIVATE">Privado (só meu grupo)</SelectItem>
+                      <SelectItem value="PUBLIC_VIEW">Público — apenas leitura</SelectItem>
+                      <SelectItem value="PUBLIC_LIKE">Público — aceita curtidas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-xs text-gray-400">Define quem pode ver e interagir com seu projeto.</p>
+                </div>
+              </div>
+            </div>
+          </SurfaceCard>
         </div>
 
-        {/* Settings Column */}
-        <div className="space-y-6">
-          {/* Gamification Settings */}
-          <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 mb-4">Gamificação</h3>
-
-            <div className="space-y-4">
+        <aside className="space-y-6 lg:sticky lg:top-20 lg:h-max">
+          <SurfaceCard padding="lg">
+            <SectionHeader
+              icon={<Award size={20} />}
+              title="Gamificação"
+              description="Defina recompensas e capacidade da equipe."
+            />
+            <div className="mt-5 space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                   <Award size={16} className="text-yellow-500" /> Recompensa de Conclusão (🪙)
                 </label>
                 <input
@@ -314,14 +316,14 @@ const NewProjectScreen = () => {
                   value={formData.rewardPoints}
                   onChange={handleChange}
                   type="number"
-                  className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary text-secondary dark:text-white font-bold"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 font-bold text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
                   placeholder="1000"
                 />
-                <p className="text-xs text-gray-400 mt-1">Connecta Points (🪙) distribuídos à equipe ao finalizar o projeto.</p>
+                <p className="mt-1 text-xs text-gray-400">Connecta Points (🪙) distribuídos à equipe ao finalizar.</p>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                   <Users size={16} className="text-sky-500" /> Vagas na Equipe
                 </label>
                 <input
@@ -329,40 +331,41 @@ const NewProjectScreen = () => {
                   value={formData.maxMembers}
                   onChange={handleChange}
                   type="number"
-                  className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary text-secondary dark:text-white font-bold"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 font-bold text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
                   placeholder="5"
                 />
               </div>
             </div>
-          </div>
+          </SurfaceCard>
 
-          {/* Cover Image Upload */}
-          <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 mb-4">Capa do Projeto</h3>
-
-            <label className={`border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group relative overflow-hidden ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+          <SurfaceCard padding="lg">
+            <SectionHeader
+              icon={<Upload size={20} />}
+              title="Capa do Projeto"
+              description="A imagem que aparece no card e na landing."
+            />
+            <label className={`mt-5 flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-slate-300 p-8 text-center transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-white/5 ${uploading ? 'pointer-events-none opacity-50' : ''} group relative`}>
               <input type="file" className="hidden" accept="image/*" onChange={handleUpload} />
 
               {formData.coverUrl ? (
-                <div className="absolute inset-0 w-full h-full">
-                  <img src={formData.coverUrl} alt="Project Cover" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-white font-bold">Alterar Imagem</p>
+                <div className="absolute inset-0 h-full w-full">
+                  <img src={formData.coverUrl} alt="Project Cover" className="h-full w-full object-cover" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                    <p className="font-bold text-white">Alterar Imagem</p>
                   </div>
                 </div>
               ) : (
                 <>
-                  <div className="w-12 h-12 rounded-full bg-sky-50 dark:bg-sky-900/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-sky-50 transition-transform group-hover:scale-110 dark:bg-sky-900/20">
                     {uploading ? <Loader size={20} className="animate-spin text-primary" /> : <Upload size={20} className="text-primary" />}
                   </div>
-                  <p className="text-sm font-bold text-gray-700 dark:text-gray-300">{uploading ? 'Enviando...' : 'Clique para upload'}</p>
-                  <p className="text-xs text-gray-400 mt-1">PNG, JPG até 5MB</p>
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{uploading ? 'Enviando...' : 'Clique para upload'}</p>
+                  <p className="mt-1 text-xs text-gray-400">PNG, JPG até 5MB</p>
                 </>
               )}
             </label>
-          </div>
-        </div>
-
+          </SurfaceCard>
+        </aside>
       </form>
     </div>
   );

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Calendar, Clock, MapPin, Type, AlignLeft, ArrowLeft, Rocket, Tag } from 'lucide-react';
+import {
+    Calendar, Clock, MapPin, Type, AlignLeft, ArrowLeft, Rocket, Tag, Loader, Check, Sparkles,
+} from 'lucide-react';
 import { createEvent, updateEvent, getEventById } from '../services/event.service';
 import toast from 'react-hot-toast';
+import { PageHero, SurfaceCard, SectionHeader } from '../components/ui';
 
 const EVENT_TYPES = [
     { id: 'MEETING', label: 'Reunião', color: 'blue' },
@@ -93,42 +96,78 @@ const NewEventScreen = () => {
 
     const getTypeColor = (typeId: string) => {
         switch (typeId) {
-            case 'meeting': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800';
-            case 'workshop': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800';
-            case 'event': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
+            case 'MEETING': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+            case 'WORKSHOP': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800';
+            case 'EVENT': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
             default: return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300';
         }
     };
 
+    if (loading) {
+        return (
+            <div className="flex flex-1 items-center justify-center p-10">
+                <Loader className="animate-spin text-primary" size={40} />
+            </div>
+        );
+    }
+
     return (
-        <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
-            <button
-                onClick={() => navigate(-1)}
-                className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-primary mb-6 transition-colors text-sm font-bold"
-            >
-                <ArrowLeft size={16} /> Voltar
-            </button>
+        <div className="mx-auto max-w-[1480px] space-y-8 p-4 sm:p-6 lg:p-8">
+            <PageHero
+                icon={Calendar}
+                tagLabel={
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="group inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary transition-all hover:bg-primary/20"
+                    >
+                        <ArrowLeft size={12} className="transition-transform group-hover:-translate-x-1" />
+                        Voltar
+                    </button>
+                }
+                title={isEditing ? 'Editar Evento' : 'Criar Novo Evento'}
+                description={
+                    isEditing
+                        ? 'Atualize as informações do evento.'
+                        : 'Organize reuniões, workshops e eventos para a comunidade Connecta.'
+                }
+                actionButtons={
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => navigate(-1)}
+                            className="rounded-xl border border-slate-200 bg-white/50 px-4 py-2.5 text-sm font-bold text-slate-600 transition-all hover:bg-slate-100 dark:border-slate-700 dark:bg-surface-dark dark:text-slate-400 dark:hover:bg-white/5"
+                            disabled={submitting}
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                const form = document.querySelector('form');
+                                if (form) form.requestSubmit();
+                            }}
+                            disabled={submitting}
+                            className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-sky-500 disabled:opacity-50"
+                        >
+                            {submitting ? <Loader className="animate-spin" size={18} /> : (isEditing ? <Check size={18} /> : <Rocket size={18} />)}
+                            {isEditing ? 'Salvar Alterações' : 'Criar Evento'}
+                        </button>
+                    </div>
+                }
+            />
 
-            <div className="flex flex-col md:flex-row gap-8">
-                <div className="flex-1">
-                    <header className="mb-8">
-                        <h1 className="text-3xl font-display font-extrabold text-secondary dark:text-white mb-2">
-                            {isEditing ? 'Editar Evento' : 'Criar Novo Evento'}
-                        </h1>
-                        <p className="text-gray-600 dark:text-gray-300">
-                            {isEditing
-                                ? 'Atualize as informações do evento.'
-                                : 'Organize reuniões, workshops e eventos para a comunidade Connecta.'
-                            }
-                        </p>
-                    </header>
+            <form className="grid grid-cols-1 gap-8 lg:grid-cols-3" onSubmit={handleSubmit}>
+                <div className="space-y-6 lg:col-span-2">
+                    <SurfaceCard padding="lg">
+                        <SectionHeader
+                            icon={<Sparkles size={22} />}
+                            title="Detalhes do Evento"
+                            description="Informações que aparecem na Agenda Connecta."
+                        />
 
-                    <form className="space-y-6" onSubmit={handleSubmit}>
-                        <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 space-y-6">
-
-                            {/* Title Input */}
+                        <div className="mt-5 space-y-5">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                                     <Type size={16} className="text-primary" /> Título do Evento *
                                 </label>
                                 <input
@@ -137,14 +176,13 @@ const NewEventScreen = () => {
                                     value={formData.title}
                                     onChange={handleChange}
                                     required
-                                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
+                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
                                     placeholder="Ex: Reunião Geral de Alinhamento"
                                 />
                             </div>
 
-                            {/* Event Type */}
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                                <label className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                                     <Tag size={16} className="text-primary" /> Tipo de Evento *
                                 </label>
                                 <div className="grid grid-cols-3 gap-3">
@@ -153,15 +191,15 @@ const NewEventScreen = () => {
                                             key={type.id}
                                             type="button"
                                             onClick={() => setFormData({ ...formData, type: type.id })}
-                                            className={`relative py-3 px-4 rounded-xl border-2 transition-all text-center font-bold text-sm ${formData.type === type.id
+                                            className={`relative rounded-xl border-2 px-4 py-3 text-center text-sm font-bold transition-all ${formData.type === type.id
                                                 ? `${getTypeColor(type.id)} border-current shadow-md`
-                                                : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-background-dark text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5'
+                                                : 'border-slate-200 bg-slate-50 text-gray-500 hover:bg-slate-100 dark:border-slate-700 dark:bg-background-dark dark:hover:bg-white/5'
                                                 }`}
                                         >
                                             {type.label}
                                             {formData.type === type.id && (
-                                                <div className="absolute top-2 right-2">
-                                                    <div className="w-2 h-2 rounded-full bg-current"></div>
+                                                <div className="absolute right-2 top-2">
+                                                    <div className="h-2 w-2 rounded-full bg-current"></div>
                                                 </div>
                                             )}
                                         </button>
@@ -169,10 +207,9 @@ const NewEventScreen = () => {
                                 </div>
                             </div>
 
-                            {/* Date and Time */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                    <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                                         <Calendar size={16} className="text-primary" /> Data *
                                     </label>
                                     <input
@@ -181,12 +218,12 @@ const NewEventScreen = () => {
                                         value={formData.date}
                                         onChange={handleChange}
                                         required
-                                        className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white"
+                                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                    <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                                         <Clock size={16} className="text-primary" /> Horário *
                                     </label>
                                     <input
@@ -195,14 +232,13 @@ const NewEventScreen = () => {
                                         value={formData.time}
                                         onChange={handleChange}
                                         required
-                                        className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white"
+                                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
                                     />
                                 </div>
                             </div>
 
-                            {/* Location */}
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                                     <MapPin size={16} className="text-primary" /> Local
                                 </label>
                                 <input
@@ -210,14 +246,13 @@ const NewEventScreen = () => {
                                     name="location"
                                     value={formData.location}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
+                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
                                     placeholder="Ex: Google Meet, Auditório C, Sala 101..."
                                 />
                             </div>
 
-                            {/* Description */}
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                                     <AlignLeft size={16} className="text-primary" /> Descrição
                                 </label>
                                 <textarea
@@ -225,59 +260,32 @@ const NewEventScreen = () => {
                                     name="description"
                                     value={formData.description}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400 resize-none"
+                                    className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
                                     placeholder="Descreva os detalhes do evento, pauta, objetivos..."
                                 />
                             </div>
-
                         </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex items-center justify-end gap-4 pt-4">
-                            <button
-                                type="button"
-                                onClick={() => navigate(-1)}
-                                className="px-6 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-                                disabled={submitting}
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={submitting}
-                                className="px-8 py-3 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:bg-sky-500 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <Rocket size={20} />
-                                {submitting
-                                    ? (isEditing ? 'Salvando...' : 'Criando...')
-                                    : (isEditing ? 'Salvar' : 'Criar Evento')
-                                }
-                            </button>
-                        </div>
-                    </form>
+                    </SurfaceCard>
                 </div>
 
-                {/* Sidebar Info */}
-                <div className="hidden lg:block w-80 space-y-6">
-                    <div className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-6 border border-primary/10">
-                        <h3 className="font-bold text-primary flex items-center gap-2 mb-3">
-                            <Calendar size={18} /> Sobre Eventos
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
-                            Eventos aparecem na Agenda Connecta e são visíveis para toda a comunidade.
-                        </p>
-                        <div className="h-px bg-primary/10 my-4"></div>
-                        <div className="space-y-2">
-                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Tipos disponíveis:</p>
+                <aside className="space-y-6 lg:sticky lg:top-20 lg:h-max">
+                    <SurfaceCard padding="lg">
+                        <SectionHeader
+                            icon={<Calendar size={20} />}
+                            title="Sobre Eventos"
+                            description="Aparecem na Agenda Connecta e são visíveis para toda a comunidade."
+                        />
+                        <div className="mt-5 space-y-3">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Tipos disponíveis</p>
                             <div className="flex flex-wrap gap-2">
-                                <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">Reunião</span>
-                                <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">Workshop</span>
-                                <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300">Evento</span>
+                                <span className="rounded-full bg-blue-100 px-2 py-1 text-[10px] font-bold uppercase text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">Reunião</span>
+                                <span className="rounded-full bg-purple-100 px-2 py-1 text-[10px] font-bold uppercase text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">Workshop</span>
+                                <span className="rounded-full bg-yellow-100 px-2 py-1 text-[10px] font-bold uppercase text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300">Evento</span>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
+                    </SurfaceCard>
+                </aside>
+            </form>
         </div>
     );
 };

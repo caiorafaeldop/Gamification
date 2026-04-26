@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { FolderOpen, Edit, Save, X, Search, CheckCircle, AlertCircle } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { FolderOpen, Edit, Save, X, Search, ShieldCheck } from 'lucide-react';
 import { Project, ProjectStatus, statusLabels, statusStyles } from '../types';
 import { useAdminProjects } from '../hooks/useAdmin';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select';
+import { PageHero, SurfaceCard } from '../components/ui';
 
 const AdminProjectsScreen = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -43,51 +43,52 @@ const AdminProjectsScreen = () => {
 
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <FolderOpen className="text-primary" /> Projetos Admin
-                    </h1>
-                    <p className="text-gray-500 dark:text-gray-400">Edite configurações, status e recompensas dos projetos.</p>
-                </div>
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                        type="text"
-                        placeholder="Buscar projeto..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 pr-4 py-2 rounded-lg bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary outline-none text-gray-900 dark:text-white w-full md:w-64"
-                    />
-                </div>
+        <div className="mx-auto max-w-[1480px] space-y-8 p-4 sm:p-6 lg:p-8">
+            <PageHero
+                icon={ShieldCheck}
+                tagLabel="Painel Admin"
+                title="Projetos Admin"
+                description="Edite configurações, status e recompensas dos projetos da plataforma."
+                actionButtons={
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input
+                                type="text"
+                                placeholder="Buscar projeto..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm font-medium text-gray-900 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-surface-dark dark:text-white md:w-64"
+                            />
+                        </div>
+                        <div className="w-full md:w-48">
+                            <Select
+                                value={statusFilter}
+                                onValueChange={(val) => setStatusFilter(val as any)}
+                            >
+                                <SelectTrigger className="h-[42px] w-full border-slate-200 bg-white dark:border-slate-700 dark:bg-surface-dark">
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todos</SelectItem>
+                                    <SelectItem value="active">Ativos</SelectItem>
+                                    <SelectItem value="inactive">Inativos</SelectItem>
+                                    <SelectItem value="archived">Arquivados</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                }
+            />
 
-                <div className="w-full md:w-48">
-                    <Select
-                        value={statusFilter}
-                        onValueChange={(val) => setStatusFilter(val as any)}
-                    >
-                        <SelectTrigger className="w-full h-[42px] bg-white dark:bg-surface-dark border-gray-200 dark:border-gray-700">
-                            <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos</SelectItem>
-                            <SelectItem value="active">Ativos</SelectItem>
-                            <SelectItem value="inactive">Inativos</SelectItem>
-                            <SelectItem value="archived">Arquivados</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {loading ? (
-                    <p className="text-gray-500 col-span-full text-center">Carregando...</p>
+                    <SurfaceCard padding="lg" className="col-span-full text-center text-gray-500">Carregando...</SurfaceCard>
                 ) : filteredProjects.length === 0 ? (
-                    <p className="text-gray-500 col-span-full text-center">Nenhum projeto encontrado.</p>
+                    <SurfaceCard padding="lg" className="col-span-full text-center text-gray-500">Nenhum projeto encontrado.</SurfaceCard>
                 ) : (
                     filteredProjects.map((project: any) => (
-                        <div key={project.id} className="bg-white dark:bg-surface-dark p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-md transition-shadow relative group">
+                        <SurfaceCard key={project.id} padding="md" className="group relative transition-shadow hover:shadow-md">
                             <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-black/20 flex items-center justify-center">
@@ -124,11 +125,11 @@ const AdminProjectsScreen = () => {
 
                             <button
                                 onClick={() => handleEdit(project)}
-                                className="w-full py-2 flex items-center justify-center gap-2 bg-gray-100 dark:bg-white/5 hover:bg-primary hover:text-white dark:hover:bg-primary transition-colors rounded-xl font-semibold text-sm"
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-100 py-2 text-sm font-semibold transition-colors hover:bg-primary hover:text-white dark:bg-white/5 dark:hover:bg-primary"
                             >
                                 <Edit size={16} /> Editar
                             </button>
-                        </div>
+                        </SurfaceCard>
                     ))
                 )}
             </div>

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { User, Edit, Save, X, Search, History } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { Edit, Save, X, Search, History, ShieldCheck } from 'lucide-react';
 import { UserProfile } from '@/types';
 import { useAdminUsers, useAdminLogs } from '../hooks/useAdmin';
+import { PageHero, SurfaceCard } from '../components/ui';
 
 const USERS_PER_PAGE = 10;
 
@@ -47,39 +47,32 @@ const AdminUsersScreen = () => {
     };
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-8">
+        <div className="mx-auto max-w-[1480px] space-y-8 p-4 sm:p-6 lg:p-8">
 
-            {/* HEADER */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <User className="text-primary" /> Gestão de Pessoas (Admin)
-                    </h1>
-                    <p className="text-gray-500 dark:text-gray-400">
-                        Gerencie usuários e pontuações manualmente.
-                    </p>
-                </div>
-
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                        type="text"
-                        placeholder="Buscar usuário..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                            setPage(1);
-                            setSearchTerm(e.target.value);
-                        }}
-                        className="pl-10 pr-4 py-2 rounded-lg bg-white dark:bg-surface-dark
-                        border border-gray-200 dark:border-gray-700
-                        focus:ring-2 focus:ring-primary outline-none
-                        text-gray-900 dark:text-white w-full md:w-64"
-                    />
-                </div>
-            </div>
+            <PageHero
+                icon={ShieldCheck}
+                tagLabel="Painel Admin"
+                title="Gestão de Pessoas"
+                description="Gerencie usuários e pontuações manualmente."
+                actionButtons={
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Buscar usuário..."
+                            value={searchTerm}
+                            onChange={(e) => {
+                                setPage(1);
+                                setSearchTerm(e.target.value);
+                            }}
+                            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm font-medium text-gray-900 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-surface-dark dark:text-white md:w-64"
+                        />
+                    </div>
+                }
+            />
 
             {/* USERS TABLE */}
-            <div className="bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <SurfaceCard padding="none" className="overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-gray-800">
@@ -143,28 +136,28 @@ const AdminUsersScreen = () => {
                 </div>
 
                 {/* PAGINATION */}
-                <div className="flex justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-800">
-                    <span className="text-sm">
+                <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4 dark:border-gray-800">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
                         Página {page} de {totalPages || 1}
                     </span>
                     <div className="flex gap-2">
                         <button
                             disabled={page === 1}
                             onClick={() => setPage(p => p - 1)}
-                            className="px-3 py-1 border rounded-lg disabled:opacity-50"
+                            className="rounded-lg border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-white/5"
                         >
                             Anterior
                         </button>
                         <button
                             disabled={page >= totalPages}
                             onClick={() => setPage(p => p + 1)}
-                            className="px-3 py-1 border rounded-lg disabled:opacity-50"
+                            className="rounded-lg border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-white/5"
                         >
                             Próxima
                         </button>
                     </div>
                 </div>
-            </div>
+            </SurfaceCard>
 
             {/* LOGS */}
             <div>

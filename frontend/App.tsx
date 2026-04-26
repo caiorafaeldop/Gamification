@@ -1,6 +1,6 @@
 import React from 'react';
 // import { AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import LoginScreen from './screens/LoginScreen';
 import DashboardScreen from './screens/DashboardScreen';
@@ -70,6 +70,7 @@ const App = () => {
           <Route path="/project-landing/:id" element={<ProjectLandingScreen />} />
           <Route path="/groups" element={<GroupsHubScreen />} />
           <Route path="/groups/new" element={<NewGroupScreen />} />
+          <Route path="/groups/:id/edit" element={<NewGroupScreen />} />
           <Route path="/groups/:id" element={<GroupDetailScreen />} />
           <Route path="/jobs" element={<JobsBoardScreen />} />
           <Route path="/jobs/new" element={<NewJobPostingScreen />} />
@@ -77,6 +78,10 @@ const App = () => {
           {/* Admin Routes */}
           <Route path="/admin/users" element={<AdminUsersScreen />} />
           <Route path="/admin/projects" element={<AdminProjectsScreen />} />
+
+          {/* Catch-all: any unknown authenticated route falls back to dashboard
+              instead of rendering a blank screen. */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>
       </BrandingProvider>

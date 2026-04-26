@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, FlaskConical, Save, Users, BookOpen, Sparkles, Loader } from 'lucide-react';
-import { useCreateGroup } from '../hooks/useGroups';
+import { useCreateGroup, useGroup, useUpdateGroup } from '../hooks/useGroups';
 import { PageHero, SurfaceCard, SectionHeader, ColorPicker, LogoUpload } from '../components/ui';
 
 const NewGroupScreen = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditing = Boolean(id);
+
   const createGroup = useCreateGroup();
+  const updateGroup = useUpdateGroup(id || '');
+  const { group, loading: loadingGroup } = useGroup(id);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -15,6 +20,17 @@ const NewGroupScreen = () => {
     logoUrl: '',
   });
 
+  useEffect(() => {
+    if (isEditing && group) {
+      setFormData({
+        name: group.name || '',
+        description: group.description || '',
+        color: group.color || '#29B6F6',
+        logoUrl: group.logoUrl || '',
+      });
+    }
+  }, [isEditing, group]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -22,6 +38,18 @@ const NewGroupScreen = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
+
+    if (isEditing && id) {
+      await updateGroup.mutateAsync({
+        name: formData.name.trim(),
+        description: formData.description || undefined,
+        color: formData.color,
+        logoUrl: formData.logoUrl || undefined,
+      });
+      navigate(`/groups/${id}`);
+      return;
+    }
+
     const group = await createGroup.mutateAsync({
       name: formData.name.trim(),
       description: formData.description || undefined,
@@ -31,6 +59,16 @@ const NewGroupScreen = () => {
     navigate(`/groups/${group.id}`);
   };
 
+  const isPending = createGroup.isPending || updateGroup.isPending;
+
+  if (isEditing && loadingGroup) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-10">
+        <Loader className="animate-spin text-primary" size={40} />
+      </div>
+    );
+  }
+
   const previewColor = formData.color || '#29B6F6';
 
   return (
@@ -39,22 +77,26 @@ const NewGroupScreen = () => {
         icon={FlaskConical}
         tagLabel={
           <button
-            onClick={() => navigate('/groups')}
+            onClick={() => navigate(isEditing && id ? `/groups/${id}` : '/groups')}
             className="group inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary transition-all hover:bg-primary/20"
           >
             <ArrowLeft size={12} className="transition-transform group-hover:-translate-x-1" />
             Voltar
           </button>
         }
-        title="Novo laboratório ou coletivo"
-        description="Defina a identidade visual e convide colegas. Projetos e integrantes poderão ser adicionados depois."
+        title={isEditing ? 'Editar Grupo' : 'Novo laboratório ou coletivo'}
+        description={
+          isEditing
+            ? 'Atualize a identidade visual e as informações do seu grupo.'
+            : 'Defina a identidade visual e convide colegas. Projetos e integrantes poderão ser adicionados depois.'
+        }
         actionButtons={
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => navigate('/groups')}
+              onClick={() => navigate(isEditing && id ? `/groups/${id}` : '/groups')}
               className="rounded-xl border border-slate-200 bg-white/50 px-4 py-2.5 text-sm font-bold text-slate-600 transition-all hover:bg-slate-100 dark:border-slate-700 dark:bg-surface-dark dark:text-slate-400 dark:hover:bg-white/5"
-              disabled={createGroup.isPending}
+              disabled={isPending}
             >
               Cancelar
             </button>
@@ -64,15 +106,15 @@ const NewGroupScreen = () => {
                 const form = document.querySelector('form');
                 if (form) form.requestSubmit();
               }}
-              disabled={createGroup.isPending || !formData.name.trim()}
+              disabled={isPending || !formData.name.trim()}
               className="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:-translate-y-0.5 disabled:opacity-50"
               style={{
                 backgroundColor: previewColor,
                 boxShadow: `0 10px 20px -10px ${previewColor}`,
               }}
             >
-              {createGroup.isPending ? <Loader className="animate-spin" size={18} /> : <Save size={18} />}
-              Salvar Grupo
+              {isPending ? <Loader className="animate-spin" size={18} /> : <Save size={18} />}
+              {isEditing ? 'Salvar Alterações' : 'Salvar Grupo'}
             </button>
           </div>
         }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Target, Award, Users, CheckCircle2, MessageSquare, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { ArrowLeft, Target, Award, Users, CheckCircle2, MessageSquare, ShieldCheck, User as UserIcon, Rocket } from 'lucide-react';
+import { PageHero, SurfaceCard, SectionHeader } from '../components/ui';
 
 const JoinProjectScreen = () => {
   const navigate = useNavigate();
@@ -39,43 +40,43 @@ const JoinProjectScreen = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
-      <button 
-        onClick={() => navigate(-1)} 
-        className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-primary mb-6 transition-colors text-sm font-bold"
-      >
-        <ArrowLeft size={16} /> Voltar para Projetos
-      </button>
+    <div className="mx-auto max-w-[1480px] space-y-8 p-4 sm:p-6 lg:p-8">
+      <PageHero
+        icon={Rocket}
+        tagLabel={
+          <button
+            onClick={() => navigate(-1)}
+            className="group inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary transition-all hover:bg-primary/20"
+          >
+            <ArrowLeft size={12} className="transition-transform group-hover:-translate-x-1" />
+            Voltar para Projetos
+          </button>
+        }
+        title={project.title}
+        description={project.description}
+        highlight={
+          <div className="flex items-center gap-3 rounded-xl border border-white/40 bg-white/70 p-3 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-black/20">
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary">
+              {project.category}
+            </span>
+            <span className="flex items-center gap-1 text-xs font-bold text-gray-500 dark:text-gray-400">
+              <Users size={14} /> {project.members.length}/{project.maxMembers} Membros
+            </span>
+          </div>
+        }
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+
         {/* Left Column: Project Details */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Header Card */}
-          <div className="bg-white dark:bg-surface-dark rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden">
-             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-             
-             <div className="flex items-center gap-3 mb-4">
-                <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
-                  {project.category}
-                </span>
-                <span className="flex items-center gap-1 text-xs font-bold text-gray-500 dark:text-gray-400">
-                  <Users size={14} /> {project.members.length}/{project.maxMembers} Membros
-                </span>
-             </div>
-
-             <h1 className="text-3xl md:text-4xl font-display font-extrabold text-secondary dark:text-white mb-6">
-               {project.title}
-             </h1>
-
-             <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed mb-8">
-               {project.description}
-             </p>
-
-             <div className="bg-gray-50 dark:bg-surface-darker/50 rounded-2xl p-6 border border-gray-100 dark:border-gray-800">
-               <h3 className="font-bold text-secondary dark:text-white flex items-center gap-2 mb-4">
-                 <Target className="text-primary" size={20} /> Objetivos Principais
-               </h3>
+        <div className="space-y-6 lg:col-span-2">
+          <SurfaceCard padding="lg">
+             <SectionHeader
+               icon={<Target size={22} />}
+               title="Objetivos Principais"
+               description="O que será entregue ao final do projeto."
+             />
+             <div className="mt-5">
                <ul className="space-y-3">
                  {project.objectives.map((obj, index) => (
                    <li key={index} className="flex items-start gap-3 text-gray-600 dark:text-gray-300">
@@ -85,18 +86,17 @@ const JoinProjectScreen = () => {
                  ))}
                </ul>
              </div>
-          </div>
+          </SurfaceCard>
 
           {/* Motivation Form */}
-          <div className="bg-white dark:bg-surface-dark rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
-             <h3 className="text-xl font-bold text-secondary dark:text-white mb-2 flex items-center gap-2">
-               <MessageSquare className="text-primary" size={24} /> Solicitar Participação
-             </h3>
-             <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">
-               Envie uma mensagem para o líder do projeto explicando por que você gostaria de participar e quais habilidades pode contribuir.
-             </p>
-             
-             <form onSubmit={handleJoin}>
+          <SurfaceCard padding="lg">
+             <SectionHeader
+               icon={<MessageSquare size={22} />}
+               title="Solicitar Participação"
+               description="Envie uma mensagem para o líder explicando por que você gostaria de participar."
+             />
+
+             <form onSubmit={handleJoin} className="mt-5">
                <div className="mb-6">
                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                    Sua Mensagem
@@ -123,28 +123,28 @@ const JoinProjectScreen = () => {
                  </button>
                </div>
              </form>
-          </div>
+          </SurfaceCard>
         </div>
 
         {/* Right Column: Sidebar Info */}
         <div className="space-y-6">
            {/* Leader Card */}
-           <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-             <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">Líder do Projeto</h3>
+           <SurfaceCard padding="lg">
+             <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-400">Líder do Projeto</h3>
              <div className="flex items-center gap-4">
-               <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center text-white">
+               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-gray-700 to-gray-900 text-white">
                  <UserIcon size={24} />
                </div>
                <div>
                  <p className="font-bold text-secondary dark:text-white">{project.leader.name}</p>
                  <p className="text-xs text-gray-500 dark:text-gray-400">{project.leader.role}</p>
-                 <p className="text-[10px] text-primary font-bold mt-1">{project.leader.department}</p>
+                 <p className="mt-1 text-[10px] font-bold text-primary">{project.leader.department}</p>
                </div>
              </div>
-           </div>
+           </SurfaceCard>
 
            {/* Reward Card */}
-           <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-2xl p-6 text-white shadow-lg shadow-yellow-500/20 relative overflow-hidden group">
+           <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-yellow-400 to-yellow-600 p-6 text-white shadow-lg shadow-yellow-500/20">
              <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-2xl -mr-10 -mt-10 group-hover:scale-110 transition-transform duration-500"></div>
              <div className="relative z-10">
                <div className="flex items-center gap-2 mb-2 opacity-90">
@@ -160,8 +160,8 @@ const JoinProjectScreen = () => {
            </div>
 
            {/* Team Slots */}
-           <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">Vagas na Equipe</h3>
+           <SurfaceCard padding="lg">
+              <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-400">Vagas na Equipe</h3>
               <div className="space-y-3">
                 {/* Filled Slots */}
                 {project.members.map((member) => (
@@ -188,10 +188,10 @@ const JoinProjectScreen = () => {
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-center text-gray-400 mt-4">
+              <p className="mt-4 text-center text-xs text-gray-400">
                 Restam {project.maxMembers - project.members.length} vagas para este projeto.
               </p>
-           </div>
+           </SurfaceCard>
         </div>
       </div>
     </div>
