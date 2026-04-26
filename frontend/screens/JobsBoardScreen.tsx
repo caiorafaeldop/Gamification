@@ -127,7 +127,7 @@ const JobsBoardScreen = () => {
         actionButtons={heroActions}
       />
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar sm:flex-wrap sm:pb-0">
         {(['ALL', 'OPEN', 'CLOSED', 'FILLED'] as const).map((opt) => {
           const isActive = statusFilter === opt;
           const label =

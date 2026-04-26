@@ -399,19 +399,19 @@ const ProfileScreen = () => {
             ) : (
                 <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-300">
                     {user?.id && (
-                        <SurfaceCard padding="sm" className="border border-primary/20 bg-gradient-to-r from-primary/5 to-sky-400/5 shadow-sm dark:border-primary/30">
-                            <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-                                <div className="flex items-center gap-3 text-left">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                        <ExternalLink size={20} />
+                        <SurfaceCard padding="xs" className="border border-primary/20 bg-gradient-to-r from-primary/5 to-sky-400/5 shadow-sm dark:border-primary/30 sm:p-4">
+                            <div className="flex flex-col items-center justify-between gap-2 p-2 sm:flex-row sm:gap-3 sm:p-0">
+                                <div className="flex items-center gap-2.5 text-left w-full sm:w-auto">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary sm:h-10 sm:w-10">
+                                        <ExternalLink size={18} />
                                     </div>
-                                    <div>
-                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                                    <div className="min-w-0 flex-1">
+                                        <h3 className="truncate text-xs font-bold text-slate-900 dark:text-white sm:text-sm">
                                             {isMyProfile ? 'Meu Currículo Público' : 'Currículo Público'}
                                         </h3>
-                                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                                        <p className="truncate text-[10px] text-slate-600 dark:text-slate-400 sm:text-xs">
                                             {isMyProfile
-                                                ? 'Compartilhe suas conquistas com recrutadores.'
+                                                ? 'Compartilhe suas conquistas.'
                                                 : 'Veja a visão detalhada deste currículo.'}
                                         </p>
                                     </div>
@@ -424,10 +424,10 @@ const ProfileScreen = () => {
                                             navigator.clipboard.writeText(url);
                                             toast.success('Link do currículo copiado!');
                                         }}
-                                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-surface-light px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 sm:flex-none"
+                                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-surface-light px-3 py-1.5 text-[10px] font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 sm:flex-none sm:text-xs"
                                     >
-                                        <LinkIcon size={14} />
-                                        Copiar Link
+                                        <LinkIcon size={12} />
+                                        Link
                                     </button>
                                     <button
                                         onClick={() => {
@@ -435,19 +435,19 @@ const ProfileScreen = () => {
                                             const url = `${landingBase}/#/cv/${user.id}`;
                                             window.open(url, '_blank');
                                         }}
-                                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-blue-600 sm:flex-none"
+                                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[10px] font-bold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-blue-600 sm:flex-none sm:text-xs"
                                     >
-                                        Ver Currículo
+                                        Ver
                                     </button>
                                 </div>
                             </div>
                         </SurfaceCard>
                     )}
 
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6">
                         <StatCard
                             icon={Trophy}
-                            label="Nível Atual"
+                            label="Nível"
                             value={typeof user?.tier === 'object' ? user.tier.name : user?.tier || 'Iniciante'}
                             accent="gold"
                         />
@@ -457,16 +457,16 @@ const ProfileScreen = () => {
                             value={`${user?.connectaPoints || 0} 🪙`}
                             accent="primary"
                         />
-                        <StatCard
-                            icon={BarChart3}
-                            label="Ranking"
-                            value="# --"
-                            hint="Calculado globalmente"
-                            accent="green"
-                        />
+                        <div className="col-span-2 md:col-span-1">
+                          <StatCard
+                              icon={BarChart3}
+                              label="Ranking"
+                              value="# --"
+                              hint="Calculado globalmente"
+                              accent="green"
+                          />
+                        </div>
                     </div>
-
-
 
                     <div className="space-y-6">
                         <SectionHeader

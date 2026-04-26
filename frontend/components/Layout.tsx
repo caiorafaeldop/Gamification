@@ -100,14 +100,14 @@ const BottomNavItem = ({ to, icon: Icon, label }: { to: string; icon: any; label
     return (
         <Link
             to={to}
-            className={`flex flex-col items-center justify-center flex-1 gap-1 py-1 transition-all duration-300 relative
-                ${isActive ? 'text-primary scale-110' : 'text-gray-500 dark:text-gray-400'}
+            className={`flex flex-col items-center justify-center flex-1 gap-1 py-1.5 transition-all duration-300 relative
+                ${isActive ? 'text-primary scale-105' : 'text-gray-500 dark:text-gray-400'}
             `}
         >
-            <Icon size={20} className={isActive ? 'stroke-[2.5px]' : 'stroke-[1.5px]'} />
-            <span className="text-[10px] font-bold uppercase tracking-tighter">{label}</span>
+            <Icon size={22} className={isActive ? 'stroke-[2.5px]' : 'stroke-[1.5px]'} />
+            <span className="text-[9px] font-bold uppercase tracking-tighter">{label}</span>
             {isActive && (
-                <div className="absolute -top-1 w-12 h-1 bg-primary rounded-full blur-[2px] opacity-50" />
+                <div className="absolute -top-1 w-12 h-1 bg-primary rounded-full blur-[2px] opacity-40 shadow-[0_0_8px_rgba(3,169,244,0.5)]" />
             )}
         </Link>
     );
@@ -277,7 +277,7 @@ const Layout = () => {
                             <Bell size={20} />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border border-white dark:border-surface-dark"></span>
                         </button>
-                        <ThemeToggle />
+                        {/* <ThemeToggle /> */}
                     </div>
                 </header>
 

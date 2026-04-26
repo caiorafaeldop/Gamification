@@ -248,9 +248,9 @@ const ActivitiesScreen = () => {
                     <SurfaceCard key={event.id} padding="md" className="group transition-all hover:shadow-md">
                       <div className="flex gap-4">
                         {/* Bloco de Data Simples e Limpo */}
-                        <div className="flex h-16 w-16 flex-shrink-0 flex-col items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-center dark:border-gray-700 dark:bg-background-dark">
-                          <span className="text-[11px] font-bold uppercase text-gray-500">{month}</span>
-                          <span className="text-2xl font-black text-secondary dark:text-white leading-none mt-0.5">{day}</span>
+                        <div className="flex h-12 w-12 flex-shrink-0 flex-col items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-center dark:border-gray-700 dark:bg-background-dark sm:h-16 sm:w-16">
+                          <span className="text-[9px] font-bold uppercase text-gray-500 sm:text-[11px]">{month}</span>
+                          <span className="text-xl font-black text-secondary dark:text-white leading-none mt-0.5 sm:text-2xl">{day}</span>
                         </div>
                         
                         <div className="flex-1">

@@ -44,7 +44,7 @@ export const PageHero: React.FC<PageHeroProps> = ({
         {highlight && <div className="shrink-0">{highlight}</div>}
 
         {actionButtons && (
-          <div className="flex flex-wrap items-center gap-3 lg:ml-auto lg:shrink-0">
+          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto lg:ml-auto lg:shrink-0 lg:justify-end">
             {actionButtons}
           </div>
         )}

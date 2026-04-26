@@ -2,12 +2,13 @@ import React from 'react';
 import { cn } from '../../utils/cn';
 
 interface SurfaceCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  padding?: 'none' | 'sm' | 'md' | 'lg';
+  padding?: 'none' | 'xs' | 'sm' | 'md' | 'lg';
   elevated?: boolean;
 }
 
 const paddingClasses: Record<NonNullable<SurfaceCardProps['padding']>, string> = {
   none: '',
+  xs: 'p-2',
   sm: 'p-4',
   md: 'p-5',
   lg: 'p-6',
