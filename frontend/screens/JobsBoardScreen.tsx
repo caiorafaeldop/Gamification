@@ -282,7 +282,8 @@ const JobCard: React.FC<JobCardProps> = ({ job, isAuthor, onDelete, onChangeStat
 
       <button
         onClick={onClickDetails}
-        className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-primary py-2 text-xs font-black uppercase tracking-widest text-white transition-transform hover:scale-[1.02]"
+        className="mt-3 flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-black uppercase tracking-widest text-white transition-transform hover:scale-[1.02] shadow-sm"
+        style={{ backgroundColor: groupColor }}
       >
         <ExternalLink size={13} />
         Saiba mais
@@ -375,19 +376,35 @@ const JobModal = ({ job, onClose }: { job: JobPosting; onClose: () => void }) =>
             {job.description}
           </div>
 
-          <div className="mt-8 rounded-xl border border-primary/20 bg-primary/5 p-4 dark:border-primary/30">
-            <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-primary">Contato para a vaga</h4>
+          <div 
+            className="mt-8 rounded-xl border p-4"
+            style={{ borderColor: `${groupColor}40`, backgroundColor: `${groupColor}10` }}
+          >
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: groupColor }}>Contato para a vaga</h4>
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-primary shadow-sm dark:bg-surface-darker">
+              <div 
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm dark:bg-surface-darker"
+                style={{ color: groupColor }}
+              >
                 {isLink ? <ExternalLink size={20} /> : <Mail size={20} />}
               </div>
               <div className="flex-1 min-w-0">
                 {isLink ? (
-                  <a href={job.contact} target="_blank" rel="noreferrer" className="block truncate text-sm font-bold text-slate-800 hover:text-primary dark:text-slate-200 hover:underline">
+                  <a 
+                    href={job.contact} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="block truncate text-sm font-bold text-slate-800 dark:text-slate-200 hover:underline"
+                    style={{ color: groupColor }}
+                  >
                     {job.contact}
                   </a>
                 ) : (
-                  <a href={`mailto:${job.contact}`} className="block truncate text-sm font-bold text-slate-800 hover:text-primary dark:text-slate-200 hover:underline">
+                  <a 
+                    href={`mailto:${job.contact}`} 
+                    className="block truncate text-sm font-bold text-slate-800 dark:text-slate-200 hover:underline"
+                    style={{ color: groupColor }}
+                  >
                     {job.contact}
                   </a>
                 )}

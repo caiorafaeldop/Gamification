@@ -209,7 +209,7 @@ const LoginScreen = () => {
 
         {/* Code snippet - top left */}
         <pre className="absolute top-8 left-8 text-[11px] font-mono text-slate-500/70 leading-relaxed pointer-events-none select-none whitespace-pre">
-{`// connecta hub
+{`// Connecta Hub
 const network = true;
 let ideias = conectar();
 
@@ -261,7 +261,7 @@ function transformar() {
 
           <p className="text-slate-300 text-base">bem-vindo ao</p>
           <h2 className="font-display font-bold text-3xl text-primary mb-2 flex items-center gap-2">
-            connecta hub <Globe size={26} />
+            Connecta Hub <Globe size={26} />
           </h2>
 
           <div className="flex items-center gap-2 my-4">

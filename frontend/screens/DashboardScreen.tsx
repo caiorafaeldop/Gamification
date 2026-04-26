@@ -251,12 +251,7 @@ const DashboardScreen = () => {
                    </div>
                 </div>
               ))}
-              <Link 
-                to="/ranking" 
-                className="block text-center text-[11px] font-bold text-cyan-600 hover:underline pt-2 border-t border-cyan-500/10"
-              >
-                Explorar Rede Completa
-              </Link>
+
             </div>
           </SurfaceCard>
 
