@@ -40,6 +40,7 @@ const JobsBoardScreen = () => {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | JobPostingStatus>('OPEN');
+  const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null);
 
   const currentUserId = useMemo(() => {
     try {
@@ -115,8 +116,10 @@ const JobsBoardScreen = () => {
   );
 
   return (
-    <div className="mx-auto max-w-[1480px] space-y-8 p-4 sm:p-6 lg:p-8">
-      <PageHero
+    <>
+      {selectedJob && <JobModal job={selectedJob} onClose={() => setSelectedJob(null)} />}
+      <div className="mx-auto max-w-[1480px] space-y-8 p-4 sm:p-6 lg:p-8">
+        <PageHero
         icon={Briefcase}
         tagLabel="Mural aberto da comunidade"
         title="Vagas"
@@ -182,11 +185,13 @@ const JobsBoardScreen = () => {
               onChangeStatus={(status) =>
                 updateStatusMutation.mutate({ id: job.id, status })
               }
+              onClickDetails={() => setSelectedJob(job)}
             />
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 
@@ -195,9 +200,10 @@ interface JobCardProps {
   isAuthor: boolean;
   onDelete: () => void;
   onChangeStatus: (status: JobPostingStatus) => void;
+  onClickDetails: () => void;
 }
 
-const JobCard: React.FC<JobCardProps> = ({ job, isAuthor, onDelete, onChangeStatus }) => {
+const JobCard: React.FC<JobCardProps> = ({ job, isAuthor, onDelete, onChangeStatus, onClickDetails }) => {
   const meta = statusMeta[job.status];
   const groupColor = job.group?.color || '#29B6F6';
   const isLink = isExternalLink(job.contact);
@@ -215,10 +221,15 @@ const JobCard: React.FC<JobCardProps> = ({ job, isAuthor, onDelete, onChangeStat
             </span>
             {job.group && (
               <span
-                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest"
-                style={{ backgroundColor: `${groupColor}20`, color: groupColor }}
+                className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold border"
+                style={{ borderColor: `${groupColor}30`, backgroundColor: `${groupColor}10`, color: groupColor }}
               >
-                <FlaskConical size={9} /> {job.group.name}
+                {job.group.logoUrl ? (
+                  <img src={job.group.logoUrl} alt={job.group.name} className="h-4 w-4 rounded-full object-cover" />
+                ) : (
+                  <FlaskConical size={10} />
+                )}
+                {job.group.name}
               </span>
             )}
           </div>
@@ -269,15 +280,13 @@ const JobCard: React.FC<JobCardProps> = ({ job, isAuthor, onDelete, onChangeStat
         </div>
       </div>
 
-      <a
-        href={isLink ? job.contact : `mailto:${job.contact}`}
-        target={isLink ? '_blank' : undefined}
-        rel={isLink ? 'noreferrer' : undefined}
+      <button
+        onClick={onClickDetails}
         className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-primary py-2 text-xs font-black uppercase tracking-widest text-white transition-transform hover:scale-[1.02]"
       >
-        {isLink ? <ExternalLink size={13} /> : <Mail size={13} />}
-        Entrar em contato
-      </a>
+        <ExternalLink size={13} />
+        Saiba mais
+      </button>
 
       {isAuthor && job.status === 'OPEN' && (
         <div className="mt-2 flex gap-2">
@@ -304,6 +313,93 @@ const JobCard: React.FC<JobCardProps> = ({ job, isAuthor, onDelete, onChangeStat
         </button>
       )}
     </article>
+  );
+};
+
+const JobModal = ({ job, onClose }: { job: JobPosting; onClose: () => void }) => {
+  const meta = statusMeta[job.status];
+  const groupColor = job.group?.color || '#29B6F6';
+  const isLink = isExternalLink(job.contact);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-surface-light shadow-2xl dark:bg-surface-dark animate-in zoom-in-95 duration-200">
+        
+        <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-black/20">
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white"
+              style={{ backgroundColor: meta.color }}
+            >
+              {meta.icon} {meta.label}
+            </span>
+            {job.group && (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold border"
+                style={{ borderColor: `${groupColor}30`, backgroundColor: `${groupColor}10`, color: groupColor }}
+              >
+                {job.group.logoUrl ? (
+                  <img src={job.group.logoUrl} alt={job.group.name} className="h-4 w-4 rounded-full object-cover" />
+                ) : (
+                  <FlaskConical size={10} />
+                )}
+                {job.group.name}
+              </span>
+            )}
+          </div>
+          <button onClick={onClose} className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200">
+            <XCircle size={20} />
+          </button>
+        </div>
+
+        <div className="p-6">
+          <h2 className="mb-4 text-2xl font-display font-bold text-secondary dark:text-white">{job.title}</h2>
+          
+          <div className="mb-6 flex items-center gap-3">
+            {job.author.avatarUrl ? (
+              <img src={job.author.avatarUrl} alt={job.author.name} className="h-10 w-10 rounded-full object-cover shadow-sm" />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white shadow-sm" style={{ backgroundColor: job.author.avatarColor || '#29B6F6' }}>
+                {job.author.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div>
+              <p className="text-sm font-bold text-gray-700 dark:text-gray-200">{job.author.name}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Publicado em {new Date(job.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+          </div>
+
+          <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 mb-8 whitespace-pre-wrap">
+            {job.description}
+          </div>
+
+          <div className="mt-8 rounded-xl border border-primary/20 bg-primary/5 p-4 dark:border-primary/30">
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-primary">Contato para a vaga</h4>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-primary shadow-sm dark:bg-surface-darker">
+                {isLink ? <ExternalLink size={20} /> : <Mail size={20} />}
+              </div>
+              <div className="flex-1 min-w-0">
+                {isLink ? (
+                  <a href={job.contact} target="_blank" rel="noreferrer" className="block truncate text-sm font-bold text-slate-800 hover:text-primary dark:text-slate-200 hover:underline">
+                    {job.contact}
+                  </a>
+                ) : (
+                  <a href={`mailto:${job.contact}`} className="block truncate text-sm font-bold text-slate-800 hover:text-primary dark:text-slate-200 hover:underline">
+                    {job.contact}
+                  </a>
+                )}
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {isLink ? 'Acesse o link acima para se candidatar' : 'Envie um e-mail para este endereço'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

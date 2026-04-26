@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FlaskConical, Users, BookOpen, ArrowLeft, Star, ArrowRight, UserPlus, LogOut, Settings, Globe, Lock, Trophy, Target, Medal } from 'lucide-react';
-import { useGroup, useJoinGroup, useLeaveGroup, useGroups } from '../hooks/useGroups';
+import { FlaskConical, Users, BookOpen, ArrowLeft, Star, ArrowRight, UserPlus, LogOut, Settings, Globe, Lock, Trophy, Target, Medal, Clock } from 'lucide-react';
+import { useGroup, useJoinGroup, useLeaveGroup, useGroups, useRequestJoinGroup } from '../hooks/useGroups';
 import { useProfile } from '../hooks/useProfile';
 import { useGroupBranding } from '../contexts/BrandingContext';
 import { PageHero, SurfaceCard, SectionHeader, EmptyState } from '../components/ui';
@@ -14,6 +14,7 @@ const GroupDetailScreen = () => {
   const { groups: allGroups } = useGroups();
   const { data: currentUser } = useProfile();
   const joinMutation = useJoinGroup();
+  const requestJoinMutation = useRequestJoinGroup();
   const leaveMutation = useLeaveGroup();
 
   useGroupBranding(group);
@@ -56,6 +57,8 @@ const GroupDetailScreen = () => {
   const projectCount = group._count?.Project || group.Project?.length || 0;
   const isMember = group.GroupMember?.some((m) => m.userId === currentUser?.id) || false;
   const isAdmin = group.GroupMember?.some((m) => m.userId === currentUser?.id && m.role === 'ADMIN') || false;
+  const pendingRequest = group.joinRequests?.find((r) => r.userId === currentUser?.id && r.status === 'PENDING');
+  const hasPendingRequest = Boolean(pendingRequest);
 
   // KPIs calculations
   const sortedGroups = [...(allGroups || [])].sort((a, b) => (b.totalXp || 0) - (a.totalXp || 0));
@@ -105,14 +108,32 @@ const GroupDetailScreen = () => {
         actionButtons={
           <div className="flex w-full items-center gap-2 sm:w-auto">
             {!isMember ? (
-              <button
-                onClick={() => joinMutation.mutate(group.id)}
-                disabled={joinMutation.isPending}
-                className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50"
-                style={{ backgroundColor: color, boxShadow: `0 8px 20px -8px ${color}` }}
-              >
-                <UserPlus size={14} /> Entrar no Grupo
-              </button>
+              hasPendingRequest ? (
+                <button
+                  disabled
+                  className="flex items-center gap-2 rounded-xl border-2 border-amber-500/50 bg-amber-500/10 px-4 py-2 text-sm font-bold text-amber-600 transition-all dark:text-amber-500"
+                >
+                  <Clock size={14} /> Solicitação Pendente
+                </button>
+              ) : group.isRestricted ? (
+                <button
+                  onClick={() => requestJoinMutation.mutate(group.id)}
+                  disabled={requestJoinMutation.isPending}
+                  className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50"
+                  style={{ backgroundColor: color, boxShadow: `0 8px 20px -8px ${color}` }}
+                >
+                  <Lock size={14} /> Solicitar Entrada
+                </button>
+              ) : (
+                <button
+                  onClick={() => joinMutation.mutate(group.id)}
+                  disabled={joinMutation.isPending}
+                  className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:scale-[1.02] disabled:opacity-50"
+                  style={{ backgroundColor: color, boxShadow: `0 8px 20px -8px ${color}` }}
+                >
+                  <UserPlus size={14} /> Entrar no Grupo
+                </button>
+              )
             ) : (
               <>
                 {isAdmin && (

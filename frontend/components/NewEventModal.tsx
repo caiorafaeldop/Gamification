@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, Type, AlignLeft, X, Rocket, Tag, Check, Edit2 } from 'lucide-react';
 import { createEvent, updateEvent, getEventById } from '../services/event.service';
 import toast from 'react-hot-toast';
+import { useGroups } from '../hooks/useGroups';
+import { useProjects } from '../hooks/useProjects';
 
 const EVENT_TYPES = [
     { id: 'MEETING', label: 'Reunião', color: 'blue' },
@@ -28,7 +30,12 @@ const NewEventModal = ({ isOpen, onClose, eventId, onSuccess }: NewEventModalPro
         endTime: '',
         location: '',
         description: '',
+        groupId: '',
+        projectId: '',
     });
+
+    const { groups } = useGroups();
+    const { projects } = useProjects();
 
     const [submitting, setSubmitting] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -49,6 +56,8 @@ const NewEventModal = ({ isOpen, onClose, eventId, onSuccess }: NewEventModalPro
                             endTime: '',
                             location: event.location || '',
                             description: event.description || '',
+                            groupId: event.groupId || '',
+                            projectId: event.projectId || '',
                         });
                     })
                     .catch(() => {
@@ -66,6 +75,8 @@ const NewEventModal = ({ isOpen, onClose, eventId, onSuccess }: NewEventModalPro
                     endTime: '',
                     location: '',
                     description: '',
+                    groupId: '',
+                    projectId: '',
                 });
             }
         } else {
@@ -95,6 +106,8 @@ const NewEventModal = ({ isOpen, onClose, eventId, onSuccess }: NewEventModalPro
                 time: formData.time,
                 location: formData.location || undefined,
                 description: formData.description || undefined,
+                groupId: formData.groupId || undefined,
+                projectId: formData.projectId || undefined,
             };
 
             if (isEditing && eventId) {
@@ -251,6 +264,42 @@ const NewEventModal = ({ isOpen, onClose, eventId, onSuccess }: NewEventModalPro
                                         className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
                                         placeholder="Ex: Google Meet, Auditório C, Sala 101..."
                                     />
+                                </div>
+
+                                {/* Group and Project Selectors */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                            Vincular a um Grupo
+                                        </label>
+                                        <select
+                                            name="groupId"
+                                            value={formData.groupId}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white"
+                                        >
+                                            <option value="">Nenhum (Geral)</option>
+                                            {groups?.map((g: any) => (
+                                                <option key={g.id} value={g.id}>{g.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                            Vincular a um Projeto
+                                        </label>
+                                        <select
+                                            name="projectId"
+                                            value={formData.projectId}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white"
+                                        >
+                                            <option value="">Nenhum</option>
+                                            {projects?.filter((p: any) => !formData.groupId || p.groupId === formData.groupId).map((p: any) => (
+                                                <option key={p.id} value={p.id}>{p.title}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
 
                                 {/* Description */}

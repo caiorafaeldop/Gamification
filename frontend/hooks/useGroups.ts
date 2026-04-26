@@ -8,6 +8,8 @@ import {
   deleteGroup,
   joinGroup,
   leaveGroup,
+  requestJoinGroup,
+  respondToJoinRequest,
   CreateGroupPayload,
 } from '../services/group.service';
 
@@ -106,5 +108,32 @@ export const useDeleteGroup = () => {
       toast.success('Grupo excluído.');
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Erro ao excluir.'),
+  });
+};
+
+export const useRequestJoinGroup = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => requestJoinGroup(id),
+    onSuccess: (_d, id) => {
+      qc.invalidateQueries({ queryKey: ['group', id] });
+      qc.invalidateQueries({ queryKey: ['groups'] });
+      toast.success('Solicitação de entrada enviada!');
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Erro ao solicitar entrada.'),
+  });
+};
+
+export const useRespondToJoinRequest = (groupId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ requestId, action }: { requestId: string; action: 'APPROVED' | 'REJECTED' }) => 
+      respondToJoinRequest(groupId, requestId, action),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['group', groupId] });
+      qc.invalidateQueries({ queryKey: ['groups'] });
+      toast.success('Solicitação processada com sucesso!');
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Erro ao processar solicitação.'),
   });
 };

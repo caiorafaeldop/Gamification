@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Trophy, Calendar, Filter, Crown, Users } from 'lucide-react';
+import { Trophy, Filter, Crown, Users } from 'lucide-react';
 import { Skeleton } from './Skeleton';
 import ProjectFilterSelect from './ProjectFilterSelect';
 import {
@@ -53,41 +53,29 @@ const RankingTab = () => {
   const remaining = rankingData.slice(3);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-surface-light px-3 py-2 text-xs text-gray-500 shadow-sm dark:border-gray-700 dark:bg-surface-dark dark:text-gray-400">
-            <Calendar size={14} />
-            <span>
-              Período: <span className="font-bold text-primary">{activeFilterLabel}</span>
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Filter size={16} className="text-gray-400" />
-            <Select value={activeFilter} onValueChange={setActiveFilter}>
-              <SelectTrigger className="w-[160px] bg-surface-light dark:bg-surface-dark border-gray-200 dark:border-gray-700">
-                <SelectValue placeholder="Selecionar Período" />
-              </SelectTrigger>
-              <SelectContent>
-                {FILTERS.map((filter) => (
-                  <SelectItem key={filter.id} value={filter.id}>
-                    {filter.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-wrap items-center gap-2">
+        <Filter size={14} className="text-gray-400" />
+        <Select value={activeFilter} onValueChange={setActiveFilter}>
+          <SelectTrigger className="w-[140px] bg-surface-light dark:bg-surface-dark border-gray-200 dark:border-gray-700">
+            <SelectValue placeholder="Período" />
+          </SelectTrigger>
+          <SelectContent>
+            {FILTERS.map((filter) => (
+              <SelectItem key={filter.id} value={filter.id}>
+                {filter.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      <SurfaceCard padding="md">
         <ProjectFilterSelect
           projects={projects}
           selectedProjectIds={selectedProjectIds}
           onToggle={toggleProject}
           onClear={() => setSelectedProjectIds([])}
         />
-      </SurfaceCard>
+      </div>
 
       {loading ? (
         <div className="mx-auto max-w-4xl space-y-3">

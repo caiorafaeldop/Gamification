@@ -44,6 +44,7 @@ model User {
   assignedTasks       Task[]             @relation("AssignedTasks")
   createdTasks        Task[]             @relation("CreatedTasks")
   taskAssignments     TaskAssignee[]     @relation("TaskAssignees")
+  groupJoinRequests   GroupJoinRequest[]
   tier                Tier               @relation(fields: [tierId], references: [id])
   userAchievements    UserAchievement[]
   weeklyRankings      WeeklyRanking[]
@@ -76,6 +77,7 @@ model Project {
   members                ProjectMember[]
   likes                  ProjectLike[]
   tasks                  Task[]
+  events                 Event[]
 }
 
 model ProjectMember {
@@ -226,9 +228,13 @@ model Event {
   location     String?
   description  String?
   createdById  String
+  groupId      String?
+  projectId    String?
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
   createdBy    User               @relation("CreatedEvents", fields: [createdById], references: [id], onDelete: Cascade)
+  group        Group?             @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  project      Project?           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   participants EventParticipant[]
 }
 
@@ -291,11 +297,14 @@ model Group {
   logoUrl     String?
   bannerUrl   String?
   totalXp     Int?          @default(0)
-  createdAt   DateTime?     @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime?     @default(now()) @db.Timestamptz(6)
-  GroupMember GroupMember[]
-  Project     Project[]
-  jobPostings JobPosting[]
+  createdAt    DateTime?          @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime?          @default(now()) @db.Timestamptz(6)
+  isRestricted Boolean            @default(false)
+  GroupMember  GroupMember[]
+  Project      Project[]
+  jobPostings  JobPosting[]
+  events       Event[]
+  joinRequests GroupJoinRequest[]
 }
 
 model GroupMember {
@@ -307,6 +316,19 @@ model GroupMember {
   User     User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([userId, groupId])
+}
+
+model GroupJoinRequest {
+  id        String        @id @default(uuid())
+  userId    String
+  groupId   String
+  status    RequestStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group     Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
 }
 
 model ProjectLike {
@@ -414,4 +436,10 @@ enum JobPostingStatus {
   OPEN
   CLOSED
   FILLED
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

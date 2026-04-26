@@ -16,7 +16,6 @@ import { Camera, Loader, Edit } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../components/ConfirmationModal';
 import MembersListModal from '../components/MembersListModal';
-import { ProjectMembersCarousel } from '../components/ProjectMembersCarousel';
 import { COLUMN_COLORS } from '../constants';
 import { ProjectStatus, statusLabels, statusStyles } from '../types';
 import ProjectDetailsScreenMobile from './ProjectDetailsScreenMobile';
@@ -748,30 +747,29 @@ const ProjectDetailsScreen = () => {
 
             {/* Header Section */}
             <div
-                className={`bg-surface-light/80 dark:bg-secondary/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 z-10 transition-all duration-300 flex-shrink-0 relative group ${isHeaderMinimized ? 'pt-1 pb-1 px-3' : 'py-3 px-4'
+                className={`bg-surface-light/80 dark:bg-secondary/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 z-10 transition-all duration-300 flex-shrink-0 relative group ${isHeaderMinimized ? 'py-1 px-3' : 'py-2 px-4'
                     }`}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
             >
-                {/* Project Cover Background */}
-                {project.coverUrl && !isHeaderMinimized && (
-                    <div className="absolute inset-0 z-0 opacity-20 group-hover:opacity-30 transition-opacity">
-                        <img src={project.coverUrl} alt="" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-surface-light dark:to-background-dark"></div>
-                    </div>
-                )}
-
                 <div className="max-w-full mx-auto relative z-10">
-                    <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center transition-all duration-300 ${isHeaderMinimized ? 'gap-1' : 'gap-3'
-                        }`}>
-                        <div className={`space-y-1 max-w-2xl transition-all duration-300 ${isHeaderMinimized ? 'hidden lg:block' : 'block'}`}>
-                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                <span onClick={() => navigate('/projects')} className="hover:text-primary cursor-pointer">Projetos</span>
-                                <span className="material-icons text-[10px]">chevron_right</span>
-                                <span className="text-primary font-bold">Detalhes</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <h1 className={`${isHeaderMinimized ? 'text-base truncate max-w-[200px]' : 'text-xl'} transition-all duration-300 font-display font-extrabold text-secondary dark:text-white lg:max-w-none`}>{project.title}</h1>
+                    <div className="flex flex-row justify-between items-center gap-3">
+                        <div className={`min-w-0 flex-1 transition-all duration-300 ${isHeaderMinimized ? 'hidden lg:block' : 'block'}`}>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <button
+                                    onClick={() => navigate('/projects')}
+                                    title="Voltar para Projetos"
+                                    className="text-[10px] text-gray-400 hover:text-primary uppercase tracking-wider font-bold"
+                                >
+                                    Projetos
+                                </button>
+                                <span className="text-gray-300 dark:text-gray-600">/</span>
+                                <h1
+                                    className={`${isHeaderMinimized ? 'text-sm truncate max-w-[240px]' : 'text-base'} transition-all duration-300 font-display font-extrabold text-secondary dark:text-white truncate max-w-[420px]`}
+                                    title={project.title}
+                                >
+                                    {project.title}
+                                </h1>
                                 {!isHeaderMinimized && (
                                     isLeaderOrAdmin ? (
                                         <div className="w-24">
@@ -789,7 +787,7 @@ const ProjectDetailsScreen = () => {
                                                 }}
                                             >
                                                 <SelectTrigger className={cn(
-                                                    "h-7 text-[10px] font-bold uppercase tracking-wide border rounded-full",
+                                                    "h-6 text-[10px] font-bold uppercase tracking-wide border rounded-full",
                                                     statusStyles[project.status as ProjectStatus] || 'bg-gray-100 text-gray-700'
                                                 )}>
                                                     <SelectValue placeholder="Status" />
@@ -802,7 +800,7 @@ const ProjectDetailsScreen = () => {
                                             </Select>
                                         </div>
                                     ) : (
-                                        <span className={`${statusStyles[project.status as ProjectStatus] || 'bg-green-100 text-green-700'} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border border-current inline-flex items-center justify-center min-w-[80px]`}>
+                                        <span className={`${statusStyles[project.status as ProjectStatus] || 'bg-green-100 text-green-700'} px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-current inline-flex items-center justify-center`}>
                                             {statusLabels[project.status as ProjectStatus] || project.status}
                                         </span>
                                     )
@@ -813,60 +811,46 @@ const ProjectDetailsScreen = () => {
                                     </span>
                                 )}
                             </div>
-                            {!isHeaderMinimized && (
-                                <p className="text-gray-600 dark:text-gray-300 text-xs line-clamp-2">
-                                    {project.description}
-                                </p>
-                            )}
-                            
-                            {/* Project Members Carousel */}
-                            {!isHeaderMinimized && project.members && (
-                                <div className="mt-4 max-w-[800px]">
-                                    <ProjectMembersCarousel members={project.members} />
-                                </div>
-                            )}
                         </div>
 
-                        <div className={`flex flex-col lg:flex-row items-end lg:items-center transition-all duration-300 ${isHeaderMinimized ? 'hidden lg:flex' : 'flex'
-                            } gap-3`}>
-                            <div className="flex items-center gap-3">
-                                <div
-                                    className="flex -space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
-                                    onClick={() => setIsMembersModalOpen(true)}
-                                    title="Ver todos os membros"
-                                >
-                                    {project.members?.slice(0, 4).map((m: any, idx: number) => (
-                                        <img
-                                            key={idx}
-                                            alt={m.user?.name || 'Member'}
-                                            className="w-7 h-7 rounded-full border-2 border-white dark:border-secondary shadow-sm object-cover"
-                                            src={m.user?.avatarUrl || `https://ui-avatars.com/api/?name=${m.user?.name || 'User'}&background=random`}
-                                            title={m.user?.name}
-                                        />
-                                    ))}
-                                    {project.members?.length > 4 && (
-                                        <div className="w-7 h-7 rounded-full border-2 border-white dark:border-secondary shadow-sm bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-500 dark:text-gray-400">
-                                            +{project.members.length - 4}
+                        <div className="flex items-center gap-2 shrink-0">
+                            <div
+                                className="flex -space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => setIsMembersModalOpen(true)}
+                                title={`Ver todos os ${project.members?.length || 0} membros`}
+                            >
+                                {project.members?.slice(0, 4).map((m: any, idx: number) => (
+                                    <img
+                                        key={idx}
+                                        alt={m.user?.name || 'Member'}
+                                        className="w-6 h-6 rounded-full border-2 border-white dark:border-secondary shadow-sm object-cover"
+                                        src={m.user?.avatarUrl || `https://ui-avatars.com/api/?name=${m.user?.name || 'User'}&background=random`}
+                                        title={m.user?.name}
+                                    />
+                                ))}
+                                {project.members?.length > 4 && (
+                                    <div className="w-6 h-6 rounded-full border-2 border-white dark:border-secondary shadow-sm bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[9px] font-bold text-gray-500 dark:text-gray-400">
+                                        +{project.members.length - 4}
+                                    </div>
+                                )}
+                            </div>
+                            <div
+                                className="hidden md:flex items-center gap-1.5 border-l border-gray-200 dark:border-gray-700 pl-2 h-6"
+                                title={`Líder: ${project.leader?.name || 'Desconhecido'}`}
+                            >
+                                <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0 overflow-hidden">
+                                    {project.leader?.avatarUrl ? (
+                                        <img src={project.leader.avatarUrl} alt={project.leader.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full bg-gradient-to-tr from-gray-200 to-gray-300 flex items-center justify-center">
+                                            <span className="text-gray-500 font-bold text-[9px]">{project.leader?.name?.substring(0, 2).toUpperCase()}</span>
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-2 border-l border-gray-300 dark:border-gray-700 pl-3 h-7">
-                                    <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-primary shrink-0 overflow-hidden">
-                                        {project.leader?.avatarUrl ? (
-                                            <img src={project.leader.avatarUrl} alt={project.leader.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full bg-gradient-to-tr from-gray-200 to-gray-300 flex items-center justify-center">
-                                                <span className="text-gray-500 font-bold text-[10px]">{project.leader?.name?.substring(0, 2).toUpperCase()}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="text-[9px] text-gray-500 uppercase font-bold leading-tight">Líder</p>
-                                        <p className="text-[11px] font-bold text-secondary dark:text-white truncate max-w-[80px] lg:max-w-[100px] leading-tight">{project.leader?.name || "Desconhecido"}</p>
-                                    </div>
-                                </div>
+                                <span className="text-[11px] font-bold text-secondary dark:text-white truncate max-w-[110px]">
+                                    {project.leader?.name || 'Desconhecido'}
+                                </span>
                             </div>
-
                         </div>
                     </div>
                 </div>

@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, FlaskConical, Save, Users, BookOpen, Sparkles, Loader } from 'lucide-react';
 import { useCreateGroup, useGroup, useUpdateGroup } from '../hooks/useGroups';
 import { PageHero, SurfaceCard, SectionHeader, ColorPicker, LogoUpload } from '../components/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select';
+import { Lock, Globe } from 'lucide-react';
 
 const NewGroupScreen = () => {
   const navigate = useNavigate();
@@ -18,6 +20,7 @@ const NewGroupScreen = () => {
     description: '',
     color: '#29B6F6',
     logoUrl: '',
+    isRestricted: false,
   });
 
   useEffect(() => {
@@ -27,6 +30,7 @@ const NewGroupScreen = () => {
         description: group.description || '',
         color: group.color || '#29B6F6',
         logoUrl: group.logoUrl || '',
+        isRestricted: group.isRestricted || false,
       });
     }
   }, [isEditing, group]);
@@ -45,6 +49,7 @@ const NewGroupScreen = () => {
         description: formData.description || undefined,
         color: formData.color,
         logoUrl: formData.logoUrl || undefined,
+        isRestricted: formData.isRestricted,
       });
       navigate(`/groups/${id}`);
       return;
@@ -55,6 +60,7 @@ const NewGroupScreen = () => {
       description: formData.description || undefined,
       color: formData.color,
       logoUrl: formData.logoUrl || undefined,
+      isRestricted: formData.isRestricted,
     });
     navigate(`/groups/${group.id}`);
   };
@@ -84,10 +90,10 @@ const NewGroupScreen = () => {
             Voltar
           </button>
         }
-        title={isEditing ? 'Editar Grupo' : 'Novo laboratório ou coletivo'}
+        title={isEditing ? 'Editar Grupo' : 'Novo Grupo'}
         description={
           isEditing
-            ? 'Atualize a identidade visual e as informações do seu grupo.'
+            ? 'Atualize a identidade visual e as informações do Conhecer.'
             : 'Defina a identidade visual e convide colegas. Projetos e integrantes poderão ser adicionados depois.'
         }
         actionButtons={
@@ -143,6 +149,33 @@ const NewGroupScreen = () => {
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
                 />
               </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">
+                  Tipo de Grupo
+                </label>
+                <Select
+                  value={formData.isRestricted ? 'restricted' : 'open'}
+                  onValueChange={(val) => setFormData(prev => ({ ...prev, isRestricted: val === 'restricted' }))}
+                >
+                  <SelectTrigger className="h-12 w-full border-slate-200 bg-slate-50 shadow-inner dark:border-slate-700 dark:bg-background-dark">
+                    <SelectValue placeholder="Selecione o tipo de grupo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="open">
+                      <div className="flex items-center gap-2">
+                        <Globe size={16} className="text-green-500" /> Aberto (Qualquer um pode entrar)
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="restricted">
+                      <div className="flex items-center gap-2">
+                        <Lock size={16} className="text-amber-500" /> Restrito (Requer aprovação)
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">
                   Descrição
@@ -219,8 +252,9 @@ const NewGroupScreen = () => {
                   </div>
                 </div>
                 <div className="bg-surface-light px-4 pb-4 pt-8 dark:bg-surface-dark">
-                  <h4 className="text-base font-display font-bold text-secondary dark:text-white">
-                    {formData.name || 'Nome do Grupo'}
+                  <h4 className="text-base font-display font-bold text-secondary dark:text-white flex items-center justify-between">
+                    <span className="truncate">{formData.name || 'Nome do Grupo'}</span>
+                    {formData.isRestricted && <Lock size={14} className="text-amber-500 shrink-0" />}
                   </h4>
                   <p className="mt-1 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
                     {formData.description || 'A descrição do grupo aparecerá aqui...'}

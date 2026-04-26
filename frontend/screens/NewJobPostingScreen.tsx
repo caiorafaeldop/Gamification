@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Briefcase, ArrowLeft, FlaskConical } from 'lucide-react';
+import { Briefcase, ArrowLeft, Users, Info, Check, Sparkles, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useGroups } from '../hooks/useGroups';
 import { createJobPosting } from '../services/jobPosting.service';
-import { PageHero } from '../components/ui';
+import { PageHero, SurfaceCard, SectionHeader } from '../components/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select';
 
 const NewJobPostingScreen = () => {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ const NewJobPostingScreen = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [contact, setContact] = useState('');
-  const [groupId, setGroupId] = useState<string>('');
+  const [groupId, setGroupId] = useState<string>('none');
 
   const currentUserId = useMemo(() => {
     try {
@@ -31,7 +32,7 @@ const NewJobPostingScreen = () => {
   const myGroups = useMemo(() => {
     if (!currentUserId) return [];
     return groups.filter((g) =>
-      (g.GroupMember || []).some((m) => m.userId === currentUserId),
+      (g.GroupMember || []).some((m: any) => m.userId === currentUserId),
     );
   }, [groups, currentUserId]);
 
@@ -41,10 +42,10 @@ const NewJobPostingScreen = () => {
         title,
         description,
         contact,
-        groupId: groupId || null,
+        groupId: groupId === 'none' ? null : groupId,
       }),
     onSuccess: () => {
-      toast.success('Vaga publicada!');
+      toast.success('Vaga publicada com sucesso!');
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       navigate('/jobs');
     },
@@ -64,125 +65,175 @@ const NewJobPostingScreen = () => {
     mutation.mutate();
   };
 
-  return (
-    <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6 lg:p-8">
-      <button
-        onClick={() => navigate('/jobs')}
-        className="flex items-center gap-2 text-sm font-semibold text-gray-500 transition-colors hover:text-primary"
-      >
-        <ArrowLeft size={16} /> Voltar para vagas
-      </button>
+  const submitForm = () => {
+    const form = document.getElementById('new-job-form') as HTMLFormElement;
+    if (form) form.requestSubmit();
+  };
 
+  return (
+    <div className="mx-auto max-w-[1480px] space-y-8 p-4 sm:p-6 lg:p-8">
       <PageHero
         icon={Briefcase}
-        tagLabel="Nova publicação"
-        title="Publicar vaga"
-        description="Conte para a comunidade sobre a oportunidade. Você pode opcionalmente vincular a vaga a um dos seus grupos."
+        tagLabel={
+          <button
+            onClick={() => navigate(-1)}
+            className="group inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary transition-all hover:bg-primary/20"
+          >
+            <ArrowLeft size={12} className="transition-transform group-hover:-translate-x-1" />
+            Voltar
+          </button>
+        }
+        title="Publicar Nova Vaga"
+        description="Divulgue uma oportunidade para a comunidade acadêmica. Defina claramente o que você precisa."
+        actionButtons={
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="rounded-xl border border-slate-200 bg-white/50 px-4 py-2.5 text-sm font-bold text-slate-600 transition-all hover:bg-slate-100 dark:border-slate-700 dark:bg-surface-dark dark:text-slate-400 dark:hover:bg-white/5"
+              disabled={mutation.isPending}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={submitForm}
+              disabled={!canSubmit}
+              className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+            >
+              {mutation.isPending ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              ) : (
+                <Check size={18} />
+              )}
+              {mutation.isPending ? 'Publicando...' : 'Publicar Vaga'}
+            </button>
+          </div>
+        }
       />
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-5 rounded-2xl border border-gray-100 bg-surface-light p-6 shadow-sm dark:border-gray-800 dark:bg-surface-dark"
-      >
-        <Field label="Título *" hint="Resuma a oportunidade em uma linha.">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            maxLength={120}
-            placeholder="Ex: Procuro dev React para projeto de portfólio"
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-700 dark:bg-surface-darker"
-            required
-          />
-        </Field>
+      <form id="new-job-form" onSubmit={handleSubmit} className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        {/* Main Content */}
+        <div className="space-y-6 lg:col-span-2">
+          <SurfaceCard padding="lg">
+            <SectionHeader
+              icon={<Sparkles size={22} />}
+              title="Detalhes da Vaga"
+              description="Informações básicas sobre a oportunidade."
+            />
 
-        <Field label="Descrição *" hint="Detalhe responsabilidades, perfil esperado e contexto.">
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={6}
-            placeholder="Descreva o que você precisa, escopo, dedicação esperada..."
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-700 dark:bg-surface-darker"
-            required
-          />
-        </Field>
+            <div className="mt-6 space-y-6">
+              <div>
+                <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                  Título da Oportunidade
+                </label>
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  maxLength={120}
+                  placeholder="Ex: Procuramos UI Designer para Projeto de IC"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
+                  required
+                />
+              </div>
 
-        <Field label="Contato *" hint="E-mail, link do LinkedIn ou WhatsApp.">
-          <input
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-            maxLength={300}
-            placeholder="seu@email.com ou https://wa.me/55..."
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-700 dark:bg-surface-darker"
-            required
-          />
-        </Field>
+              <div>
+                <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                  Descrição Completa
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={6}
+                  placeholder="Detalhe o contexto, requisitos, tecnologias utilizadas e carga horária..."
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
+                  required
+                />
+              </div>
 
-        <Field
-          label="Vincular a um grupo (opcional)"
-          hint="Apenas grupos dos quais você é membro aparecem aqui."
-        >
-          {loadingGroups ? (
-            <div className="text-sm text-gray-400">Carregando grupos...</div>
-          ) : myGroups.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:border-gray-700 dark:bg-white/5">
-              Você ainda não é membro de nenhum grupo. A vaga será publicada sem
-              vínculo.
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                    Forma de Contato
+                  </label>
+                  <input
+                    value={contact}
+                    onChange={(e) => setContact(e.target.value)}
+                    maxLength={300}
+                    placeholder="E-mail, link do Forms, WhatsApp..."
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                    Vincular a um Grupo
+                  </label>
+                  {loadingGroups ? (
+                    <div className="flex h-12 w-full animate-pulse items-center rounded-xl bg-slate-100 px-4 dark:bg-surface-darker">
+                      <span className="text-sm text-slate-400">Carregando...</span>
+                    </div>
+                  ) : myGroups.length === 0 ? (
+                    <div className="flex h-12 w-full items-center rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 dark:border-slate-700 dark:bg-surface-darker">
+                      <span className="text-sm text-slate-500">Nenhum grupo disponível</span>
+                    </div>
+                  ) : (
+                    <Select value={groupId} onValueChange={(val) => setGroupId(val)}>
+                      <SelectTrigger className="h-12 w-full border-slate-200 bg-slate-50 shadow-inner dark:border-slate-700 dark:bg-background-dark">
+                        <SelectValue placeholder="Selecione um grupo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">— Vaga Pessoal (Sem vínculo)</SelectItem>
+                        {myGroups.map((g) => (
+                          <SelectItem key={g.id} value={g.id}>
+                            {g.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              </div>
             </div>
-          ) : (
-            <select
-              value={groupId}
-              onChange={(e) => setGroupId(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-700 dark:bg-surface-darker"
-            >
-              <option value="">— Sem vínculo (vaga pessoal)</option>
-              {myGroups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
-          )}
-          {groupId && (
-            <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-              <FlaskConical size={12} />
-              Vinculada a {myGroups.find((g) => g.id === groupId)?.name}
-            </div>
-          )}
-        </Field>
+          </SurfaceCard>
+        </div>
 
-        <div className="flex justify-end gap-3 border-t border-gray-100 pt-5 dark:border-gray-800">
-          <button
-            type="button"
-            onClick={() => navigate('/jobs')}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className="rounded-lg bg-primary px-5 py-2 text-sm font-bold text-white shadow transition-all hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {mutation.isPending ? 'Publicando...' : 'Publicar vaga'}
-          </button>
+        {/* Sidebar */}
+        <div className="space-y-6 lg:col-span-1">
+          <SurfaceCard padding="md" className="border-blue-100 bg-blue-50/50 dark:border-blue-900/30 dark:bg-blue-900/10">
+            <h4 className="mb-3 flex items-center gap-2 font-bold text-blue-800 dark:text-blue-300">
+              <Info size={18} className="text-blue-600 dark:text-blue-400" />
+              Dicas Importantes
+            </h4>
+            <ul className="space-y-3 text-sm text-blue-900/70 dark:text-blue-200/70">
+              <li className="flex items-start gap-2">
+                <span className="mt-1 flex h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400"></span>
+                Especifique a carga horária se for um projeto de laboratório.
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-1 flex h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400"></span>
+                Seja muito claro quanto aos pré-requisitos essenciais.
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-1 flex h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400"></span>
+                Informe se a vaga oferece bolsa, certificado ou se é voluntária.
+              </li>
+            </ul>
+          </SurfaceCard>
+
+          <SurfaceCard padding="md">
+            <h4 className="mb-3 flex items-center gap-2 font-bold text-secondary dark:text-white">
+              <Users size={18} className="text-primary" />
+              Impacto dos Grupos
+            </h4>
+            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+              Vincular a vaga a um grupo a fará aparecer na página oficial dele, fortalecendo a credibilidade da oportunidade e alcançando talentos mais focados na sua área.
+            </p>
+          </SurfaceCard>
         </div>
       </form>
     </div>
   );
 };
-
-const Field: React.FC<{
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-}> = ({ label, hint, children }) => (
-  <div>
-    <label className="mb-1 block text-sm font-bold text-secondary dark:text-white">
-      {label}
-    </label>
-    {hint && <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">{hint}</p>}
-    {children}
-  </div>
-);
 
 export default NewJobPostingScreen;

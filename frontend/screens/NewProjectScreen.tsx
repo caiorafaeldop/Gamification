@@ -289,7 +289,7 @@ const NewProjectScreen = () => {
                     <SelectContent>
                       <SelectItem value="PRIVATE">Privado (só meu grupo)</SelectItem>
                       <SelectItem value="PUBLIC_VIEW">Público — apenas leitura</SelectItem>
-                      <SelectItem value="PUBLIC_LIKE">Público — aceita curtidas</SelectItem>
+                      <SelectItem value="PUBLIC_LIKE">Público — aceita Likes</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="mt-1 text-xs text-gray-400">Define quem pode ver e interagir com seu projeto.</p>

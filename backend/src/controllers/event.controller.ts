@@ -10,6 +10,8 @@ export const getEvents = async (req: Request, res: Response, next: NextFunction)
                 createdBy: {
                     select: { id: true, name: true, avatarColor: true }
                 },
+                group: { select: { id: true, name: true, color: true } },
+                project: { select: { id: true, title: true } },
                 participants: {
                     include: {
                         user: {
@@ -27,7 +29,7 @@ export const getEvents = async (req: Request, res: Response, next: NextFunction)
 
 export const createEvent = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { title, type, date, time, location, description } = req.body;
+        const { title, type, date, time, location, description, groupId, projectId } = req.body;
         const userId = (req as any).user?.userId;
 
         if (!title || !type || !date || !time) {
@@ -48,6 +50,8 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
                 location,
                 description,
                 createdById: userId,
+                ...(groupId && { groupId }),
+                ...(projectId && { projectId }),
                 participants: {
                     create: {
                         userId: userId
@@ -57,7 +61,9 @@ export const createEvent = async (req: Request, res: Response, next: NextFunctio
             include: {
                 createdBy: {
                     select: { id: true, name: true, avatarColor: true }
-                }
+                },
+                group: { select: { id: true, name: true, color: true } },
+                project: { select: { id: true, title: true } }
             }
         });
 
@@ -76,7 +82,9 @@ export const getEventById = async (req: Request, res: Response, next: NextFuncti
             include: {
                 createdBy: {
                     select: { id: true, name: true, avatarColor: true }
-                }
+                },
+                group: { select: { id: true, name: true, color: true } },
+                project: { select: { id: true, title: true } }
             }
         });
 
@@ -93,7 +101,7 @@ export const getEventById = async (req: Request, res: Response, next: NextFuncti
 export const updateEvent = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
-        const { title, type, date, time, location, description } = req.body;
+        const { title, type, date, time, location, description, groupId, projectId } = req.body;
         const userId = (req as any).user?.userId;
         const userRole = (req as any).user?.role;
 
@@ -124,11 +132,15 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
                 ...(time && { time }),
                 ...(location !== undefined && { location }),
                 ...(description !== undefined && { description }),
+                ...(groupId !== undefined && { groupId: groupId || null }),
+                ...(projectId !== undefined && { projectId: projectId || null }),
             },
             include: {
                 createdBy: {
                     select: { id: true, name: true, avatarColor: true }
                 },
+                group: { select: { id: true, name: true, color: true } },
+                project: { select: { id: true, title: true } },
                 participants: {
                     include: {
                         user: {

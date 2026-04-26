@@ -8,6 +8,7 @@ interface CreateGroupInput {
   color?: string;
   logoUrl?: string;
   bannerUrl?: string;
+  isRestricted?: boolean;
 }
 
 interface UpdateGroupInput {
@@ -16,6 +17,7 @@ interface UpdateGroupInput {
   color?: string;
   logoUrl?: string;
   bannerUrl?: string;
+  isRestricted?: boolean;
 }
 
 const groupInclude = {
@@ -41,11 +43,13 @@ const groupInclude = {
   _count: { select: { GroupMember: true, Project: true } },
 } as const;
 
-export const listGroups = async () => {
+export const listGroups = async (userId?: string) => {
   const groups = await prisma.group.findMany({
     include: {
       _count: { select: { GroupMember: true, Project: true } },
       Project: { select: { likeCount: true } },
+      GroupMember: { select: { userId: true } },
+      ...(userId && { joinRequests: { where: { userId } } }),
     },
   });
 
@@ -60,10 +64,13 @@ export const listGroups = async () => {
   return withLikes;
 };
 
-export const getGroupDetails = async (id: string) => {
+export const getGroupDetails = async (id: string, userId?: string) => {
   const group = await prisma.group.findUnique({
     where: { id },
-    include: groupInclude,
+    include: {
+      ...groupInclude,
+      ...(userId && { joinRequests: { where: { userId } } }),
+    },
   });
   if (!group) throw { statusCode: 404, message: 'Group not found.' };
   return group;
@@ -82,6 +89,7 @@ export const createGroup = async (data: CreateGroupInput, creatorId: string) => 
         color: data.color || '#29B6F6',
         logoUrl: data.logoUrl,
         bannerUrl: data.bannerUrl,
+        isRestricted: data.isRestricted ?? false,
         GroupMember: {
           create: {
             userId: creatorId,
@@ -119,6 +127,7 @@ export const updateGroup = async (
       ...(data.color !== undefined && { color: data.color }),
       ...(data.logoUrl !== undefined && { logoUrl: data.logoUrl }),
       ...(data.bannerUrl !== undefined && { bannerUrl: data.bannerUrl }),
+      ...(data.isRestricted !== undefined && { isRestricted: data.isRestricted }),
       updatedAt: new Date(),
     },
     include: groupInclude,
@@ -152,8 +161,89 @@ export const joinGroup = async (groupId: string, userId: string) => {
   });
   if (existing) throw { statusCode: 409, message: 'Você já é membro desse grupo.' };
 
+  if (group.isRestricted) {
+    throw { statusCode: 403, message: 'Este grupo é restrito. Você precisa solicitar entrada.' };
+  }
+
   return prisma.groupMember.create({
     data: { userId, groupId, role: GroupRole.MEMBER },
+  });
+};
+
+export const requestJoinGroup = async (groupId: string, userId: string) => {
+  const group = await prisma.group.findUnique({ where: { id: groupId } });
+  if (!group) throw { statusCode: 404, message: 'Group not found.' };
+
+  const existingMember = await prisma.groupMember.findUnique({
+    where: { userId_groupId: { userId, groupId } },
+  });
+  if (existingMember) throw { statusCode: 409, message: 'Você já é membro desse grupo.' };
+
+  const existingRequest = await prisma.groupJoinRequest.findUnique({
+    where: { userId_groupId: { userId, groupId } },
+  });
+  if (existingRequest && existingRequest.status === 'PENDING') {
+    throw { statusCode: 409, message: 'Você já tem uma solicitação pendente para este grupo.' };
+  }
+
+  if (existingRequest) {
+    return prisma.groupJoinRequest.update({
+      where: { userId_groupId: { userId, groupId } },
+      data: { status: 'PENDING', updatedAt: new Date() },
+    });
+  }
+
+  return prisma.groupJoinRequest.create({
+    data: { userId, groupId },
+  });
+};
+
+export const respondToJoinRequest = async (
+  requestId: string,
+  groupId: string,
+  action: 'APPROVED' | 'REJECTED',
+  requestingUserId: string,
+  requestingUserRole: Role
+) => {
+  const membership = await prisma.groupMember.findUnique({
+    where: { userId_groupId: { userId: requestingUserId, groupId } },
+  });
+  const isGroupAdmin = membership?.role === GroupRole.ADMIN;
+  const isSystemAdmin = requestingUserRole === Role.ADMIN;
+
+  if (!isGroupAdmin && !isSystemAdmin) {
+    throw { statusCode: 403, message: 'Apenas admins do grupo podem gerenciar solicitações.' };
+  }
+
+  const joinRequest = await prisma.groupJoinRequest.findUnique({
+    where: { id: requestId },
+  });
+
+  if (!joinRequest || joinRequest.groupId !== groupId) {
+    throw { statusCode: 404, message: 'Solicitação não encontrada.' };
+  }
+
+  if (joinRequest.status !== 'PENDING') {
+    throw { statusCode: 400, message: 'Esta solicitação já foi processada.' };
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const updatedRequest = await tx.groupJoinRequest.update({
+      where: { id: requestId },
+      data: { status: action, updatedAt: new Date() },
+    });
+
+    if (action === 'APPROVED') {
+      await tx.groupMember.create({
+        data: {
+          userId: joinRequest.userId,
+          groupId: joinRequest.groupId,
+          role: GroupRole.MEMBER,
+        },
+      });
+    }
+
+    return updatedRequest;
   });
 };
 

@@ -124,7 +124,7 @@ export const getCatalogForUser = async (userId: string) => {
         include: projectInclude,
       })
     : [];
-  // mantém ordem do groupBy (mais curtidas primeiro)
+  // mantém ordem do groupBy (mais Likes primeiro)
   const trendingMap = new Map(trendingProjects.map((p) => [p.id, p]));
   const trending = trendingIds
     .map((id) => trendingMap.get(id))

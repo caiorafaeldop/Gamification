@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import * as groupService from '../services/group.service';
 
-export const getGroups = async (_req: Request, res: Response, next: NextFunction) => {
+export const getGroups = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const groups = await groupService.listGroups();
+    const userId = req.user?.userId;
+    const groups = await groupService.listGroups(userId);
     res.json(groups);
   } catch (error) {
     next(error);
@@ -12,7 +13,8 @@ export const getGroups = async (_req: Request, res: Response, next: NextFunction
 
 export const getGroup = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const group = await groupService.getGroupDetails(req.params.id);
+    const userId = req.user?.userId;
+    const group = await groupService.getGroupDetails(req.params.id, userId);
     res.json(group);
   } catch (error) {
     next(error);
@@ -73,6 +75,37 @@ export const leaveGroup = async (req: Request, res: Response, next: NextFunction
     const userId = req.user!.userId;
     await groupService.leaveGroup(req.params.id, userId);
     res.json({ message: 'Você saiu do grupo.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const requestJoinGroup = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.userId;
+    const request = await groupService.requestJoinGroup(req.params.id, userId);
+    res.status(201).json(request);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const respondToJoinRequest = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.userId;
+    const userRole = req.user!.role;
+    const { action } = req.body;
+    if (action !== 'APPROVED' && action !== 'REJECTED') {
+      return res.status(400).json({ message: 'Ação inválida. Use APPROVED ou REJECTED.' });
+    }
+    const response = await groupService.respondToJoinRequest(
+      req.params.requestId,
+      req.params.id,
+      action,
+      userId,
+      userRole
+    );
+    res.json(response);
   } catch (error) {
     next(error);
   }

@@ -66,6 +66,52 @@ export const getDashboardStats = async (userId: string) => {
   const progressIntoTier = totalXP - user.tier.minPoints;
   const tierProgress = nextTier ? Math.min(Math.round((progressIntoTier / tierRange) * 100), 100) : 100;
 
+  // Fetch user groups
+  const userGroups = await prisma.group.findMany({
+    where: {
+      GroupMember: {
+        some: { userId }
+      }
+    },
+    include: {
+      Project: {
+        select: { likeCount: true }
+      }
+    },
+    take: 3
+  });
+
+  const formattedUserGroups = userGroups.map(g => {
+    const totalLikes = g.Project.reduce((acc: number, p: any) => acc + (p.likeCount || 0), 0);
+    return {
+      id: g.id,
+      name: g.name,
+      logoUrl: g.logoUrl,
+      color: g.color,
+      totalLikes
+    };
+  });
+
+  // Fetch top 3 groups globally for ranking preview
+  const allGroups = await prisma.group.findMany({
+    include: {
+      Project: {
+        select: { likeCount: true }
+      }
+    }
+  });
+
+  const topGroups = allGroups
+    .map(g => ({
+      id: g.id,
+      name: g.name,
+      logoUrl: g.logoUrl,
+      color: g.color,
+      totalLikes: g.Project.reduce((acc: number, p: any) => acc + (p.likeCount || 0), 0)
+    }))
+    .sort((a, b) => b.totalLikes - a.totalLikes)
+    .slice(0, 3);
+
   return {
     user: {
       name: user.name,
@@ -76,7 +122,7 @@ export const getDashboardStats = async (userId: string) => {
     },
     activeTaskCount: user.assignedTasks.length,
     projects: activeProjects.map((p) => {
-      const project = p as any; // Temporary cast to bypass the inference issue if Prisma types are stale
+      const project = p as any; 
       return {
         id: project.id,
         title: project.title,
@@ -91,6 +137,8 @@ export const getDashboardStats = async (userId: string) => {
           : 0
       };
     }),
+    userGroups: formattedUserGroups,
+    topGroups,
     recentActivity
   };
 };

@@ -30,10 +30,12 @@ export interface Group {
   bannerUrl: string | null;
   totalXp: number | null;
   totalLikes?: number;
+  isRestricted?: boolean;
   createdAt: string;
   updatedAt: string;
   GroupMember?: GroupMemberSummary[];
   Project?: GroupProjectSummary[];
+  joinRequests?: any[];
   _count?: { GroupMember: number; Project: number };
 }
 
@@ -43,6 +45,7 @@ export interface CreateGroupPayload {
   color?: string;
   logoUrl?: string;
   bannerUrl?: string;
+  isRestricted?: boolean;
 }
 
 export const listGroups = async (): Promise<Group[]> => {
@@ -77,5 +80,15 @@ export const joinGroup = async (id: string) => {
 
 export const leaveGroup = async (id: string) => {
   const { data } = await api.delete(`/groups/${id}/leave`);
+  return data;
+};
+
+export const requestJoinGroup = async (id: string) => {
+  const { data } = await api.post(`/groups/${id}/request`);
+  return data;
+};
+
+export const respondToJoinRequest = async (id: string, requestId: string, action: 'APPROVED' | 'REJECTED') => {
+  const { data } = await api.post(`/groups/${id}/requests/${requestId}/respond`, { action });
   return data;
 };

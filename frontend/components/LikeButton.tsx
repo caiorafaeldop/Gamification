@@ -59,7 +59,7 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
     e.stopPropagation();
     e.preventDefault();
     if (disabled) {
-      toast('Este projeto não aceita curtidas no momento.', { icon: 'ℹ️' });
+      toast('Este projeto não aceita Likes no momento.', { icon: 'ℹ️' });
       return;
     }
     if (mutation.isPending) return;

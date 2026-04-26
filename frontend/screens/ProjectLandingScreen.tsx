@@ -1,19 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Rocket, Users, Target, ArrowLeft, Star, Heart, CheckCircle, Calendar, ListTodo, CheckSquare, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+    Rocket, Users, Target, ArrowLeft, Heart, CheckCircle, Calendar, ListTodo,
+    CheckSquare, Zap, ChevronLeft, ChevronRight, Crown, Trophy, Medal, LayoutGrid,
+} from 'lucide-react';
 import { getProjectDetails } from '../services/project.service';
 import { registerProjectInterest } from '../services/explore.service';
-import { PageHero, EmptyState } from '../components/ui';
+import { PageHero, EmptyState, SectionHeader, SurfaceCard } from '../components/ui';
 import { Skeleton } from '../components/Skeleton';
 import { LikeButton } from '../components/LikeButton';
+import { useProfile } from '../hooks/useProfile';
 import toast from 'react-hot-toast';
+
+const MEMBERS_PER_PAGE = 4;
+const AUTOPLAY_MS = 6000;
 
 const ProjectLandingScreen = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [interestExpressed, setInterestExpressed] = useState(false);
-    const [carouselIndex, setCarouselIndex] = useState(0);
+    const { data: currentUser } = useProfile();
 
     const { data: project, isLoading, error } = useQuery({
         queryKey: ['project-landing', id],
@@ -29,108 +36,111 @@ const ProjectLandingScreen = () => {
         },
         onError: (err: any) => {
             toast.error(err.response?.data?.error || 'Erro ao registrar interesse');
-        }
+        },
     });
-
-    const membersPerPage = 4;
-    const totalMembers = project?.members?.length || 0;
-    const canGoNext = carouselIndex + membersPerPage < totalMembers;
-    const canGoPrev = carouselIndex > 0;
-
-    const nextMembers = React.useCallback(() => {
-        const length = project?.members?.length || 0;
-        if (carouselIndex + membersPerPage < length) {
-            setCarouselIndex(prev => prev + 1);
-        } else {
-            setCarouselIndex(0);
-        }
-    }, [carouselIndex, project?.members?.length, membersPerPage]);
-
-    // Auto-play do Carrossel
-    React.useEffect(() => {
-        if (totalMembers <= membersPerPage) return;
-        const timer = setInterval(nextMembers, 5000);
-        return () => clearInterval(timer);
-    }, [nextMembers, totalMembers, membersPerPage]);
-
 
     if (isLoading) {
         return (
-            <div className="mx-auto max-w-[1000px] p-4 sm:p-6 lg:p-8 space-y-6">
-                <Skeleton height={200} className="rounded-2xl" />
-                <Skeleton height={400} className="rounded-2xl" />
+            <div className="mx-auto max-w-[1480px] space-y-6 p-4 sm:p-6 lg:p-8">
+                <Skeleton height={240} className="rounded-3xl" />
+                <Skeleton height={120} className="rounded-2xl" />
+                <Skeleton height={320} className="rounded-2xl" />
             </div>
         );
     }
 
     if (error || !project) {
         return (
-            <div className="mx-auto max-w-[1000px] p-4 sm:p-6 lg:p-8">
-                <button 
-                    onClick={() => navigate('/projects')} 
-                    className="mb-6 flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
-                >
-                    <ArrowLeft size={16} /> Voltar para Projetos
-                </button>
-                <EmptyState icon={Target} title="Projeto não encontrado" description="O projeto pode ter sido removido ou tornado privado." />
+            <div className="mx-auto max-w-[1480px] p-4 sm:p-6 lg:p-8">
+                <EmptyState
+                    icon={Target}
+                    title="Projeto não encontrado"
+                    description="O projeto pode ter sido removido ou tornado privado."
+                    action={
+                        <button
+                            onClick={() => navigate('/projects')}
+                            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-sky-500"
+                        >
+                            <ArrowLeft size={14} /> Voltar para Projetos
+                        </button>
+                    }
+                />
             </div>
         );
     }
 
     const color = project.Group?.color || project.color || '#29B6F6';
-
-    const prevMembers = () => {
-        if (canGoPrev) setCarouselIndex(prev => prev - 1);
-    };
-
+    const memberCount = project._count?.members || project.members?.length || 0;
+    const isMember =
+        !!currentUser &&
+        (currentUser.id === project.leaderId ||
+            project.members?.some((m: any) => m.user?.id === currentUser.id));
 
     return (
-        <div className="min-h-full bg-background-light dark:bg-background-dark pb-20">
-            <div className="mx-auto max-w-[1480px] p-4 sm:p-6 lg:p-8 space-y-6">
-                <div className="relative">
-                    {/* Badge de Membros no topo direito */}
-                    <div className="absolute top-4 right-4 z-20 hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md border border-gray-200 dark:border-white/5 shadow-sm">
-                        <Users size={14} style={{ color }} />
-                        <span className="text-xs font-black text-secondary dark:text-white">
-                            {project._count?.members || project.members?.length || 0}
-                        </span>
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Membros</span>
-                    </div>
+        <div className="min-h-full bg-background-light pb-20 dark:bg-background-dark">
+            <div className="mx-auto max-w-[1480px] space-y-6 p-4 sm:p-6 lg:p-8">
 
-                    <PageHero
-                        icon={Target}
-                        tagLabel={
-                            <button 
-                                onClick={() => navigate('/projects')}
-                                className="group flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-surface-dark px-4 py-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 shadow-sm hover:border-gray-400 hover:text-gray-900 dark:hover:text-white transition-all mr-2"
-                            >
-                                <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> 
-                                Voltar para Projetos
-                            </button>
-                        }
-                        title={project.title}
-                        description={project.description || "Nenhuma descrição fornecida."}
-                        highlight={
-                            <div className="flex items-center gap-3 p-2.5 px-4 rounded-2xl bg-surface-light/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 shadow-sm">
-                                <div className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center bg-gray-100 dark:bg-white/10 overflow-hidden ring-2 ring-white dark:ring-gray-800">
+                <PageHero
+                    icon={Target}
+                    tagLabel={
+                        <button
+                            onClick={() => navigate('/projects')}
+                            className="group inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary transition-all hover:bg-primary/20"
+                            style={{ borderColor: `${color}33`, backgroundColor: `${color}1A`, color }}
+                        >
+                            <ArrowLeft size={12} className="transition-transform group-hover:-translate-x-1" />
+                            Voltar para Projetos
+                        </button>
+                    }
+                    title={project.title}
+                    description={project.description || 'Nenhuma descrição fornecida.'}
+                    highlight={
+                        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/40 bg-white/70 p-2 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-black/20">
+                            <div className="flex items-center gap-3 rounded-xl px-3 py-2">
+                                <div
+                                    className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-white dark:ring-gray-800"
+                                    style={{ backgroundColor: project.leader?.avatarColor || color }}
+                                >
                                     {project.leader?.avatarUrl ? (
-                                        <img src={project.leader.avatarUrl} alt={project.leader.name} className="w-full h-full object-cover" />
+                                        <img src={project.leader.avatarUrl} alt={project.leader.name} className="h-full w-full object-cover" />
                                     ) : (
-                                        <span className="font-bold text-xs" style={{ color: project.leader?.avatarColor || color }}>
+                                        <span className="text-sm font-bold text-white">
                                             {project.leader?.name?.charAt(0).toUpperCase()}
                                         </span>
                                     )}
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Líder do Projeto</p>
-                                    <p className="text-xs font-bold text-secondary dark:text-white truncate max-w-[100px] leading-none">
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                                        Líder
+                                    </p>
+                                    <p className="truncate text-xs font-bold text-secondary dark:text-white">
                                         {project.leader?.name}
                                     </p>
                                 </div>
                             </div>
-                        }
-                        actionButtons={
-                            <>
+
+                            <div className="flex items-center gap-3 rounded-xl px-3 py-2">
+                                <div
+                                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                                    style={{ backgroundColor: `${color}20`, color }}
+                                >
+                                    <Users size={16} />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                                        Equipe
+                                    </p>
+                                    <p className="truncate text-xs font-bold text-secondary dark:text-white">
+                                        {memberCount} {memberCount === 1 ? 'membro' : 'membros'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    actionButtons={
+                        <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
+                            {/* Secondary cluster: like + group chip */}
+                            <div className="flex items-center gap-2">
                                 <LikeButton
                                     projectId={id!}
                                     initialLiked={project.liked ?? false}
@@ -139,202 +149,321 @@ const ProjectLandingScreen = () => {
                                     variant="inline"
                                 />
 
-                                {project.isJoiningOpen ? (
-                                    <button
-                                        onClick={() => interestMutation.mutate()}
-                                        disabled={interestExpressed || interestMutation.isPending}
-                                        className="flex items-center justify-center gap-2 rounded-xl py-3 px-6 text-sm font-bold w-full sm:w-auto text-white transition-all shadow-sm hover:opacity-90 disabled:opacity-80 disabled:cursor-not-allowed"
-                                        style={{ backgroundColor: interestExpressed ? '#10B981' : color }}
-                                    >
-                                        {interestMutation.isPending ? 'Enviando...' : interestExpressed ? <><CheckCircle size={18} /> Interesse Enviado</> : <><Heart size={18} /> Tenho Interesse</>}
-                                    </button>
-                                ) : (
-                                    <div className="flex items-center justify-center gap-2 rounded-xl py-3 px-6 text-sm font-bold bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 cursor-not-allowed border border-gray-200 dark:border-gray-700 w-full sm:w-auto">
-                                        Vagas Fechadas
-                                    </div>
-                                )}
-
                                 {project.Group && (
-                                    <button 
+                                    <button
                                         onClick={() => navigate(`/groups/${project.Group.id}`)}
-                                        className="flex items-center justify-center gap-3 py-3 px-6 rounded-xl bg-surface-light dark:bg-surface-dark border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 transition shadow-sm w-full sm:w-auto"
+                                        className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs font-bold text-secondary shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-surface-dark dark:text-white dark:hover:bg-white/5"
+                                        title={`Ver grupo ${project.Group.name}`}
                                     >
-                                        <div className="w-6 h-6 rounded flex items-center justify-center overflow-hidden">
+                                        <span className="flex h-5 w-5 items-center justify-center overflow-hidden rounded">
                                             {project.Group.logoUrl ? (
-                                                <img src={project.Group.logoUrl} alt={project.Group.name} className="w-full h-full object-cover" />
+                                                <img src={project.Group.logoUrl} alt="" className="h-full w-full object-cover" />
                                             ) : (
-                                                <Rocket size={16} className="text-gray-400" />
+                                                <Rocket size={12} className="text-gray-400" />
                                             )}
-                                        </div>
-                                        <span className="text-sm font-bold text-secondary dark:text-white truncate max-w-[150px]">
-                                            {project.Group.name}
                                         </span>
+                                        <span className="max-w-[120px] truncate">{project.Group.name}</span>
                                     </button>
                                 )}
-                            </>
-                        }
-                    />
-                </div>
-
-                {/* KPIs com estilo "MedTrack" */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                    <div className="relative overflow-hidden bg-white dark:bg-surface-dark rounded-2xl p-5 border border-gray-200 dark:border-white/5 shadow-sm hover:shadow-xl transition-all duration-300 group text-left w-full hover:-translate-y-1">
-                        <div className="absolute top-0 right-0 w-24 h-24 rounded-bl-[60px] opacity-10 group-hover:opacity-20 transition-opacity" style={{ backgroundColor: "#8B5CF6" }} />
-                        <div className="relative z-10">
-                            <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-sm" style={{ backgroundColor: `#8B5CF615`, border: `1px solid #8B5CF625` }}>
-                                <Calendar size={20} style={{ color: "#8B5CF6" }} />
                             </div>
-                            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Início</p>
-                            <p className="text-2xl font-display font-black text-secondary dark:text-white leading-none">
+
+                            {/* Primary CTA — context-aware */}
+                            {isMember ? (
+                                <button
+                                    onClick={() => navigate(`/kanban/${id}`)}
+                                    className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:-translate-y-0.5"
+                                    style={{
+                                        backgroundColor: color,
+                                        boxShadow: `0 10px 24px -10px ${color}`,
+                                    }}
+                                >
+                                    <LayoutGrid size={18} /> Abrir Board
+                                </button>
+                            ) : project.isJoiningOpen ? (
+                                <button
+                                    onClick={() => interestMutation.mutate()}
+                                    disabled={interestExpressed || interestMutation.isPending}
+                                    className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-80"
+                                    style={{
+                                        backgroundColor: interestExpressed ? '#10B981' : color,
+                                        boxShadow: `0 10px 24px -10px ${interestExpressed ? '#10B981' : color}`,
+                                    }}
+                                >
+                                    {interestMutation.isPending ? (
+                                        'Enviando...'
+                                    ) : interestExpressed ? (
+                                        <>
+                                            <CheckCircle size={18} /> Interesse Enviado
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Heart size={18} /> Tenho Interesse
+                                        </>
+                                    )}
+                                </button>
+                            ) : (
+                                <div className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-100 px-6 py-3 text-sm font-bold text-gray-500 dark:border-gray-700 dark:bg-white/5 dark:text-gray-400">
+                                    Vagas Fechadas
+                                </div>
+                            )}
+                        </div>
+                    }
+                />
+
+                {/* KPIs */}
+                <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div className="group relative w-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-white/5 dark:bg-surface-dark">
+                        <div className="absolute right-0 top-0 h-24 w-24 rounded-bl-[60px] opacity-10 transition-opacity group-hover:opacity-20" style={{ backgroundColor: '#8B5CF6' }} />
+                        <div className="relative z-10">
+                            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl shadow-sm" style={{ backgroundColor: '#8B5CF615', border: '1px solid #8B5CF625' }}>
+                                <Calendar size={20} style={{ color: '#8B5CF6' }} />
+                            </div>
+                            <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Início</p>
+                            <p className="font-display text-2xl font-black leading-none text-secondary dark:text-white">
                                 {project.createdAt ? new Date(project.createdAt).toLocaleDateString('pt-BR') : 'N/A'}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1.5 font-medium">Data de criação</p>
+                            <p className="mt-1.5 text-xs font-medium text-gray-500">Data de criação</p>
                         </div>
                     </div>
 
-                    <div className="relative overflow-hidden bg-white dark:bg-surface-dark rounded-2xl p-5 border border-gray-200 dark:border-white/5 shadow-sm hover:shadow-xl transition-all duration-300 group text-left w-full hover:-translate-y-1">
-                        <div className="absolute top-0 right-0 w-24 h-24 rounded-bl-[60px] opacity-10 group-hover:opacity-20 transition-opacity" style={{ backgroundColor: "#3B82F6" }} />
+                    <div className="group relative w-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-white/5 dark:bg-surface-dark">
+                        <div className="absolute right-0 top-0 h-24 w-24 rounded-bl-[60px] opacity-10 transition-opacity group-hover:opacity-20" style={{ backgroundColor: '#3B82F6' }} />
                         <div className="relative z-10">
-                            <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-sm" style={{ backgroundColor: `#3B82F615`, border: `1px solid #3B82F625` }}>
-                                <ListTodo size={20} style={{ color: "#3B82F6" }} />
+                            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl shadow-sm" style={{ backgroundColor: '#3B82F615', border: '1px solid #3B82F625' }}>
+                                <ListTodo size={20} style={{ color: '#3B82F6' }} />
                             </div>
-                            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Missões (Total)</p>
-                            <p className="text-2xl font-display font-black text-secondary dark:text-white leading-none">
+                            <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Missões (Total)</p>
+                            <p className="font-display text-2xl font-black leading-none text-secondary dark:text-white">
                                 {project.stats?.tasksCount ?? project.tasks?.length ?? 0}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1.5 font-medium">Tarefas atribuídas</p>
+                            <p className="mt-1.5 text-xs font-medium text-gray-500">Tarefas atribuídas</p>
                         </div>
                     </div>
 
-                    <div className="relative overflow-hidden bg-white dark:bg-surface-dark rounded-2xl p-5 border border-gray-200 dark:border-white/5 shadow-sm hover:shadow-xl transition-all duration-300 group text-left w-full hover:-translate-y-1">
-                        <div className="absolute top-0 right-0 w-24 h-24 rounded-bl-[60px] opacity-10 group-hover:opacity-20 transition-opacity" style={{ backgroundColor: "#10B981" }} />
+                    <div className="group relative w-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-white/5 dark:bg-surface-dark">
+                        <div className="absolute right-0 top-0 h-24 w-24 rounded-bl-[60px] opacity-10 transition-opacity group-hover:opacity-20" style={{ backgroundColor: '#10B981' }} />
                         <div className="relative z-10">
-                            <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-sm" style={{ backgroundColor: `#10B98115`, border: `1px solid #10B98125` }}>
-                                <CheckSquare size={20} style={{ color: "#10B981" }} />
+                            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl shadow-sm" style={{ backgroundColor: '#10B98115', border: '1px solid #10B98125' }}>
+                                <CheckSquare size={20} style={{ color: '#10B981' }} />
                             </div>
-                            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Concluídas</p>
-                            <p className="text-2xl font-display font-black text-secondary dark:text-white leading-none">
+                            <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Concluídas</p>
+                            <p className="font-display text-2xl font-black leading-none text-secondary dark:text-white">
                                 {project.stats?.tasksCompleted ?? 0}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1.5 font-medium">Tarefas finalizadas</p>
+                            <p className="mt-1.5 text-xs font-medium text-gray-500">Tarefas finalizadas</p>
                         </div>
                     </div>
 
-                    <div className="relative overflow-hidden bg-white dark:bg-surface-dark rounded-2xl p-5 border border-gray-200 dark:border-white/5 shadow-sm hover:shadow-xl transition-all duration-300 group text-left w-full hover:-translate-y-1">
-                        <div className="absolute top-0 right-0 w-24 h-24 rounded-bl-[60px] opacity-10 group-hover:opacity-30 transition-opacity" style={{ backgroundColor: "#F59E0B" }} />
+                    <div className="group relative w-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-white/5 dark:bg-surface-dark">
+                        <div className="absolute right-0 top-0 h-24 w-24 rounded-bl-[60px] opacity-10 transition-opacity group-hover:opacity-30" style={{ backgroundColor: '#F59E0B' }} />
                         <div className="relative z-10">
-                            <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-sm" style={{ backgroundColor: `#F59E0B15`, border: `1px solid #F59E0B25` }}>
-                                <Zap size={20} style={{ color: "#F59E0B" }} />
+                            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl shadow-sm" style={{ backgroundColor: '#F59E0B15', border: '1px solid #F59E0B25' }}>
+                                <Zap size={20} style={{ color: '#F59E0B' }} />
                             </div>
-                            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Total Points</p>
-                            <p className="text-2xl font-display font-black text-secondary dark:text-white leading-none">
+                            <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Total Points</p>
+                            <p className="font-display text-2xl font-black leading-none text-secondary dark:text-white">
                                 {project.stats?.totalPoints ?? 0}
                             </p>
-                            <p className="text-xs text-amber-500 mt-1.5 font-bold">XP Gerado</p>
+                            <p className="mt-1.5 text-xs font-bold text-amber-500">XP Gerado</p>
                         </div>
                     </div>
                 </div>
 
                 {project.members && project.members.length > 0 && (
-                    <div className="mt-10">
-                        <div className="flex items-center justify-between mb-6 px-1">
-                            <h3 className="text-sm font-black text-secondary dark:text-white tracking-widest uppercase">Membros (Top XP)</h3>
-                            {totalMembers > membersPerPage && (
-                                <div className="flex items-center gap-2">
-                                    <button 
-                                        onClick={prevMembers} 
-                                        disabled={!canGoPrev}
-                                        className="p-1.5 rounded-full border border-gray-200 dark:border-white/10 bg-white dark:bg-surface-dark text-gray-500 hover:text-secondary dark:hover:text-white disabled:opacity-30 transition-all"
-                                    >
-                                        <ChevronLeft size={16} />
-                                    </button>
-                                    <button 
-                                        onClick={nextMembers} 
-                                        disabled={!canGoNext}
-                                        className="p-1.5 rounded-full border border-gray-200 dark:border-white/10 bg-white dark:bg-surface-dark text-gray-500 hover:text-secondary dark:hover:text-white disabled:opacity-30 transition-all"
-                                    >
-                                        <ChevronRight size={16} />
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                                  <div className="relative overflow-hidden group/carousel">
-                            <div 
-                                className="flex gap-6 py-4"
-                                style={{
-                                    width: 'max-content',
-                                    animation: totalMembers > 4 ? `scroll-carousel ${totalMembers * 5}s linear infinite` : 'none',
-                                }}
-                            >
-                                <style>{`
-                                    @keyframes scroll-carousel {
-                                        0% { transform: translateX(0); }
-                                        100% { transform: translateX(-50%); }
-                                    }
-                                `}</style>
-                                {(totalMembers > 4 ? [...project.members, ...project.members] : project.members).map((m: any, idx: number) => {
-                                    const isTop3 = (idx % totalMembers) < 3 && (m.projectScore > 0 || (idx % totalMembers) === 0);
-                                    
-                                    const rankStyles = [
-                                        { bg: 'from-amber-300 via-yellow-500 to-amber-600', ring: 'ring-amber-400/30' },
-                                        { bg: 'from-slate-200 via-slate-400 to-slate-500', ring: 'ring-slate-400/30' },
-                                        { bg: 'from-orange-400 via-orange-600 to-orange-700', ring: 'ring-orange-500/30' }
-                                    ][idx % totalMembers] || { bg: 'from-gray-400 to-gray-600', ring: 'ring-gray-400/20' };
-
-                                    return (
-                                        <div 
-                                            key={`${m.user.id}-${idx}`} 
-                                            className={`relative group shrink-0 w-[280px] bg-white/80 dark:bg-surface-dark/60 backdrop-blur-xl border border-white dark:border-white/5 rounded-[2rem] p-6 flex flex-col items-center text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-500 overflow-hidden
-                                                ${isTop3 ? 'before:absolute before:inset-0 before:p-[2px] before:rounded-[2rem] before:bg-gradient-to-r ' + rankStyles.bg + ' before:opacity-20 group-hover:before:opacity-100 before:transition-opacity before:-z-10' : ''}
-                                            `}
-                                        >
-                                            <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-br ${rankStyles.bg} -z-20`} />
-                                            <div className="absolute -top-10 -right-10 w-24 h-24 bg-gradient-to-br from-primary/5 to-transparent rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
-                                            {isTop3 && (
-                                                <div className={`absolute top-4 left-4 w-7 h-7 rounded-full bg-gradient-to-br ${rankStyles.bg} flex items-center justify-center text-white text-[10px] font-black shadow-lg border-2 border-white dark:border-surface-dark z-20`}>
-                                                    {(idx % totalMembers) + 1}
-                                                </div>
-                                            )}
-                                            <div className="relative mb-5">
-                                                <div className={`absolute inset-0 rounded-full blur-md opacity-0 group-hover:opacity-60 transition-opacity duration-500 bg-gradient-to-tr ${rankStyles.bg}`} />
-                                                <div className={`w-20 h-20 rounded-full p-1.5 bg-white dark:bg-gray-800 shadow-inner relative z-10 ring-1 ${rankStyles.ring} group-hover:ring-4 transition-all duration-500`}>
-                                                    <div className="w-full h-full rounded-full overflow-hidden bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700">
-                                                        {m.user.avatarUrl ? (
-                                                            <img src={m.user.avatarUrl} alt={m.user.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-2xl font-black text-white shadow-inner" style={{ backgroundColor: m.user.avatarColor || color }}>
-                                                                {m.user.name?.charAt(0).toUpperCase()}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="relative z-10 w-full mb-4">
-                                                <p className="text-sm font-black text-secondary dark:text-white line-clamp-1 group-hover:text-primary transition-colors duration-300">{m.user.name}</p>
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Colaborador</p>
-                                            </div>
-                                            <div className="mt-auto relative z-10">
-                                                <div className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 shadow-sm group-hover:bg-white dark:group-hover:bg-white/10 transition-colors">
-                                                    <Zap size={12} className="text-yellow-500 fill-yellow-500 animate-pulse" />
-                                                    <span className="text-xs font-black text-secondary dark:text-white">
-                                                        {m.projectScore ?? 0}
-                                                    </span>
-                                                    <span className="text-[10px] font-bold text-gray-400 uppercase">PTS</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            
-                            {/* Overlay Gradient para suavizar as bordas do carrossel infinito */}
-                            <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-background-light dark:from-background-dark to-transparent z-10 pointer-events-none" />
-                            <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-background-light dark:from-background-dark to-transparent z-10 pointer-events-none" />
-                        </div>
-                    </div>
+                    <MembersCarousel members={project.members} color={color} />
                 )}
             </div>
         </div>
+    );
+};
+
+interface Member {
+    user: { id: string; name: string; avatarUrl?: string | null; avatarColor?: string | null };
+    projectScore?: number;
+}
+
+const MembersCarousel: React.FC<{ members: Member[]; color: string }> = ({ members, color }) => {
+    const total = members.length;
+    const totalPages = Math.max(1, Math.ceil(total / MEMBERS_PER_PAGE));
+    const hasPagination = totalPages > 1;
+
+    const [page, setPage] = useState(0);
+    const [paused, setPaused] = useState(false);
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    useEffect(() => {
+        if (!hasPagination || paused) return;
+        intervalRef.current = setInterval(() => {
+            setPage((p) => (p + 1) % totalPages);
+        }, AUTOPLAY_MS);
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        };
+    }, [hasPagination, paused, totalPages]);
+
+    // Sort by projectScore so podium accents land on the right people
+    const sorted = [...members].sort((a, b) => (b.projectScore ?? 0) - (a.projectScore ?? 0));
+    const top3Ids = new Set(sorted.slice(0, 3).map((m) => m.user.id));
+    const rankById = new Map(sorted.map((m, i) => [m.user.id, i]));
+
+    const goPrev = () => setPage((p) => (p - 1 + totalPages) % totalPages);
+    const goNext = () => setPage((p) => (p + 1) % totalPages);
+
+    return (
+        <section className="mt-10">
+            <SectionHeader
+                icon={<Trophy size={20} style={{ color }} />}
+                title="Membros (Top XP)"
+                description="Quem está construindo este projeto."
+                action={
+                    hasPagination && (
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={goPrev}
+                                aria-label="Membros anteriores"
+                                className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-all hover:border-gray-300 hover:text-secondary dark:border-white/10 dark:bg-surface-dark dark:hover:text-white"
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            <button
+                                onClick={goNext}
+                                aria-label="Próximos membros"
+                                className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-all hover:border-gray-300 hover:text-secondary dark:border-white/10 dark:bg-surface-dark dark:hover:text-white"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    )
+                }
+            />
+
+            <div
+                className="mt-5 overflow-hidden"
+                onMouseEnter={() => setPaused(true)}
+                onMouseLeave={() => setPaused(false)}
+            >
+                <div
+                    className="flex transition-transform duration-500 ease-out"
+                    style={{ transform: `translateX(-${page * 100}%)` }}
+                >
+                    {Array.from({ length: totalPages }).map((_, pageIdx) => {
+                        const slice = members.slice(
+                            pageIdx * MEMBERS_PER_PAGE,
+                            pageIdx * MEMBERS_PER_PAGE + MEMBERS_PER_PAGE
+                        );
+                        return (
+                            <div
+                                key={pageIdx}
+                                className="grid w-full shrink-0 grid-cols-2 gap-4 px-1 sm:grid-cols-2 lg:grid-cols-4"
+                            >
+                                {slice.map((m) => (
+                                    <MemberCard
+                                        key={m.user.id}
+                                        member={m}
+                                        color={color}
+                                        rank={rankById.get(m.user.id)}
+                                        isTop3={top3Ids.has(m.user.id)}
+                                    />
+                                ))}
+                                {/* Pad incomplete pages so layout stays 4-up on desktop */}
+                                {slice.length < MEMBERS_PER_PAGE &&
+                                    Array.from({ length: MEMBERS_PER_PAGE - slice.length }).map((_, i) => (
+                                        <div key={`pad-${i}`} className="hidden lg:block" />
+                                    ))}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {hasPagination && (
+                <div className="mt-5 flex justify-center gap-1.5">
+                    {Array.from({ length: totalPages }).map((_, i) => (
+                        <button
+                            key={i}
+                            onClick={() => setPage(i)}
+                            aria-label={`Ir para página ${i + 1}`}
+                            className="h-1.5 rounded-full transition-all"
+                            style={{
+                                width: i === page ? 24 : 8,
+                                backgroundColor: i === page ? color : '#CBD5E1',
+                                opacity: i === page ? 1 : 0.6,
+                            }}
+                        />
+                    ))}
+                </div>
+            )}
+        </section>
+    );
+};
+
+const PODIUM = [
+    { color: '#F59E0B', icon: Crown, label: '1º' },   // gold
+    { color: '#94A3B8', icon: Medal, label: '2º' },   // silver
+    { color: '#B45309', icon: Medal, label: '3º' },   // bronze
+];
+
+const MemberCard: React.FC<{
+    member: Member;
+    color: string;
+    rank: number | undefined;
+    isTop3: boolean;
+}> = ({ member, color, rank, isTop3 }) => {
+    const podium = isTop3 && rank !== undefined ? PODIUM[rank] : null;
+    const Icon = podium?.icon;
+
+    return (
+        <SurfaceCard
+            padding="lg"
+            className="group relative flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+            style={
+                podium
+                    ? { borderColor: `${podium.color}55` }
+                    : undefined
+            }
+        >
+            {podium && Icon && (
+                <div
+                    className="absolute right-3 top-3 flex h-7 items-center gap-1 rounded-full px-2 text-[10px] font-black text-white shadow-sm"
+                    style={{ backgroundColor: podium.color }}
+                >
+                    <Icon size={12} />
+                    {podium.label}
+                </div>
+            )}
+
+            <div
+                className="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full ring-2 ring-white shadow-sm dark:ring-gray-800"
+                style={{ backgroundColor: member.user.avatarColor || color }}
+            >
+                {member.user.avatarUrl ? (
+                    <img
+                        src={member.user.avatarUrl}
+                        alt={member.user.name}
+                        className="h-full w-full object-cover"
+                    />
+                ) : (
+                    <span className="text-xl font-black text-white">
+                        {member.user.name?.charAt(0).toUpperCase()}
+                    </span>
+                )}
+            </div>
+
+            <p className="line-clamp-1 text-sm font-bold text-secondary dark:text-white">
+                {member.user.name}
+            </p>
+            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                Colaborador
+            </p>
+
+            <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-gray-100 bg-gray-50 px-3 py-1.5 dark:border-white/5 dark:bg-white/5">
+                <Zap size={12} className="fill-yellow-500 text-yellow-500" />
+                <span className="text-xs font-black text-secondary dark:text-white">
+                    {member.projectScore ?? 0}
+                </span>
+                <span className="text-[10px] font-bold uppercase text-gray-400">pts</span>
+            </div>
+        </SurfaceCard>
     );
 };
 

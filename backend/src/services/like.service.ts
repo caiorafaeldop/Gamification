@@ -18,7 +18,7 @@ export const toggleProjectLike = async (projectId: string, userId: string) => {
         throw { statusCode: 403, message: 'Você não pode curtir este projeto.' };
       }
     } else {
-      throw { statusCode: 403, message: 'Este projeto não aceita curtidas.' };
+      throw { statusCode: 403, message: 'Este projeto não aceita Likes.' };
     }
   }
 

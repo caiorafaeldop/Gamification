@@ -180,7 +180,7 @@ const Layout = () => {
                 <div className="h-16 flex items-center px-6 border-b border-gray-100 dark:border-gray-800/50">
                     <div className="flex items-center gap-2 cursor-pointer p-2 rounded-md bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 shadow-sm shadow-primary/5 hover:shadow-md hover:shadow-primary/10 transition-all duration-300" onClick={() => navigate('/dashboard')}>
                         <img src={logo} alt="ConnectaCI Logo" className="h-7 w-auto rounded-xl shadow-sm" />
-                        <span className="font-display font-bold text-lg text-secondary dark:text-white tracking-tight">Connecta<span className="text-primary">CI</span></span>
+                        <span className="font-display font-bold text-lg text-secondary dark:text-white tracking-tight">Connecta<span className="text-primary">Hub</span></span>
                     </div>
                 </div>
 
@@ -257,7 +257,7 @@ const Layout = () => {
                     <div className="flex items-center gap-4">
                         <div className="md:hidden flex items-center gap-2 cursor-pointer" onClick={() => navigate('/dashboard')}>
                             <img src={logo} alt="Logo" className="h-7 w-auto rounded-xl" />
-                            <span className="font-display font-bold text-lg text-secondary dark:text-white">Connecta<span className="text-primary">CI</span></span>
+                            <span className="font-display font-bold text-lg text-secondary dark:text-white">Connecta<span className="text-primary">Hub</span></span>
                         </div>
 
                         {!loading && user && (

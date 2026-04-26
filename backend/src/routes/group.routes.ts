@@ -7,6 +7,8 @@ import {
   deleteGroup,
   joinGroup,
   leaveGroup,
+  requestJoinGroup,
+  respondToJoinRequest
 } from '../controllers/group.controller';
 import { unifiedAuth } from '../middlewares/unifiedAuth';
 
@@ -21,5 +23,7 @@ router.patch('/:id', updateGroup);
 router.delete('/:id', deleteGroup);
 router.post('/:id/join', joinGroup);
 router.delete('/:id/leave', leaveGroup);
+router.post('/:id/request', requestJoinGroup);
+router.post('/:id/requests/:requestId/respond', respondToJoinRequest);
 
 export default router;

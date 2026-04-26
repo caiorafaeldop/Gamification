@@ -398,6 +398,52 @@ const ProfileScreen = () => {
                 </SurfaceCard>
             ) : (
                 <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-300">
+                    {user?.id && (
+                        <SurfaceCard padding="sm" className="border border-primary/20 bg-gradient-to-r from-primary/5 to-sky-400/5 shadow-sm dark:border-primary/30">
+                            <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+                                <div className="flex items-center gap-3 text-left">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                        <ExternalLink size={20} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                                            {isMyProfile ? 'Meu Currículo Público' : 'Currículo Público'}
+                                        </h3>
+                                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                                            {isMyProfile
+                                                ? 'Compartilhe suas conquistas com recrutadores.'
+                                                : 'Veja a visão detalhada deste currículo.'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex w-full items-center gap-2 sm:w-auto">
+                                    <button
+                                        onClick={() => {
+                                            const landingBase = import.meta.env.VITE_LANDING_PAGE_URL || 'https://connecta-landing-page.onrender.com';
+                                            const url = `${landingBase}/#/cv/${user.id}`;
+                                            navigator.clipboard.writeText(url);
+                                            toast.success('Link do currículo copiado!');
+                                        }}
+                                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-surface-light px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 sm:flex-none"
+                                    >
+                                        <LinkIcon size={14} />
+                                        Copiar Link
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const landingBase = import.meta.env.VITE_LANDING_PAGE_URL || 'https://connecta-landing-page.onrender.com';
+                                            const url = `${landingBase}/#/cv/${user.id}`;
+                                            window.open(url, '_blank');
+                                        }}
+                                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-blue-600 sm:flex-none"
+                                    >
+                                        Ver Currículo
+                                    </button>
+                                </div>
+                            </div>
+                        </SurfaceCard>
+                    )}
+
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                         <StatCard
                             icon={Trophy}
@@ -420,51 +466,7 @@ const ProfileScreen = () => {
                         />
                     </div>
 
-                    {user?.id && (
-                        <SurfaceCard padding="lg" className="border-primary/20 bg-gradient-to-r from-primary/5 to-sky-400/5 dark:border-primary/30">
-                            <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-                                <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-                                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                        <ExternalLink size={26} />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                                            {isMyProfile ? 'Meu Currículo Público' : 'Currículo Público'}
-                                        </h3>
-                                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                                            {isMyProfile
-                                                ? 'Compartilhe suas conquistas, projetos e nível Connecta com recrutadores.'
-                                                : 'Veja a visão detalhada deste currículo.'}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex w-full items-center gap-3 sm:w-auto">
-                                    <button
-                                        onClick={() => {
-                                            const landingBase = import.meta.env.VITE_LANDING_PAGE_URL || 'https://connecta-landing-page.onrender.com';
-                                            const url = `${landingBase}/#/cv/${user.id}`;
-                                            navigator.clipboard.writeText(url);
-                                            toast.success('Link do currículo copiado!');
-                                        }}
-                                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-surface-light px-4 py-2.5 font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 sm:flex-none"
-                                    >
-                                        <LinkIcon size={18} />
-                                        Copiar Link
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            const landingBase = import.meta.env.VITE_LANDING_PAGE_URL || 'https://connecta-landing-page.onrender.com';
-                                            const url = `${landingBase}/#/cv/${user.id}`;
-                                            window.open(url, '_blank');
-                                        }}
-                                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 font-bold text-white shadow-md shadow-primary/20 transition-colors hover:bg-blue-600 sm:flex-none"
-                                    >
-                                        Ver Currículo
-                                    </button>
-                                </div>
-                            </div>
-                        </SurfaceCard>
-                    )}
+
 
                     <div className="space-y-6">
                         <SectionHeader

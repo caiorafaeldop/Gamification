@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sun, CheckSquare, Trophy, ArrowRight, Store, Folder, Star, Sparkles } from 'lucide-react';
+import { Zap, CheckSquare, Trophy, ArrowRight, Users, Folder, Star, Sparkles, Heart, Network, Share2, Globe } from 'lucide-react';
 import { Skeleton } from '../components/Skeleton';
 import { PageHero, SectionHeader, SurfaceCard, EmptyState } from '../components/ui';
 import { useDashboard } from '../hooks/useDashboard';
@@ -34,7 +34,7 @@ const DashboardScreen = () => {
     </div>
   );
 
-  const { user, activeTaskCount, projects, recentActivity } = data;
+  const { user, activeTaskCount, projects, recentActivity, userGroups = [], topGroups = [] } = data;
   const firstName = user?.name?.split(' ')[0] || 'Estudante';
   const activeProjects = projects.filter((p: any) => p.status !== 'archived');
 
@@ -42,28 +42,28 @@ const DashboardScreen = () => {
     <div className="w-full rounded-2xl border border-white/40 bg-white/70 p-5 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-black/20 lg:w-80">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Minha Pontuação</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Impacto na Rede</p>
           <p className="mt-1 text-3xl font-display font-black text-primary">
-            {user.points} <span className="text-base text-gray-400">🪙</span>
+            {user.points} <span className="text-base text-gray-400">⚡</span>
           </p>
         </div>
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-yellow-300 to-yellow-600 shadow-lg shadow-yellow-500/30">
-          <Trophy className="text-white" size={28} />
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/30">
+          <Zap className="text-white" size={28} />
         </div>
       </div>
       <div className="mt-4 space-y-1.5">
         <div className="flex justify-between text-[11px] font-bold text-gray-600 dark:text-gray-300">
-          <span>Nível</span>
+          <span>Grau de Conexão</span>
           <span className="text-secondary dark:text-white">{user.tier}</span>
         </div>
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-primary to-sky-500 shadow-[0_0_10px_rgba(41,182,246,0.5)] transition-all"
+            className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(6,182,212,0.5)] transition-all"
             style={{ width: `${user.tierProgress}%` }}
           />
         </div>
         <p className="text-right text-[10px] text-gray-500 dark:text-gray-400">
-          Faltam {user.nextTierPoints} 🪙 p/ próximo nível
+          {user.nextTierPoints > 0 ? `+${user.nextTierPoints} xp para o próximo grau` : 'Nível de Elite Conectado'}
         </p>
       </div>
     </div>
@@ -75,42 +75,93 @@ const DashboardScreen = () => {
       style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 20px) + 32px)' }}
     >
       <PageHero
-        icon={Sun}
-        tagLabel="Bom dia"
-        title={<>Olá, <span className="text-primary">{firstName}!</span></>}
-        description={`Você tem ${activeTaskCount} tarefas em andamento. Continue colaborando para subir no ranking!`}
+        icon={Network}
+        tagLabel="Central do Hub"
+        title={<>Boas vindas, <span className="text-primary">{firstName}!</span></>}
+        description={`Sua contribuição é o que move o ecossistema da nossa comunidade.`}
         highlight={heroHighlight}
       />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
+          
+          {/* My Groups Section */}
           <section className="space-y-6">
             <SectionHeader
-              icon={<Folder size={22} />}
-              title="Seus projetos ativos no momento"
-              description="Continue colaborando nos projetos em andamento."
+              icon={<Users size={22} className="text-primary" />}
+              title=" Seus Grupos"
+              description="Os pilares da sua rede de colaboração."
               action={
                 <Link
-                  to="/projects"
-                  className="group hidden items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-bold text-primary shadow-sm transition-all hover:bg-primary hover:text-white active:scale-95 sm:inline-flex"
+                  to="/groups"
+                  className="group items-center gap-2 text-xs font-bold text-primary hover:underline hidden sm:flex"
                 >
-                  Ver todos
-                  <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+                  Explorar toda a rede
+                  <ArrowRight size={14} />
                 </Link>
               }
+            />
+            
+            {userGroups.length === 0 ? (
+              <div className="rounded-2xl border-2 border-dashed border-gray-100 dark:border-gray-800 p-8 text-center bg-gray-50/50 dark:bg-white/5">
+                <Network size={40} className="mx-auto text-gray-300 mb-3" />
+                <p className="text-sm text-gray-500">Você ainda não se conectou a nenhum laboratório ou coletivo.</p>
+                <Link to="/groups" className="text-primary text-sm font-bold mt-2 inline-block">Descobrir conexões</Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {userGroups.map((group: any) => (
+                  <Link 
+                    key={group.id} 
+                    to={`/groups/${group.id}`}
+                    className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md dark:border-gray-800 dark:bg-surface-dark"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div 
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
+                        style={{ backgroundColor: group.color || '#3b82f6' }}
+                      >
+                        {group.logoUrl ? (
+                          <img src={group.logoUrl} alt={group.name} className="h-full w-full rounded-xl object-cover" />
+                        ) : (
+                          <span className="text-xl font-bold">{group.name.charAt(0)}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="truncate text-sm font-bold text-secondary dark:text-white group-hover:text-primary transition-colors">
+                          {group.name}
+                        </h4>
+                        <div className="mt-1 flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                          <Share2 size={10} className="text-cyan-500" />
+                          <span>{group.totalLikes || 0} Likes</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Active Projects Section */}
+          <section className="space-y-6">
+            <SectionHeader
+              icon={<Globe size={22} className="text-primary" />}
+              title="Seu Ecossistema de Projetos"
+              description=""
             />
 
             {activeProjects.length === 0 ? (
               <EmptyState
                 icon={Folder}
-                title="Ainda sem projetos"
-                description={projects.length > 0 ? "Você não tem projetos ativos no momento. Explore seus projetos arquivados ou procure novos." : "Você ainda não participa de nenhum projeto. Explore a lista e encontre algo que te inspire."}
+                title="Rede silenciosa"
+                description="Você ainda não iniciou nenhuma colaboração em projetos."
                 action={
                   <Link
                     to="/projects"
                     className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-sky-500"
                   >
-                    Procurar projetos
+                    Descobrir Projetos
                     <ArrowRight size={14} />
                   </Link>
                 }
@@ -137,19 +188,9 @@ const DashboardScreen = () => {
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                       <div className="absolute bottom-2 left-3 z-20 flex gap-1.5">
-                        <span className="rounded bg-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
+                        <span className="rounded bg-cyan-500/80 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
                           {project.category || 'Geral'}
                         </span>
-                        {project.status === 'archived' && (
-                          <span className="rounded bg-gray-500/80 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
-                            Arquivado
-                          </span>
-                        )}
-                        {project.status === 'inactive' && (
-                          <span className="rounded bg-yellow-500/80 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
-                            Inativo
-                          </span>
-                        )}
                       </div>
                     </div>
                     <div className="flex flex-1 flex-col p-4">
@@ -159,121 +200,104 @@ const DashboardScreen = () => {
                       <p className="mt-1 line-clamp-2 text-xs text-gray-600 dark:text-gray-400">
                         {project.description}
                       </p>
-                      <div className="mt-2 flex items-center gap-1.5">
-                        {project.leader?.avatarUrl ? (
-                          <img
-                            src={project.leader.avatarUrl}
-                            alt={project.leader.name}
-                            className="h-5 w-5 rounded-full border border-primary/20 object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-5 w-5 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-[9px] font-bold text-primary">
-                            {project.leader?.name?.charAt(0) || 'L'}
-                          </div>
-                        )}
-                        <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                          Líder: <span className="font-semibold text-gray-700 dark:text-gray-200">{project.leader?.name || 'Desconhecido'}</span>
-                        </span>
-                      </div>
-                      <div className="mt-auto border-t border-gray-100 pt-2 dark:border-gray-700">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); navigate(`/project-details/${project.id}`); }}
-                          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary/10 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary hover:text-white"
-                        >
-                          Acessar <ArrowRight size={14} />
-                        </button>
+                      
+                      <div className="mt-3 flex items-center justify-between">
+                         <div className="h-1.5 flex-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mr-3">
+                            <div 
+                              className="h-full bg-cyan-500 rounded-full shadow-[0_0_8px_rgba(6,182,212,0.4)]"
+                              style={{ width: `${project.progress}%` }}
+                            />
+                         </div>
+                         <span className="text-[10px] font-bold text-cyan-600">{Math.round(project.progress)}%</span>
                       </div>
                     </div>
                   </article>
                 ))}
               </div>
             )}
-
-            <div className="sm:hidden">
-              <Link
-                to="/projects"
-                className="group inline-flex w-full items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-5 py-3 text-sm font-bold text-primary shadow-sm transition-all hover:bg-primary hover:text-white active:scale-95"
-              >
-                Ver todos
-                <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-              </Link>
-            </div>
           </section>
         </div>
 
         <div className="space-y-8">
+          {/* Trend Hub - Connectivity Preview */}
+          <SurfaceCard padding="none" className="overflow-hidden border-cyan-500/20 bg-cyan-500/5">
+            <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-4 text-white">
+               <div className="flex items-center gap-2">
+                  <Zap size={18} />
+                  <h3 className="font-display font-bold uppercase tracking-wider text-sm">Mais Ativos</h3>
+               </div>
+               <p className="text-[10px] opacity-80 mt-1">Os nós mais ativos do ecossistema</p>
+            </div>
+            <div className="p-4 space-y-4">
+              {topGroups.map((group: any, idx: number) => (
+                <div key={group.id} className="flex items-center gap-3">
+                   <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-black ${
+                     idx === 0 ? 'bg-cyan-400 text-cyan-900' :
+                     idx === 1 ? 'bg-blue-300 text-blue-700' :
+                     'bg-indigo-600 text-indigo-100'
+                   }`}>
+                      {idx + 1}
+                   </div>
+                   <div className="h-8 w-8 rounded-lg bg-white shadow-sm flex items-center justify-center overflow-hidden">
+                      {group.logoUrl ? (
+                        <img src={group.logoUrl} alt={group.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <Users size={14} className="text-primary" />
+                      )}
+                   </div>
+                   <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-bold text-secondary dark:text-white">{group.name}</p>
+                      <p className="text-[10px] text-gray-400">{group.totalLikes} conexões estabelecidas</p>
+                   </div>
+                </div>
+              ))}
+              <Link 
+                to="/ranking" 
+                className="block text-center text-[11px] font-bold text-cyan-600 hover:underline pt-2 border-t border-cyan-500/10"
+              >
+                Explorar Rede Completa
+              </Link>
+            </div>
+          </SurfaceCard>
+
           <SurfaceCard padding="lg">
             <SectionHeader
               icon={<Sparkles size={20} />}
-              title="Atividade Recente"
+              title="Feed de Atividades"
               titleClassName="text-lg"
             />
             <div className="mt-4 space-y-3">
               {recentActivity.length === 0 ? (
                 <EmptyState
                   icon={Sparkles}
-                  title="Nada por aqui ainda"
-                  description="Suas próximas conquistas e movimentos aparecerão aqui."
+                  title="Aguardando Likes"
+                  description="Suas interações na rede aparecerão aqui."
                   compact
                 />
               ) : recentActivity.slice(0, 5).map((activity: any) => (
                 <div key={activity.id} className="rounded-xl bg-gray-50 p-3 shadow-sm dark:bg-surface-darker">
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                  <p className="text-[13px] leading-tight text-gray-600 dark:text-gray-300">
                     {(() => {
                       const desc = activity.description;
                       const achievementMatch = desc.match(/^Earned achievement: "(.*)"!$/);
                       if (achievementMatch) {
                         return (
                           <span>
-                            Você ganhou a conquista <span className="font-bold text-primary">"{achievementMatch[1]}"</span> 🏆
+                            Expandiu influência: <span className="font-bold text-cyan-500">"{achievementMatch[1]}"</span> ✨
                           </span>
                         );
                       }
-                      const createdTaskMatch = desc.match(/^Created task "(.*)" for project "(.*)"\.$/);
-                      if (createdTaskMatch) {
-                        return `Criou a tarefa "${createdTaskMatch[1]}" no projeto "${createdTaskMatch[2]}".`;
-                      }
-                      const assignedTaskMatch = desc.match(/^Assigned task "(.*)" to (.*)\.$/);
-                      if (assignedTaskMatch) {
-                        return `Atribuiu a tarefa "${assignedTaskMatch[1]}" a ${assignedTaskMatch[2]}.`;
-                      }
-                      const joinedProjectMatch = desc.match(/^Joined project "(.*)"\.$/);
-                      if (joinedProjectMatch) {
-                        return `Entrou no projeto "${joinedProjectMatch[1]}".`;
-                      }
-                      if (desc.startsWith('Completed a task and earned')) {
-                        const points = desc.match(/earned (\d+)/)?.[1];
-                        return `Concluiu uma tarefa e ganhou ${points || ''} pontos.`;
-                      }
-                      if (desc.startsWith('Achieved new tier:')) {
-                        const tier = desc.match(/tier: (.*)!/)?.[1];
-                        return `Alcançou o nível ${tier || ''}! 🎉`;
-                      }
-                      if (desc.startsWith('Streak updated:')) {
-                        return 'Sequência diária atualizada!';
-                      }
+                      if (desc.startsWith('Completed a task')) return 'Tarefa sincronizada com sucesso. 🟢';
+                      if (desc.startsWith('Achieved new tier:')) return 'Evolução de nó: Novo grau de conexão! 🌐';
+                      if (desc.startsWith('Joined project')) return 'Nova Sinergia: Iniciou colaboração. 🤝';
                       return desc;
                     })()}
                   </p>
-                  <p className="mt-0.5 text-xs text-gray-400">{new Date(activity.createdAt).toLocaleDateString()}</p>
+                  <p className="mt-1 text-[10px] font-bold text-gray-400 uppercase">{new Date(activity.createdAt).toLocaleDateString()}</p>
                 </div>
               ))}
             </div>
           </SurfaceCard>
-
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-sky-500 p-6 text-center text-white shadow-lg shadow-primary/30">
-            <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
-            <div className="relative">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white/20">
-                <Store className="text-white" size={24} />
-              </div>
-              <h3 className="text-lg font-display font-bold">Troque seus Pontos!</h3>
-              <p className="mt-1 text-sm text-white/80">Novos itens disponíveis na loja.</p>
-              <button className="mt-4 w-full rounded-lg bg-white px-4 py-2 text-sm font-bold text-primary transition-colors hover:bg-gray-100">
-                Em Breve
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
