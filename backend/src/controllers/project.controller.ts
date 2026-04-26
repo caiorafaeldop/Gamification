@@ -159,11 +159,10 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
             return res.status(404).json({ message: 'Projeto não encontrado' });
         }
 
-        /* Permissão removida conforme solicitação: qualquer usuário autenticado pode editar */
-        // if (project.leaderId !== userId && (req as any).user?.role !== Role.ADMIN) {
-        //     console.error(`[UPDATE PROJECT] Permission denied for user ${userId} on project ${id}`);
-        //     return res.status(403).json({ message: 'Apenas o líder do projeto ou um administrador podem alterar os detalhes.' });
-        // }
+        if (project.leaderId !== userId && (req as any).user?.role !== Role.ADMIN) {
+            console.error(`[UPDATE PROJECT] Permission denied for user ${userId} on project ${id}`);
+            return res.status(403).json({ message: 'Apenas o líder do projeto ou um administrador podem alterar os detalhes.' });
+        }
 
         const data: any = {};
         if (title !== undefined) data.title = title;

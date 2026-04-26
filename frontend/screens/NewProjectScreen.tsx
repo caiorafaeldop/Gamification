@@ -49,6 +49,17 @@ const NewProjectScreen = () => {
       setLoadingProject(true);
       try {
         const project = await getProjectDetails(id);
+        
+        // Security check: only leader or admin can edit
+        const isLeader = project.leaderId === user?.id;
+        const isAdmin = user?.role === 'ADMIN';
+
+        if (!isLeader && !isAdmin) {
+          toast.error('Você não tem permissão para editar este projeto.');
+          navigate(`/project-details/${id}`);
+          return;
+        }
+
         setFormData({
           name: project.title || '',
           description: project.description || '',

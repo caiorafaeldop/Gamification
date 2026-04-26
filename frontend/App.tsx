@@ -24,6 +24,7 @@ import GroupDetailScreen from './screens/GroupDetailScreen';
 import ProjectsScreen from './screens/ProjectsScreen';
 import JobsBoardScreen from './screens/JobsBoardScreen';
 import NewJobPostingScreen from './screens/NewJobPostingScreen';
+import ProjectRequestsScreen from './screens/ProjectRequestsScreen';
 
 import { Toaster } from 'react-hot-toast';
 import { BrandingProvider } from './contexts/BrandingContext';
@@ -66,6 +67,7 @@ const App = () => {
           <Route path="/eventos/editar/:id" element={<NewEventScreen />} />
           <Route path="/profile" element={<ProfileScreen />} />
           <Route path="/profile/:id" element={<ProfileScreen />} />
+          <Route path="/project-requests/:id" element={<ProjectRequestsScreen />} />
 
           <Route path="/project-landing/:id" element={<ProjectLandingScreen />} />
           <Route path="/groups" element={<GroupsHubScreen />} />

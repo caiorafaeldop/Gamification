@@ -966,6 +966,17 @@ const ProjectDetailsScreen = () => {
                             </div>
                         )}
 
+                        {/* Join Requests - For Leader and Admin */}
+                        {isLeaderOrAdmin && (
+                            <button
+                                onClick={() => navigate(`/project-requests/${id}`)}
+                                className="flex items-center gap-1.5 px-2 py-1 text-xs text-primary hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
+                            >
+                                <span className="material-icons text-sm">group_add</span>
+                                <span>Solicitações</span>
+                            </button>
+                        )}
+
                         {/* Leave Project Button */}
                         {user && isProjectMember && (
                             <button

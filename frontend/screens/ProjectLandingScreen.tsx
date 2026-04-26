@@ -73,10 +73,14 @@ const ProjectLandingScreen = () => {
 
     const color = project.Group?.color || project.color || '#29B6F6';
     const memberCount = project._count?.members || project.members?.length || 0;
-    const isMember =
-        !!currentUser &&
-        (currentUser.id === project.leaderId ||
-            project.members?.some((m: any) => m.user?.id === currentUser.id));
+    const isAdmin = currentUser?.role === 'ADMIN';
+    const isLeader = currentUser?.id === project.leaderId;
+    const isExplicitMember = project.members?.some((m: any) => 
+        (m.userId === currentUser?.id) || (m.user?.id === currentUser?.id)
+    );
+    
+    const isMember = isLeader || isExplicitMember;
+    const canAccessBoard = isMember || isAdmin;
 
     return (
         <div className="min-h-full bg-background-light pb-20 dark:bg-background-dark">
@@ -137,7 +141,16 @@ const ProjectLandingScreen = () => {
                             </div>
 
                             {/* Primary CTA */}
-                            <div className="shrink-0">
+                            <div className="flex shrink-0 items-center gap-3">
+                                {isAdmin && !isMember && (
+                                    <button
+                                        onClick={() => navigate(`/kanban/${id}`)}
+                                        className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-600 transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-white/5 dark:text-gray-400"
+                                    >
+                                        <LayoutGrid size={14} /> Board (Admin)
+                                    </button>
+                                )}
+
                                 {isMember ? (
                                     <button
                                         onClick={() => navigate(`/kanban/${id}`)}
@@ -146,7 +159,7 @@ const ProjectLandingScreen = () => {
                                     >
                                         <LayoutGrid size={15} /> Abrir Board
                                     </button>
-                                ) : project.visibility === 'PRIVATE' ? (
+                                ) : project.visibility === 'PRIVATE' && !isAdmin ? (
                                     <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-100 px-5 py-2.5 text-sm font-bold text-gray-400 dark:border-gray-700 dark:bg-white/5">
                                         Projeto Privado
                                     </div>
@@ -154,7 +167,7 @@ const ProjectLandingScreen = () => {
                                     <button
                                         onClick={() => interestMutation.mutate()}
                                         disabled={interestExpressed || interestMutation.isPending}
-                                        className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:-translate-y-0.5 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-80"
+                                        className="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:-translate-y-0.5 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-80"
                                         style={{
                                             backgroundColor: interestExpressed ? '#10B981' : color,
                                             boxShadow: `0 8px 20px -8px ${interestExpressed ? '#10B981' : color}`,
@@ -162,7 +175,7 @@ const ProjectLandingScreen = () => {
                                     >
                                         {interestMutation.isPending ? 'Enviando...'
                                             : interestExpressed ? <><CheckCircle size={15} /> Solicitado</>
-                                            : project.visibility === 'PUBLIC_OPEN' ? <><Rocket size={15} /> Entrar</>
+                                            : project.visibility === 'PUBLIC_OPEN' ? <><Rocket size={15} /> Entrar Agora</>
                                             : <><Heart size={15} /> Solicitar Entrada</>}
                                     </button>
                                 )}

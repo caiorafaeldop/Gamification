@@ -7,7 +7,7 @@ import TaskDetailModal from '../components/TaskDetailModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { ProjectMembersCarousel } from '../components/ProjectMembersCarousel';
 import { COLUMN_COLORS } from '../constants';
-import { ArrowLeft, MoreVertical, Plus, Filter, Search, Calendar, User, CheckCircle2, Circle, Edit, Trash2, ArrowRight } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Plus, Filter, Search, Calendar, User, CheckCircle2, Circle, Edit, Trash2, ArrowRight, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const ProjectDetailsScreenMobile = () => {
@@ -345,7 +345,34 @@ const isProjectMember = user && project?.members?.some((m: any) => m.user?.id ==
                 columns={columns}
             />
 
-            {/* Task Action Bottom Sheet */}
+            {/* Project Management Menu */}
+            {isMenuOpen && (
+                <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)}></div>
+                    <div className="relative w-full max-w-sm bg-white dark:bg-surface-dark rounded-t-2xl sm:rounded-2xl p-2 shadow-2xl animate-in slide-in-from-bottom duration-300">
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                            <h3 className="font-bold text-secondary dark:text-white">Opções do Projeto</h3>
+                        </div>
+                        <div className="p-2 space-y-1">
+                            {(user?.role === 'ADMIN' || project.leaderId === user?.id) && (
+                                <button 
+                                    onClick={() => { navigate(`/project-requests/${id}`); setIsMenuOpen(false); }}
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors"
+                                >
+                                    <span className="material-icons text-primary">group_add</span>
+                                    Solicitações de Entrada
+                                </button>
+                            )}
+                            <button 
+                                onClick={() => setIsMenuOpen(false)}
+                                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors"
+                            >
+                                <X size={20} /> Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             
             <ConfirmationModal
