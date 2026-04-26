@@ -1,5 +1,20 @@
 import { Router } from 'express';
-import { createProject, getProjectDetails, getProjects, joinProject, uploadProjectCover, updateProject, leaveProject, transferOwnership, deleteProject, registerInterest, getCatalog } from '../controllers/project.controller';
+import {
+  createProject,
+  getProjectDetails,
+  getProjects,
+  joinProject,
+  uploadProjectCover,
+  updateProject,
+  leaveProject,
+  transferOwnership,
+  deleteProject,
+  registerInterest,
+  getCatalog,
+  requestJoinProjectController,
+  listProjectJoinRequestsController,
+  respondToProjectJoinRequestController,
+} from '../controllers/project.controller';
 import { toggleLike, getLikeStatus } from '../controllers/like.controller';
 import { unifiedAuth } from '../middlewares/unifiedAuth';
 import upload from '../middlewares/upload.middleware';
@@ -17,6 +32,9 @@ router.post('/', createProject);
 router.patch('/:id', updateProject);
 router.post('/:id/join', joinProject);
 router.post('/:id/interest', registerInterest);
+router.post('/:id/request-join', requestJoinProjectController);
+router.get('/:id/join-requests', listProjectJoinRequestsController);
+router.post('/join-requests/:requestId/respond', respondToProjectJoinRequestController);
 router.post('/:id/like', toggleLike);
 router.get('/:id/like', getLikeStatus);
 router.delete('/:id/leave', leaveProject);

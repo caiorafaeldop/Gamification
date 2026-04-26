@@ -8,7 +8,7 @@ export interface ExploreProject {
   coverUrl: string | null;
   color: string | null;
   status: string;
-  visibility: 'PRIVATE' | 'PUBLIC_VIEW' | 'PUBLIC_LIKE' | null;
+  visibility: 'PRIVATE' | 'PUBLIC_VIEW' | 'PUBLIC_LIKE' | 'PUBLIC_OPEN' | null;
   isJoiningOpen: boolean | null;
   progress: number;
   leader: { id: string; name: string; avatarUrl?: string | null; avatarColor?: string | null };
@@ -24,5 +24,18 @@ export const getExploreProjects = async (): Promise<ExploreProject[]> => {
 
 export const registerProjectInterest = async (projectId: string) => {
   const { data } = await api.post(`/projects/${projectId}/interest`);
+  return data;
+};
+
+export interface RequestJoinProjectResponse {
+  status: 'joined' | 'project-request-sent' | 'group-request-sent';
+  joinedGroup?: boolean;
+  joinedProject?: boolean;
+  requestId?: string;
+  message: string;
+}
+
+export const requestJoinProject = async (projectId: string): Promise<RequestJoinProjectResponse> => {
+  const { data } = await api.post(`/projects/${projectId}/request-join`);
   return data;
 };

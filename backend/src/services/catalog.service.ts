@@ -16,7 +16,7 @@ const baseSelectableProject = (extra: Record<string, any> = {}) => ({
   ...extra,
 });
 
-const visibleToOutsider = { in: ['PUBLIC_VIEW', 'PUBLIC_LIKE'] as const };
+const visibleToOutsider = { in: ['PUBLIC_VIEW', 'PUBLIC_LIKE', 'PUBLIC_OPEN'] as const };
 
 export const getCatalogForUser = async (userId: string) => {
   const userGroupMemberships = await prisma.groupMember.findMany({

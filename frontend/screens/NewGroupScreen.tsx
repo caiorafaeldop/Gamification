@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, FlaskConical, Save, Users, BookOpen, Sparkles, Loader } from 'lucide-react';
+import { ArrowLeft, FlaskConical, Save, Sparkles, Loader } from 'lucide-react';
 import { useCreateGroup, useGroup, useUpdateGroup } from '../hooks/useGroups';
 import { PageHero, SurfaceCard, SectionHeader, ColorPicker, LogoUpload } from '../components/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select';
 import { Lock, Globe } from 'lucide-react';
+import GroupCard from '../components/GroupCard';
+import type { Group } from '../services/group.service';
 
 const NewGroupScreen = () => {
   const navigate = useNavigate();
@@ -76,6 +78,21 @@ const NewGroupScreen = () => {
   }
 
   const previewColor = formData.color || '#29B6F6';
+
+  const previewGroup = useMemo<Group>(() => ({
+    id: 'preview',
+    name: formData.name || 'Nome do Grupo',
+    description: formData.description || 'A descrição do grupo aparecerá aqui...',
+    color: previewColor,
+    logoUrl: formData.logoUrl || null,
+    bannerUrl: null,
+    totalXp: null,
+    totalLikes: 0,
+    isRestricted: formData.isRestricted,
+    createdAt: '',
+    updatedAt: '',
+    _count: { GroupMember: 1, Project: 0 },
+  }), [formData.name, formData.description, formData.logoUrl, formData.isRestricted, previewColor]);
 
   return (
     <div className="mx-auto max-w-[1480px] space-y-8 p-4 sm:p-6 lg:p-8">
@@ -222,53 +239,7 @@ const NewGroupScreen = () => {
               </p>
             </div>
             <div className="px-4 pb-4">
-              <div className="overflow-hidden rounded-2xl border border-gray-100 shadow-sm dark:border-gray-800">
-                <div
-                  className="relative h-28 overflow-hidden"
-                  style={{
-                    background: `linear-gradient(135deg, ${previewColor} 0%, ${previewColor}CC 100%)`,
-                  }}
-                >
-                  <div
-                    className="absolute inset-0 opacity-20"
-                    style={{
-                      backgroundImage:
-                        "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
-                    }}
-                  />
-                  <div className="absolute -bottom-6 left-4">
-                    <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border-4 border-surface-light bg-surface-light shadow-lg dark:border-surface-dark dark:bg-surface-dark">
-                      {formData.logoUrl ? (
-                        <img src={formData.logoUrl} alt="Logo" className="h-full w-full object-cover" />
-                      ) : (
-                        <div
-                          className="flex h-full w-full items-center justify-center text-white"
-                          style={{ backgroundColor: previewColor }}
-                        >
-                          <FlaskConical size={20} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-surface-light px-4 pb-4 pt-8 dark:bg-surface-dark">
-                  <h4 className="text-base font-display font-bold text-secondary dark:text-white flex items-center justify-between">
-                    <span className="truncate">{formData.name || 'Nome do Grupo'}</span>
-                    {formData.isRestricted && <Lock size={14} className="text-amber-500 shrink-0" />}
-                  </h4>
-                  <p className="mt-1 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
-                    {formData.description || 'A descrição do grupo aparecerá aqui...'}
-                  </p>
-                  <div className="mt-3 flex items-center gap-3 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <Users size={12} style={{ color: previewColor }} /> 1 membro
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <BookOpen size={12} style={{ color: previewColor }} /> 0 projetos
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <GroupCard group={previewGroup} preview />
             </div>
           </SurfaceCard>
         </aside>

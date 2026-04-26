@@ -1,6 +1,6 @@
 import api from './api';
 
-export type ProjectVisibility = 'PRIVATE' | 'PUBLIC_VIEW' | 'PUBLIC_LIKE';
+export type ProjectVisibility = 'PRIVATE' | 'PUBLIC_VIEW' | 'PUBLIC_LIKE' | 'PUBLIC_OPEN';
 
 export interface CatalogProject {
   id: string;

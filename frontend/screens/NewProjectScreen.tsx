@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Upload, Type, Hash, Users, Award, ArrowLeft, Rocket, LayoutGrid, Crown,
-  Target, Loader, Check, Eye, Sparkles
+  Upload, Type, Hash, ArrowLeft, Rocket, LayoutGrid, Crown,
+  Target, Loader, Check, Eye, Sparkles, FlaskConical
 } from 'lucide-react';
 import { createProject, uploadProjectCover, getProjectDetails, updateProject } from '../services/project.service';
 import toast from 'react-hot-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select';
 import { PageHero, SurfaceCard, SectionHeader } from '../components/ui';
+import { useGroups } from '../hooks/useGroups';
+import { useAuth } from '../hooks/useAuth';
 
 const NewProjectScreen = () => {
   const navigate = useNavigate();
@@ -23,8 +25,19 @@ const NewProjectScreen = () => {
     maxMembers: 4,
     rewardPoints: 1500,
     coverUrl: '',
-    visibility: 'PUBLIC_LIKE' as 'PRIVATE' | 'PUBLIC_VIEW' | 'PUBLIC_LIKE',
+    visibility: 'PUBLIC_LIKE' as 'PRIVATE' | 'PUBLIC_VIEW' | 'PUBLIC_LIKE' | 'PUBLIC_OPEN',
+    groupId: '' as string,
   });
+
+  const { user } = useAuth();
+  const { groups, loading: loadingGroups } = useGroups();
+
+  const myGroups = useMemo(() => {
+    if (!user?.id) return [];
+    return groups.filter((g) =>
+      (g.GroupMember || []).some((m: any) => m.userId === user.id)
+    );
+  }, [groups, user?.id]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loadingProject, setLoadingProject] = useState(false);
@@ -45,7 +58,8 @@ const NewProjectScreen = () => {
           maxMembers: project.maxMembers || 4,
           rewardPoints: project.rewardPoints || 1500,
           coverUrl: project.coverUrl || '',
-          visibility: (project as any).visibility || 'PUBLIC_LIKE',
+          visibility: ((project as any).visibility === 'PUBLIC_VIEW' ? 'PUBLIC_LIKE' : (project as any).visibility) || 'PUBLIC_LIKE',
+          groupId: (project as any).groupId || (project as any).Group?.id || '',
         });
       } catch (err: any) {
         toast.error('Erro ao carregar projeto');
@@ -62,13 +76,18 @@ const NewProjectScreen = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      if (!formData.groupId) {
+        toast.error('Selecione um grupo para o projeto.');
+        return;
+      }
       if (isEditing && id) {
         await updateProject(id, {
           title: formData.name,
           description: formData.description,
           category: formData.category,
           coverUrl: formData.coverUrl,
-          visibility: formData.visibility as any,
+          visibility: formData.visibility,
+          groupId: formData.groupId,
         });
         toast.success('Projeto atualizado com sucesso! ✓');
         navigate(`/project-details/${id}`);
@@ -79,10 +98,9 @@ const NewProjectScreen = () => {
           category: formData.category,
           type: formData.type,
           tags: formData.tags,
-          maxMembers: Number(formData.maxMembers),
-          rewardPoints: Number(formData.rewardPoints),
           coverUrl: formData.coverUrl,
-          visibility: formData.visibility as any,
+          visibility: formData.visibility,
+          groupId: formData.groupId,
         });
         toast.success('Projeto criado com sucesso! 🚀');
         navigate('/projects');
@@ -158,7 +176,7 @@ const NewProjectScreen = () => {
             </button>
             <button
               onClick={submitForm}
-              disabled={loading}
+              disabled={loading || !formData.groupId}
               className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-blue-600 disabled:opacity-50"
             >
               {loading ? <Loader className="animate-spin" size={18} /> : (isEditing ? <Check size={18} /> : <Rocket size={18} />)}
@@ -261,7 +279,7 @@ const NewProjectScreen = () => {
                   </Select>
                 </div>
 
-                <div>
+                <div className="md:col-span-2">
                   <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
                     <Hash size={16} className="text-primary" /> Tags
                   </label>
@@ -274,26 +292,6 @@ const NewProjectScreen = () => {
                     placeholder="react, python, ia..."
                   />
                 </div>
-
-                <div>
-                  <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
-                    <Eye size={16} className="text-primary" /> Visibilidade
-                  </label>
-                  <Select
-                    value={formData.visibility}
-                    onValueChange={(val) => setFormData({ ...formData, visibility: val as any })}
-                  >
-                    <SelectTrigger className="h-12 w-full border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-background-dark">
-                      <SelectValue placeholder="Selecione a visibilidade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PRIVATE">Privado (só meu grupo)</SelectItem>
-                      <SelectItem value="PUBLIC_VIEW">Público — apenas leitura</SelectItem>
-                      <SelectItem value="PUBLIC_LIKE">Público — aceita Likes</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="mt-1 text-xs text-gray-400">Define quem pode ver e interagir com seu projeto.</p>
-                </div>
               </div>
             </div>
           </SurfaceCard>
@@ -302,38 +300,76 @@ const NewProjectScreen = () => {
         <aside className="space-y-6 lg:sticky lg:top-20 lg:h-max">
           <SurfaceCard padding="lg">
             <SectionHeader
-              icon={<Award size={20} />}
-              title="Gamificação"
-              description="Defina recompensas e capacidade da equipe."
+              icon={<FlaskConical size={20} />}
+              title="Grupo & Visibilidade"
+              description="Vincule o projeto a um grupo e defina quem pode vê-lo."
             />
             <div className="mt-5 space-y-4">
               <div>
                 <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
-                  <Award size={16} className="text-yellow-500" /> Recompensa de Conclusão (🪙)
+                  <FlaskConical size={16} className="text-primary" /> Grupo <span className="text-red-500">*</span>
                 </label>
-                <input
-                  name="rewardPoints"
-                  value={formData.rewardPoints}
-                  onChange={handleChange}
-                  type="number"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 font-bold text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
-                  placeholder="1000"
-                />
-                <p className="mt-1 text-xs text-gray-400">Connecta Points (🪙) distribuídos à equipe ao finalizar.</p>
+                <Select
+                  value={formData.groupId || undefined}
+                  onValueChange={(val) => setFormData({ ...formData, groupId: val })}
+                  disabled={loadingGroups || myGroups.length === 0}
+                >
+                  <SelectTrigger className="h-12 w-full border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-background-dark">
+                    <SelectValue
+                      placeholder={
+                        loadingGroups
+                          ? 'Carregando grupos...'
+                          : myGroups.length === 0
+                            ? 'Você ainda não faz parte de nenhum grupo'
+                            : 'Selecione um grupo'
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {myGroups.map((g) => (
+                      <SelectItem key={g.id} value={g.id}>
+                        <span className="flex items-center gap-2">
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/10 dark:ring-white/10"
+                            style={{ backgroundColor: g.color || '#29B6F6' }}
+                          />
+                          <span>{g.name}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-gray-400">
+                  {myGroups.length === 0 && !loadingGroups
+                    ? 'Você precisa fazer parte de um grupo para criar projetos.'
+                    : 'Todo projeto pertence a um grupo. Ele aparecerá nos espaços do grupo selecionado.'}
+                </p>
               </div>
 
               <div>
                 <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
-                  <Users size={16} className="text-sky-500" /> Vagas na Equipe
+                  <Eye size={16} className="text-primary" /> Visibilidade
                 </label>
-                <input
-                  name="maxMembers"
-                  value={formData.maxMembers}
-                  onChange={handleChange}
-                  type="number"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 font-bold text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
-                  placeholder="5"
-                />
+                <Select
+                  value={formData.visibility === 'PUBLIC_VIEW' ? 'PUBLIC_LIKE' : formData.visibility}
+                  onValueChange={(val) => setFormData({ ...formData, visibility: val as any })}
+                >
+                  <SelectTrigger className="h-12 w-full border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-background-dark">
+                    <SelectValue placeholder="Selecione a visibilidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PUBLIC_LIKE">Público</SelectItem>
+                    <SelectItem value="PUBLIC_OPEN">Público e Aberto</SelectItem>
+                    <SelectItem value="PRIVATE">Privado</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-gray-400">
+                  {formData.visibility === 'PRIVATE'
+                    ? 'O projeto não aparece na aba Projetos. Só os membros do grupo veem.'
+                    : formData.visibility === 'PUBLIC_OPEN'
+                      ? 'Aparece na aba Projetos. Qualquer um pode entrar com um clique — entra no projeto e no grupo.'
+                      : 'Aparece na aba Projetos e recebe likes. Outros usuários podem solicitar entrada.'}
+                </p>
               </div>
             </div>
           </SurfaceCard>

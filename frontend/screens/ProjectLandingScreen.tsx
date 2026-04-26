@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import {
-    Rocket, Users, Target, ArrowLeft, Heart, CheckCircle, Calendar, ListTodo,
+    Rocket, Users, ArrowLeft, Heart, CheckCircle, Calendar, ListTodo,
     CheckSquare, Zap, ChevronLeft, ChevronRight, Crown, Trophy, Medal, LayoutGrid,
+    Target,
 } from 'lucide-react';
 import { getProjectDetails } from '../services/project.service';
-import { registerProjectInterest } from '../services/explore.service';
-import { PageHero, EmptyState, SectionHeader, SurfaceCard } from '../components/ui';
+import { requestJoinProject } from '../services/explore.service';
+import { EmptyState, SectionHeader, SurfaceCard } from '../components/ui';
 import { Skeleton } from '../components/Skeleton';
 import { LikeButton } from '../components/LikeButton';
 import { useProfile } from '../hooks/useProfile';
@@ -29,13 +30,14 @@ const ProjectLandingScreen = () => {
     });
 
     const interestMutation = useMutation({
-        mutationFn: () => registerProjectInterest(id!),
-        onSuccess: () => {
+        mutationFn: () => requestJoinProject(id!),
+        onSuccess: (result) => {
             setInterestExpressed(true);
-            toast.success('Interesse registrado! O líder foi notificado.', { icon: '🙌' });
+            const icon = result.status === 'joined' ? '🚀' : result.status === 'group-request-sent' ? '🔒' : '🙌';
+            toast.success(result.message, { icon });
         },
         onError: (err: any) => {
-            toast.error(err.response?.data?.error || 'Erro ao registrar interesse');
+            toast.error(err.response?.data?.message || err.response?.data?.error || 'Erro ao solicitar entrada');
         },
     });
 
@@ -80,135 +82,133 @@ const ProjectLandingScreen = () => {
         <div className="min-h-full bg-background-light pb-20 dark:bg-background-dark">
             <div className="mx-auto max-w-[1480px] space-y-6 p-4 sm:p-6 lg:p-8">
 
-                <PageHero
-                    icon={Target}
-                    tagLabel={
-                        <button
-                            onClick={() => navigate('/projects')}
-                            className="group inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary transition-all hover:bg-primary/20"
-                            style={{ borderColor: `${color}33`, backgroundColor: `${color}1A`, color }}
-                        >
-                            <ArrowLeft size={12} className="transition-transform group-hover:-translate-x-1" />
-                            Voltar para Projetos
-                        </button>
-                    }
-                    title={project.title}
-                    description={project.description || 'Nenhuma descrição fornecida.'}
-                    highlight={
-                        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/40 bg-white/70 p-2 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-black/20">
-                            <div className="flex items-center gap-3 rounded-xl px-3 py-2">
+                {/* ── HERO ── */}
+                <header
+                    className="relative overflow-hidden rounded-2xl border border-gray-100 bg-surface-light/90 p-5 shadow-sm backdrop-blur-md dark:border-gray-800 dark:bg-surface-dark/80"
+                    style={{ borderTopColor: `${color}44` }}
+                >
+                    {/* decorative blur */}
+                    <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full blur-3xl" style={{ backgroundColor: `${color}18` }} />
+                    <div className="pointer-events-none absolute inset-0 bg-network-pattern opacity-30 dark:opacity-10" />
+
+                    <div className="relative z-10 flex flex-col gap-4">
+
+                        {/* Row 1 — back + like */}
+                        <div className="flex items-center justify-between">
+                            <button
+                                onClick={() => navigate('/projects')}
+                                className="group inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary transition-all hover:bg-primary/20"
+                            >
+                                <ArrowLeft size={12} className="transition-transform group-hover:-translate-x-1" />
+                                Voltar
+                            </button>
+
+                            <LikeButton
+                                projectId={id!}
+                                initialLiked={project.liked ?? false}
+                                initialCount={project.likeCount ?? 0}
+                                visibility={project.visibility}
+                                variant="inline"
+                            />
+                        </div>
+
+                        {/* Row 2 — title + CTA */}
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0 flex-1">
+                                {/* group chip */}
+                                {project.Group && (
+                                    <button
+                                        onClick={() => navigate(`/groups/${project.Group.id}`)}
+                                        className="mb-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest transition-all hover:opacity-80"
+                                        style={{ borderColor: `${color}44`, backgroundColor: `${color}15`, color }}
+                                    >
+                                        <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center overflow-hidden rounded-sm">
+                                            {project.Group.logoUrl
+                                                ? <img src={project.Group.logoUrl} alt="" className="h-full w-full object-cover" />
+                                                : <Rocket size={9} />}
+                                        </span>
+                                        {project.Group.name}
+                                    </button>
+                                )}
+
+                                <h1 className="font-display text-xl font-extrabold tracking-tight text-secondary dark:text-white sm:text-2xl">
+                                    {project.title}
+                                </h1>
+                            </div>
+
+                            {/* Primary CTA */}
+                            <div className="shrink-0">
+                                {isMember ? (
+                                    <button
+                                        onClick={() => navigate(`/kanban/${id}`)}
+                                        className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:-translate-y-0.5 active:scale-[0.98]"
+                                        style={{ backgroundColor: color, boxShadow: `0 8px 20px -8px ${color}` }}
+                                    >
+                                        <LayoutGrid size={15} /> Abrir Board
+                                    </button>
+                                ) : project.visibility === 'PRIVATE' ? (
+                                    <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-100 px-5 py-2.5 text-sm font-bold text-gray-400 dark:border-gray-700 dark:bg-white/5">
+                                        Projeto Privado
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => interestMutation.mutate()}
+                                        disabled={interestExpressed || interestMutation.isPending}
+                                        className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:-translate-y-0.5 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-80"
+                                        style={{
+                                            backgroundColor: interestExpressed ? '#10B981' : color,
+                                            boxShadow: `0 8px 20px -8px ${interestExpressed ? '#10B981' : color}`,
+                                        }}
+                                    >
+                                        {interestMutation.isPending ? 'Enviando...'
+                                            : interestExpressed ? <><CheckCircle size={15} /> Solicitado</>
+                                            : project.visibility === 'PUBLIC_OPEN' ? <><Rocket size={15} /> Entrar</>
+                                            : <><Heart size={15} /> Solicitar Entrada</>}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Row 3 — leader + members */}
+                        <div className="flex flex-wrap items-center gap-3">
+                            {/* Leader */}
+                            <div className="flex items-center gap-2 rounded-xl border border-gray-100 bg-white/70 px-3 py-1.5 dark:border-white/10 dark:bg-white/5">
                                 <div
-                                    className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-white dark:ring-gray-800"
+                                    className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-white dark:ring-gray-800"
                                     style={{ backgroundColor: project.leader?.avatarColor || color }}
                                 >
-                                    {project.leader?.avatarUrl ? (
-                                        <img src={project.leader.avatarUrl} alt={project.leader.name} className="h-full w-full object-cover" />
-                                    ) : (
-                                        <span className="text-sm font-bold text-white">
-                                            {project.leader?.name?.charAt(0).toUpperCase()}
-                                        </span>
-                                    )}
+                                    {project.leader?.avatarUrl
+                                        ? <img src={project.leader.avatarUrl} alt={project.leader.name} className="h-full w-full object-cover" />
+                                        : <span className="text-[10px] font-bold text-white">{project.leader?.name?.charAt(0).toUpperCase()}</span>}
                                 </div>
-                                <div className="min-w-0">
-                                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-                                        Líder
-                                    </p>
-                                    <p className="truncate text-xs font-bold text-secondary dark:text-white">
-                                        {project.leader?.name}
-                                    </p>
+                                <div>
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Líder</p>
+                                    <p className="text-xs font-bold text-secondary dark:text-white">{project.leader?.name}</p>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3 rounded-xl px-3 py-2">
-                                <div
-                                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                                    style={{ backgroundColor: `${color}20`, color }}
-                                >
-                                    <Users size={16} />
+                            {/* Members count */}
+                            <div className="flex items-center gap-2 rounded-xl border border-gray-100 bg-white/70 px-3 py-1.5 dark:border-white/10 dark:bg-white/5">
+                                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: `${color}20`, color }}>
+                                    <Users size={12} />
                                 </div>
-                                <div className="min-w-0">
-                                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-                                        Equipe
-                                    </p>
-                                    <p className="truncate text-xs font-bold text-secondary dark:text-white">
+                                <div>
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Equipe</p>
+                                    <p className="text-xs font-bold text-secondary dark:text-white">
                                         {memberCount} {memberCount === 1 ? 'membro' : 'membros'}
                                     </p>
                                 </div>
                             </div>
                         </div>
-                    }
-                    actionButtons={
-                        <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
-                            {/* Secondary cluster: like + group chip */}
-                            <div className="flex items-center gap-2">
-                                <LikeButton
-                                    projectId={id!}
-                                    initialLiked={project.liked ?? false}
-                                    initialCount={project.likeCount ?? 0}
-                                    visibility={project.visibility}
-                                    variant="inline"
-                                />
 
-                                {project.Group && (
-                                    <button
-                                        onClick={() => navigate(`/groups/${project.Group.id}`)}
-                                        className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs font-bold text-secondary shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-surface-dark dark:text-white dark:hover:bg-white/5"
-                                        title={`Ver grupo ${project.Group.name}`}
-                                    >
-                                        <span className="flex h-5 w-5 items-center justify-center overflow-hidden rounded">
-                                            {project.Group.logoUrl ? (
-                                                <img src={project.Group.logoUrl} alt="" className="h-full w-full object-cover" />
-                                            ) : (
-                                                <Rocket size={12} className="text-gray-400" />
-                                            )}
-                                        </span>
-                                        <span className="max-w-[120px] truncate">{project.Group.name}</span>
-                                    </button>
-                                )}
-                            </div>
-
-                            {/* Primary CTA — context-aware */}
-                            {isMember ? (
-                                <button
-                                    onClick={() => navigate(`/kanban/${id}`)}
-                                    className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:-translate-y-0.5"
-                                    style={{
-                                        backgroundColor: color,
-                                        boxShadow: `0 10px 24px -10px ${color}`,
-                                    }}
-                                >
-                                    <LayoutGrid size={18} /> Abrir Board
-                                </button>
-                            ) : project.isJoiningOpen ? (
-                                <button
-                                    onClick={() => interestMutation.mutate()}
-                                    disabled={interestExpressed || interestMutation.isPending}
-                                    className="flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-80"
-                                    style={{
-                                        backgroundColor: interestExpressed ? '#10B981' : color,
-                                        boxShadow: `0 10px 24px -10px ${interestExpressed ? '#10B981' : color}`,
-                                    }}
-                                >
-                                    {interestMutation.isPending ? (
-                                        'Enviando...'
-                                    ) : interestExpressed ? (
-                                        <>
-                                            <CheckCircle size={18} /> Interesse Enviado
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Heart size={18} /> Tenho Interesse
-                                        </>
-                                    )}
-                                </button>
-                            ) : (
-                                <div className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-100 px-6 py-3 text-sm font-bold text-gray-500 dark:border-gray-700 dark:bg-white/5 dark:text-gray-400">
-                                    Vagas Fechadas
-                                </div>
-                            )}
-                        </div>
-                    }
-                />
+                        {/* Row 4 — description full width */}
+                        {project.description && (
+                            <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+                                {project.description}
+                            </p>
+                        )}
+                    </div>
+                </header>
 
                 {/* KPIs */}
                 <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">

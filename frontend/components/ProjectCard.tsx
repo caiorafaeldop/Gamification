@@ -53,7 +53,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, size = 'md' }) => {
 
         <div className="absolute left-2 top-2 flex flex-wrap gap-1">
           {visibilityBadge}
-          {project.isJoiningOpen && (
+          {project.visibility === 'PUBLIC_OPEN' && (
             <span
               className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white"
               style={{ backgroundColor: color }}

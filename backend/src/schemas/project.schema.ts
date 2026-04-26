@@ -14,7 +14,8 @@ export const createProjectSchema = z.object({
     xpReward: z.number().int().positive().optional(),
     progress: z.number().int().min(0).max(100).optional(),
     coverUrl: z.string().optional(),
-    visibility: z.enum(['PRIVATE', 'PUBLIC_VIEW', 'PUBLIC_LIKE']).optional(),
+    visibility: z.enum(['PRIVATE', 'PUBLIC_VIEW', 'PUBLIC_LIKE', 'PUBLIC_OPEN']).optional(),
+    groupId: uuidSchema.optional(),
   }),
 });
 
@@ -41,7 +42,8 @@ export const updateProjectSchema = z.object({
     coverUrl: z.string().optional(),
     pointsPerOpenTask: z.number().int().min(0).optional(),
     pointsPerCompletedTask: z.number().int().min(0).optional(),
-    visibility: z.enum(['PRIVATE', 'PUBLIC_VIEW', 'PUBLIC_LIKE']).optional(),
+    visibility: z.enum(['PRIVATE', 'PUBLIC_VIEW', 'PUBLIC_LIKE', 'PUBLIC_OPEN']).optional(),
+    groupId: uuidSchema.nullable().optional(),
   }).partial(),
 });
 

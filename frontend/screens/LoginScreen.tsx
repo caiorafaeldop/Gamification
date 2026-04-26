@@ -4,7 +4,7 @@ import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, User, KeyRound, Code2, Br
 import { login, register, resetPassword } from '../services/auth.service';
 import toast from 'react-hot-toast';
 import logo from '../assets/logo.webp';
-import { useGoogleLogin } from '@react-oauth/google';
+// import { useGoogleLogin } from '@react-oauth/google';
 import api from '../services/api';
 
 type View = 'login' | 'register' | 'forgot-password';
@@ -32,6 +32,7 @@ const LoginScreen = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
+/*
   const handleGoogleSuccess = async (tokenResponse: any) => {
     setLoading(true);
     try {
@@ -51,6 +52,7 @@ const LoginScreen = () => {
     onSuccess: handleGoogleSuccess,
     onError: () => toast.error('Falha no login com Google.'),
   });
+  */
 
   const resetForm = () => {
     setEmail('');
@@ -140,8 +142,9 @@ const LoginScreen = () => {
     'w-full rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 shadow-sm focus:border-primary focus:ring-4 focus:ring-primary/15 focus:outline-none transition-all duration-200 text-[11px]';
   const inputWithIcon = `${inputBase} pl-9 pr-4 py-1.5`;
   const inputWithTrailing = `${inputBase} pl-9 pr-9 py-1.5`;
-  const labelBase = 'block text-[9px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1';
+  const labelBase = 'block text-[9px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-2';
 
+/*
   const GoogleButton = ({ label }: { label: string }) => (
     <button
       type="button"
@@ -158,6 +161,7 @@ const LoginScreen = () => {
       {label}
     </button>
   );
+  */
 
   const Divider = ({ text }: { text: string }) => (
     <div className="relative my-0.5">
@@ -172,7 +176,7 @@ const LoginScreen = () => {
 
   const PrimaryButton = ({ children }: { children: React.ReactNode }) => (
     <button
-      className="cursor-pointer w-full group relative flex justify-center items-center gap-2 py-2 px-4 rounded-xl text-[11px] font-bold text-white bg-gradient-to-r from-primary to-sky-500 hover:from-sky-500 hover:to-primary shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 focus:outline-none focus:ring-4 focus:ring-primary/30 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
+      className="cursor-pointer w-full group relative flex justify-center items-center gap-2 py-2 px-4 rounded-xl text-[11px] font-bold text-white bg-gradient-to-r from-primary to-sky-500 hover:from-sky-500 hover:to-primary shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 focus:outline-none focus:ring-4 focus:ring-primary/30 active:scale-[0.98] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
       type="submit"
       disabled={loading}
     >
@@ -188,9 +192,9 @@ const LoginScreen = () => {
   );
 
   return (
-    <div className="bg-background-light dark:bg-background-dark text-slate-800 dark:text-gray-100 font-sans min-h-screen flex flex-col md:flex-row">
+    <div className="bg-background-light dark:bg-background-dark text-slate-800 dark:text-gray-100 font-sans h-screen flex flex-col md:flex-row overflow-hidden">
       {/* LEFT - Connecta Hub panel, 50% */}
-      <div className="hidden md:flex md:w-1/2 relative overflow-hidden bg-slate-950 min-h-screen">
+      <div className="hidden md:flex md:w-1/2 h-full relative overflow-hidden bg-slate-950">
         {/* Deep gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#050b1e] to-[#020617]" />
 
@@ -299,8 +303,8 @@ function transformar() {
         </div>
       </div>
 
-      {/* RIGHT - Form side, 50% (top-aligned so toggle doesn't jump on view change) */}
-      <div className="w-full md:w-1/2 flex flex-col items-center justify-start p-6 sm:p-8 lg:p-10 lg:pt-2 relative overflow-hidden min-h-screen">
+      {/* RIGHT - Form side, 50% */}
+      <div className="w-full md:w-1/2 flex flex-col items-center justify-start p-6 sm:p-8 lg:p-12 lg:pt-[10vh] relative overflow-y-auto h-full bg-background-light dark:bg-background-dark">
         {/* Decorative blurs */}
         <div className="absolute top-0 right-0 w-[30rem] h-[30rem] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-sky-200/40 dark:bg-primary/5 rounded-full blur-3xl pointer-events-none" />
@@ -313,15 +317,15 @@ function transformar() {
           </span>
         </div>
 
-        <div className="relative z-10 w-full max-w-md mt-4 md:mt-2">
+        <div className="relative z-10 w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700">
           {/* Header */}
-          <div className="mb-5">
-            <h1 className="font-display font-extrabold text-xl sm:text-2xl text-secondary dark:text-white tracking-tight mb-1">
+          <div className="mb-8">
+            <h1 className="font-display font-extrabold text-xl sm:text-2xl text-secondary dark:text-white tracking-tight mb-2">
               {view === 'login' && 'Bem-vindo de volta'}
               {view === 'register' && 'Crie sua conta'}
               {view === 'forgot-password' && 'Recuperar senha'}
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-[11px]">
+            <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
               {view === 'login' && 'Acesse sua conta para continuar sua jornada.'}
               {view === 'register' && 'Preencha os dados abaixo para começar.'}
               {view === 'forgot-password' && 'Use sua palavra secreta para redefinir.'}
@@ -330,11 +334,11 @@ function transformar() {
 
           {/* Segmented toggle - only for login/register */}
           {view !== 'forgot-password' && (
-            <div className="relative flex p-1 mb-5 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+            <div className="relative flex p-1 mb-8 bg-slate-100/50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 backdrop-blur-sm">
               <button
                 type="button"
                 onClick={() => switchView('login')}
-                className={`cursor-pointer relative z-10 flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors duration-200 ${view === 'login'
+                className={`cursor-pointer relative z-10 flex-1 py-2 text-xs font-semibold rounded-lg transition-all duration-300 ${view === 'login'
                     ? 'text-white'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                   }`}
@@ -344,7 +348,7 @@ function transformar() {
               <button
                 type="button"
                 onClick={() => switchView('register')}
-                className={`cursor-pointer relative z-10 flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors duration-200 ${view === 'register'
+                className={`cursor-pointer relative z-10 flex-1 py-2 text-xs font-semibold rounded-lg transition-all duration-300 ${view === 'register'
                     ? 'text-white'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                   }`}
@@ -352,7 +356,7 @@ function transformar() {
                 Cadastrar
               </button>
               <div
-                className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] rounded-lg bg-gradient-to-r from-primary to-sky-500 shadow-md shadow-primary/25 transition-all duration-300 ${view === 'login' ? 'left-1' : 'left-[calc(50%+0rem)]'
+                className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] rounded-lg bg-gradient-to-r from-primary to-sky-500 shadow-lg shadow-primary/25 transition-all duration-500 ease-out ${view === 'login' ? 'left-1' : 'left-[calc(50%+0rem)]'
                   }`}
               />
             </div>
@@ -360,10 +364,12 @@ function transformar() {
 
           {view === 'login' && (
             <div className="space-y-4">
+              {/* 
               <GoogleButton label="Continuar com Google" />
               <Divider text="Ou com email" />
+              */}
 
-              <form onSubmit={handleLogin} className="space-y-3">
+              <form onSubmit={handleLogin} className="space-y-5">
                 <div>
                   <label className={labelBase} htmlFor="email">Email ou usuário</label>
                   <div className="relative">
@@ -423,10 +429,12 @@ function transformar() {
 
           {view === 'register' && (
             <div className="space-y-4">
+              {/* 
               <GoogleButton label="Registrar com Google" />
               <Divider text="Ou com email" />
+              */}
 
-              <form onSubmit={handleRegister} className="space-y-3">
+              <form onSubmit={handleRegister} className="space-y-5">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className={labelBase}>Nome</label>
@@ -531,7 +539,7 @@ function transformar() {
           )}
 
           {view === 'forgot-password' && (
-            <form onSubmit={handleResetPassword} className="space-y-3.5">
+            <form onSubmit={handleResetPassword} className="space-y-5">
               <div>
                 <label className={labelBase}>Email ou usuário</label>
                 <div className="relative">

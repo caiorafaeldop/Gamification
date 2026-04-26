@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../utils/prisma';
 import { Role, TaskStatus } from '@prisma/client';
 
-import { createNewProject, addMemberToProject, leaveProject as leaveProjectService, transferProjectOwnership, deleteProjectById, registerInterestInProject } from '../services/project.service';
+import { createNewProject, addMemberToProject, leaveProject as leaveProjectService, transferProjectOwnership, deleteProjectById, registerInterestInProject, requestJoinProject, listProjectJoinRequests, respondToProjectJoinRequest } from '../services/project.service';
 import { getCatalogForUser } from '../services/catalog.service';
 
 export const getProjects = async (req: Request, res: Response, next: NextFunction) => {
@@ -39,7 +39,7 @@ export const getProjects = async (req: Request, res: Response, next: NextFunctio
 export const createProject = async (req: Request, res: Response, next: NextFunction) => {
     try {
         console.log('[CONTROLLER] createProject hit');
-        const { title, name, description, category, type, coverUrl, visibility } = req.body;
+        const { title, name, description, category, type, coverUrl, visibility, groupId } = req.body;
         const userId = req.user!.userId;
 
         const project = await createNewProject({
@@ -49,9 +49,10 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
             type,
             coverUrl,
             visibility,
+            groupId: groupId || undefined,
             leaderId: userId,
             memberIds: [userId]
-        }, userId);
+        } as any, userId);
 
         res.status(201).json(project);
     } catch (error) {
@@ -176,6 +177,11 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
         if (pointsPerOpenTask !== undefined) data.pointsPerOpenTask = pointsPerOpenTask;
         if (pointsPerCompletedTask !== undefined) data.pointsPerCompletedTask = pointsPerCompletedTask;
         if (req.body.visibility !== undefined) data.visibility = req.body.visibility;
+        if (req.body.groupId !== undefined) {
+            data.Group = req.body.groupId
+                ? { connect: { id: req.body.groupId } }
+                : { disconnect: true };
+        }
 
         console.log(`[UPDATE PROJECT] Updating project ${id} with data:`, data);
 
@@ -223,7 +229,7 @@ export const getExploreProjects = async (_req: Request, res: Response, next: Nex
         const projects = await prisma.project.findMany({
             where: {
                 status: { not: 'archived' },
-                visibility: { in: ['PUBLIC_VIEW', 'PUBLIC_LIKE'] },
+                visibility: { in: ['PUBLIC_VIEW', 'PUBLIC_LIKE', 'PUBLIC_OPEN'] },
             },
             include: {
                 members: { select: { userId: true } },
@@ -268,6 +274,43 @@ export const registerInterest = async (req: Request, res: Response, next: NextFu
         const userId = req.user!.userId;
         const result = await registerInterestInProject(id, userId);
         res.status(201).json(result);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const requestJoinProjectController = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user!.userId;
+        const result = await requestJoinProject(id, userId);
+        res.status(201).json(result);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const listProjectJoinRequestsController = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user!.userId;
+        const result = await listProjectJoinRequests(id, userId);
+        res.json(result);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const respondToProjectJoinRequestController = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { requestId } = req.params;
+        const { action } = req.body;
+        const userId = req.user!.userId;
+        if (action !== 'APPROVED' && action !== 'REJECTED') {
+            return res.status(400).json({ message: "action deve ser 'APPROVED' ou 'REJECTED'." });
+        }
+        const result = await respondToProjectJoinRequest(requestId, action, userId);
+        res.json(result);
     } catch (error) {
         next(error);
     }

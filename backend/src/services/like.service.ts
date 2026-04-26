@@ -9,7 +9,8 @@ export const toggleProjectLike = async (projectId: string, userId: string) => {
     throw { statusCode: 404, message: 'Projeto não encontrado.' };
   }
 
-  if (project.visibility !== 'PUBLIC_LIKE') {
+  const publicLikeable = project.visibility === 'PUBLIC_LIKE' || project.visibility === 'PUBLIC_OPEN';
+  if (!publicLikeable) {
     if (project.visibility === 'PRIVATE' && project.groupId) {
       const isGroupMember = await prisma.groupMember.findUnique({
         where: { userId_groupId: { userId, groupId: project.groupId } },

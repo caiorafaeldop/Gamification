@@ -1,4 +1,4 @@
-import { Prisma, Project, Role, ActivityType } from '@prisma/client';
+import { Prisma, Project, Role, ActivityType, GroupRole } from '@prisma/client';
 import { createProject, findProjectById, findProjects, updateProject, deleteProject, addProjectMember, removeProjectMember, isUserProjectMember } from '../repositories/project.repository';
 import { findUserById, updateUser } from '../repositories/user.repository';
 import { createActivityLog } from '../repositories/activityLog.repository';
@@ -19,6 +19,8 @@ export const createNewProject = async (data: CreateProjectInput, creatorId: stri
     const uniqueMemberIds = new Set(data.memberIds || []);
     uniqueMemberIds.add(data.leaderId);
 
+    const groupId = (data as any).groupId as string | undefined;
+
     const project = await createProject({
       title: data.title,
       description: data.description,
@@ -31,6 +33,7 @@ export const createNewProject = async (data: CreateProjectInput, creatorId: stri
       coverUrl: data.coverUrl,
       visibility: (data as any).visibility || undefined,
       leader: { connect: { id: data.leaderId } },
+      ...(groupId ? { Group: { connect: { id: groupId } } } : {}),
       members: {
         create: Array.from(uniqueMemberIds).map(userId => ({ userId })),
       },
@@ -280,15 +283,31 @@ export const leaveProject = async (projectId: string, userId: string) => {
 
 
 export const registerInterestInProject = async (projectId: string, userId: string) => {
-  const project = await findProjectById(projectId);
+  return requestJoinProject(projectId, userId);
+};
+
+export const requestJoinProject = async (projectId: string, userId: string) => {
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: {
+      id: true,
+      title: true,
+      visibility: true,
+      leaderId: true,
+      groupId: true,
+      Group: { select: { id: true, name: true, isRestricted: true } },
+    },
+  });
   if (!project) {
-    throw { statusCode: 404, message: 'Project not found.' };
+    throw { statusCode: 404, message: 'Projeto não encontrado.' };
   }
-  if (!project.isJoiningOpen) {
-    throw { statusCode: 403, message: 'Este projeto não está aceitando interessados no momento.' };
-  }
+
   if (project.visibility === 'PRIVATE') {
-    throw { statusCode: 403, message: 'Este projeto não está disponível no marketplace.' };
+    throw { statusCode: 403, message: 'Este projeto é privado.' };
+  }
+
+  if (project.leaderId === userId) {
+    throw { statusCode: 409, message: 'Você é o líder deste projeto.' };
   }
 
   const alreadyMember = await isUserProjectMember(projectId, userId);
@@ -301,20 +320,218 @@ export const registerInterestInProject = async (projectId: string, userId: strin
     throw { statusCode: 404, message: 'Usuário não encontrado.' };
   }
 
-  if (project.leaderId === userId) {
-    throw { statusCode: 409, message: 'Você é o líder deste projeto.' };
+  if (!project.groupId || !project.Group) {
+    throw { statusCode: 400, message: 'Este projeto não está vinculado a um grupo.' };
   }
 
-  await prisma.notification.create({
-    data: {
-      userId: project.leaderId,
-      title: 'Novo interessado no seu projeto',
-      message: `${interested.name} demonstrou interesse em entrar no projeto "${project.title}". Abra o perfil dele para adicioná-lo.`,
-      type: 'PROJECT_INTEREST',
+  const groupId = project.groupId;
+  const group = project.Group;
+  const isGroupMember = !!(await prisma.groupMember.findUnique({
+    where: { userId_groupId: { userId, groupId } },
+  }));
+
+  // CASE A — PUBLIC_OPEN: instant join (group + project)
+  if ((project.visibility as string) === 'PUBLIC_OPEN') {
+    await prisma.$transaction(async (tx) => {
+      if (!isGroupMember) {
+        await tx.groupMember.create({
+          data: { userId, groupId, role: GroupRole.MEMBER },
+        });
+      }
+      await tx.projectMember.create({
+        data: { userId, projectId },
+      });
+      await createActivityLog({
+        user: { connect: { id: userId } },
+        type: ActivityType.USER_JOINED_PROJECT,
+        description: `Joined project "${project.title}".`,
+      }, tx);
+    });
+
+    checkAndAwardAchievements(userId).catch((err) => console.error('Achievement check failed:', err));
+
+    return {
+      status: 'joined' as const,
+      joinedGroup: !isGroupMember,
+      joinedProject: true,
+      message: isGroupMember
+        ? `Você entrou no projeto "${project.title}".`
+        : `Você entrou no grupo "${group.name}" e no projeto "${project.title}".`,
+    };
+  }
+
+  // CASE B — PUBLIC (PUBLIC_LIKE / PUBLIC_VIEW): request flow
+
+  // Sub-case B3 — not a group member, group restricted: request to JOIN THE GROUP
+  if (!isGroupMember && group.isRestricted) {
+    const existing = await prisma.groupJoinRequest.findUnique({
+      where: { userId_groupId: { userId, groupId } },
+    });
+    if (existing && existing.status === 'PENDING') {
+      throw {
+        statusCode: 409,
+        message: `Você já tem uma solicitação pendente para entrar no grupo "${group.name}".`,
+      };
+    }
+    if (existing) {
+      await prisma.groupJoinRequest.update({
+        where: { userId_groupId: { userId, groupId } },
+        data: { status: 'PENDING', updatedAt: new Date() },
+      });
+    } else {
+      await prisma.groupJoinRequest.create({ data: { userId, groupId } });
+    }
+
+    return {
+      status: 'group-request-sent' as const,
+      message: `Este grupo é restrito. Sua solicitação foi enviada para entrar no grupo "${group.name}". Quando aprovada, você poderá pedir para entrar no projeto.`,
+    };
+  }
+
+  // Sub-case B2 — not a group member, group is open: auto-join group, then request to join project
+  if (!isGroupMember && !group.isRestricted) {
+    await prisma.groupMember.create({
+      data: { userId, groupId, role: GroupRole.MEMBER },
+    });
+  }
+
+  // Sub-case B1 / B2 continued — create or refresh ProjectJoinRequest
+  const existingProjectRequest = await (prisma as any).projectJoinRequest.findUnique({
+    where: { userId_projectId: { userId, projectId } },
+  });
+  if (existingProjectRequest && existingProjectRequest.status === 'PENDING') {
+    throw {
+      statusCode: 409,
+      message: 'Você já tem uma solicitação pendente para este projeto.',
+    };
+  }
+
+  const projectRequest = existingProjectRequest
+    ? await (prisma as any).projectJoinRequest.update({
+        where: { userId_projectId: { userId, projectId } },
+        data: { status: 'PENDING', updatedAt: new Date() },
+      })
+    : await (prisma as any).projectJoinRequest.create({
+        data: { userId, projectId },
+      });
+
+  // Notify all current project members
+  const projectMembers = await prisma.projectMember.findMany({
+    where: { projectId },
+    select: { userId: true },
+  });
+  const recipientIds = new Set<string>(projectMembers.map((m) => m.userId));
+  recipientIds.add(project.leaderId);
+  recipientIds.delete(userId);
+
+  if (recipientIds.size > 0) {
+    await prisma.notification.createMany({
+      data: Array.from(recipientIds).map((rid) => ({
+        userId: rid,
+        title: 'Nova solicitação para entrar no projeto',
+        message: `${interested.name} solicitou entrada no projeto "${project.title}".`,
+        type: 'PROJECT_JOIN_REQUEST',
+      })),
+    });
+  }
+
+  const joinedGroupNow = !isGroupMember && !group.isRestricted;
+
+  return {
+    status: 'project-request-sent' as const,
+    joinedGroup: joinedGroupNow,
+    requestId: projectRequest.id,
+    message: joinedGroupNow
+      ? `Você entrou no grupo "${group.name}". Sua solicitação foi enviada aos membros do projeto para aprovação.`
+      : `Solicitação enviada aos membros do projeto "${project.title}".`,
+  };
+};
+
+export const listProjectJoinRequests = async (projectId: string, requestingUserId: string) => {
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { id: true, leaderId: true },
+  });
+  if (!project) throw { statusCode: 404, message: 'Projeto não encontrado.' };
+
+  const isMember = await isUserProjectMember(projectId, requestingUserId);
+  if (!isMember && project.leaderId !== requestingUserId) {
+    throw { statusCode: 403, message: 'Apenas membros do projeto podem ver solicitações.' };
+  }
+
+  return (prisma as any).projectJoinRequest.findMany({
+    where: { projectId, status: 'PENDING' },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      user: { select: { id: true, name: true, avatarUrl: true, avatarColor: true } },
     },
   });
+};
 
-  return { message: 'Seu interesse foi enviado ao líder do projeto.' };
+export const respondToProjectJoinRequest = async (
+  requestId: string,
+  action: 'APPROVED' | 'REJECTED',
+  requestingUserId: string,
+) => {
+  const joinRequest = await (prisma as any).projectJoinRequest.findUnique({
+    where: { id: requestId },
+    include: { project: { select: { id: true, title: true, leaderId: true } } },
+  });
+  if (!joinRequest) throw { statusCode: 404, message: 'Solicitação não encontrada.' };
+  if (joinRequest.status !== 'PENDING') {
+    throw { statusCode: 400, message: 'Esta solicitação já foi processada.' };
+  }
+
+  const isMember = await isUserProjectMember(joinRequest.projectId, requestingUserId);
+  const isLeader = joinRequest.project.leaderId === requestingUserId;
+  if (!isMember && !isLeader) {
+    throw { statusCode: 403, message: 'Apenas membros do projeto podem responder a solicitações.' };
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const updated = await (tx as any).projectJoinRequest.update({
+      where: { id: requestId },
+      data: { status: action, updatedAt: new Date() },
+    });
+
+    if (action === 'APPROVED') {
+      const alreadyMember = await tx.projectMember.findUnique({
+        where: {
+          userId_projectId: { userId: joinRequest.userId, projectId: joinRequest.projectId },
+        },
+      });
+      if (!alreadyMember) {
+        await tx.projectMember.create({
+          data: { userId: joinRequest.userId, projectId: joinRequest.projectId },
+        });
+        await createActivityLog({
+          user: { connect: { id: joinRequest.userId } },
+          type: ActivityType.USER_JOINED_PROJECT,
+          description: `Joined project "${joinRequest.project.title}".`,
+        }, tx);
+      }
+
+      await tx.notification.create({
+        data: {
+          userId: joinRequest.userId,
+          title: 'Sua solicitação foi aprovada',
+          message: `Você agora é membro do projeto "${joinRequest.project.title}".`,
+          type: 'PROJECT_JOIN_APPROVED',
+        },
+      });
+    } else {
+      await tx.notification.create({
+        data: {
+          userId: joinRequest.userId,
+          title: 'Sua solicitação foi recusada',
+          message: `Sua solicitação para o projeto "${joinRequest.project.title}" foi recusada.`,
+          type: 'PROJECT_JOIN_REJECTED',
+        },
+      });
+    }
+
+    return updated;
+  });
 };
 
 export const transferProjectOwnership = async (projectId: string, newLeaderId: string, requestingUserId: string) => {
