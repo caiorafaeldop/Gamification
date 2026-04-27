@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_BASE_URL || 'http://localhost:3000', // Fallback for safety
+  baseURL: import.meta.env.VITE_BASE_URL || 'http://localhost:3333/api/v1', // Fallback for safety
   headers: {
     'Content-Type': 'application/json',
   },
@@ -9,17 +9,6 @@ const api = axios.create({
 
 api.interceptors.request.use(async (config) => {
   try {
-    // 1. Prioritize Clerk Token if session exists (Google Login)
-    // const clerk = (window as any).Clerk;
-    // if (clerk?.session) {
-    //   const token = await clerk.session.getToken();
-    //   if (token) {
-    //     config.headers.Authorization = `Bearer ${token}`;
-    //     return config;
-    //   }
-    // }
-
-    // 2. Fallback to Legacy Token (Email/Password Login)
     const legacyToken = localStorage.getItem('token');
     if (legacyToken) {
       config.headers.Authorization = `Bearer ${legacyToken}`;
@@ -34,12 +23,12 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const hasToken = !!localStorage.getItem('token');
 
-    // Handle 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      // A. Try Legacy Refresh Token
+      // Tenta refresh apenas se já tinha sessão antes (token armazenado)
       const refreshToken = localStorage.getItem('refreshToken');
       if (refreshToken) {
         try {
@@ -53,15 +42,15 @@ api.interceptors.response.use(
         }
       }
 
-      // B. If refresh failed or no legacy token, force logout (Clerk + Local)
-      // const clerk = (window as any).Clerk;
-      // if (clerk) {
-      //   await clerk.signOut();
-      // }
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
-      window.location.href = '/';
+      // Se o usuário tinha token (sessão expirada), limpa cache+storage e avisa o app
+      if (hasToken) {
+        const { clearSession } = await import('../utils/session');
+        clearSession();
+        window.dispatchEvent(new CustomEvent('auth:expired'));
+      } else {
+        // Guest tentando ação autenticada — propaga o erro pro chamador exibir o modal/CTA.
+        window.dispatchEvent(new CustomEvent('auth:required'));
+      }
     }
     return Promise.reject(error);
   }

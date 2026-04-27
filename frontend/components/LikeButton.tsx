@@ -3,6 +3,7 @@ import { Heart } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toggleProjectLike } from '../services/like.service';
 import toast from 'react-hot-toast';
+import { useLoginRequired } from './LoginRequiredModal';
 
 interface LikeButtonProps {
   projectId: string;
@@ -24,6 +25,8 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
   onChange,
 }) => {
   const queryClient = useQueryClient();
+  const loginRequired = useLoginRequired();
+  const isGuest = !localStorage.getItem('token');
   const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(initialCount);
 
@@ -58,6 +61,10 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    if (isGuest) {
+      loginRequired.open('Faça login para curtir este projeto.');
+      return;
+    }
     if (disabled) {
       toast('Este projeto não aceita Likes no momento.', { icon: 'ℹ️' });
       return;
@@ -74,7 +81,7 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
     return (
       <button
         onClick={handleClick}
-        disabled={disabled || mutation.isPending}
+        disabled={!isGuest && (disabled || mutation.isPending)}
         className={`flex items-center gap-1.5 rounded-full bg-black/40 backdrop-blur-md ${padding} ${fontSize} font-bold text-white transition-all hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-60`}
         aria-label={liked ? 'Descurtir' : 'Curtir'}
       >
@@ -90,7 +97,7 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
   return (
     <button
       onClick={handleClick}
-      disabled={disabled || mutation.isPending}
+      disabled={!isGuest && (disabled || mutation.isPending)}
       className={`flex items-center gap-1.5 rounded-lg border ${padding} ${fontSize} font-bold transition-all disabled:cursor-not-allowed disabled:opacity-60 ${
         liked
           ? 'border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-900/40 dark:bg-rose-500/10 dark:text-rose-400'

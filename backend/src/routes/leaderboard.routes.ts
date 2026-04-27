@@ -1,16 +1,16 @@
 import { Router } from 'express';
 import { getLeaderboard as getGlobalLeaderboard, getProjectLeaderboard } from '../controllers/leaderboard.controller';
 import { unifiedAuth } from '../middlewares/unifiedAuth';
+import { optionalAuth } from '../middlewares/optionalAuth';
 import { validate } from '../middlewares/validation.middleware';
 import { paginationSchema, uuidSchema } from '../utils/zod';
 import { z } from 'zod';
 
 const router = Router();
 
-router.use(unifiedAuth);
-
 router.get(
   '/',
+  optionalAuth,
   validate(
     paginationSchema.partial().extend({
       query: z.object({
@@ -22,6 +22,6 @@ router.get(
   getGlobalLeaderboard
 );
 
-router.get('/project/:projectId', validate(paginationSchema.partial().extend({ params: z.object({ projectId: uuidSchema }) })), getProjectLeaderboard);
+router.get('/project/:projectId', unifiedAuth, validate(paginationSchema.partial().extend({ params: z.object({ projectId: uuidSchema }) })), getProjectLeaderboard);
 
 export default router;

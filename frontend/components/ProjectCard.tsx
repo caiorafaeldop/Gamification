@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FlaskConical, Sparkles, Star, Users, Lock, Eye } from 'lucide-react';
 import LikeButton from './LikeButton';
+import ProjectPreviewModal from './ProjectPreviewModal';
 import type { CatalogProject } from '../services/catalog.service';
 
 interface ProjectCardProps {
@@ -11,12 +12,20 @@ interface ProjectCardProps {
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, size = 'md' }) => {
   const navigate = useNavigate();
+  const isGuest = !localStorage.getItem('token');
+  const [previewOpen, setPreviewOpen] = useState(false);
   const color = project.Group?.color || project.color || '#29B6F6';
 
   const heightCls = size === 'sm' ? 'h-32' : size === 'lg' ? 'h-48' : 'h-40';
   const titleCls = size === 'sm' ? 'text-sm' : 'text-base';
 
-  const goDetails = () => navigate(`/project-landing/${project.id}`);
+  const goDetails = () => {
+    if (isGuest) {
+      setPreviewOpen(true);
+    } else {
+      navigate(`/project-landing/${project.id}`);
+    }
+  };
 
   const visibilityBadge =
     project.visibility === 'PRIVATE' ? (
@@ -30,6 +39,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, size = 'md' }) => {
     ) : null;
 
   return (
+    <>
+    {previewOpen && <ProjectPreviewModal project={project} onClose={() => setPreviewOpen(false)} />}
     <article
       onClick={goDetails}
       className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-100 bg-surface-light shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-gray-800 dark:bg-surface-dark"
@@ -129,6 +140,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, size = 'md' }) => {
         </div>
       </div>
     </article>
+    </>
   );
 };
 

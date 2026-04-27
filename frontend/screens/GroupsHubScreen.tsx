@@ -5,11 +5,14 @@ import { useGroups } from '../hooks/useGroups';
 import { Skeleton } from '../components/Skeleton';
 import { PageHero, EmptyState } from '../components/ui';
 import GroupCarousel from '../components/GroupCarousel';
+import { useLoginRequired } from '../components/LoginRequiredModal';
 
 const GroupsHubScreen = () => {
   const navigate = useNavigate();
   const { groups, loading } = useGroups();
   const [searchTerm, setSearchTerm] = useState('');
+  const { open: openLoginModal } = useLoginRequired();
+  const isGuest = !localStorage.getItem('token');
 
   const currentUserId = useMemo(() => {
     try {
@@ -62,7 +65,13 @@ const GroupsHubScreen = () => {
         />
       </div>
       <button
-        onClick={() => navigate('/groups/new')}
+        onClick={() => {
+          if (isGuest) {
+            openLoginModal('Faça login para criar seu próprio grupo e reunir membros.');
+          } else {
+            navigate('/groups/new');
+          }
+        }}
         className="flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-sky-500"
       >
         <Plus size={16} /> Criar Grupo
@@ -107,29 +116,33 @@ const GroupsHubScreen = () => {
               : 'Seja pioneiro. Crie o primeiro grupo e convide colegas para colaborar.'
           }
           action={
-            <button
-              onClick={() => navigate('/groups/new')}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-sky-500"
-            >
-              <Plus size={16} /> Criar Grupo
-            </button>
+            !isGuest ? (
+              <button
+                onClick={() => navigate('/groups/new')}
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-sky-500"
+              >
+                <Plus size={16} /> Criar Grupo
+              </button>
+            ) : undefined
           }
         />
       ) : (
         <div className="space-y-10">
-          <GroupCarousel
-            title="Seus Grupos"
-            subtitle=""
-            icon={<Users size={20} />}
-            accentColor="#29B6F6"
-            groups={myGroups}
-            myGroupIdMappings={myGroupIdMappings}
-            emptyMessage={
-              searchTerm
-                ? undefined
-                : 'Você ainda não faz parte de nenhum grupo. Encontre um abaixo e participe!'
-            }
-          />
+          {!isGuest && (
+            <GroupCarousel
+              title="Seus Grupos"
+              subtitle=""
+              icon={<Users size={20} />}
+              accentColor="#29B6F6"
+              groups={myGroups}
+              myGroupIdMappings={myGroupIdMappings}
+              emptyMessage={
+                searchTerm
+                  ? undefined
+                  : 'Você ainda não faz parte de nenhum grupo. Encontre um abaixo e participe!'
+              }
+            />
+          )}
 
           <GroupCarousel
             title="Explorar Comunidade"

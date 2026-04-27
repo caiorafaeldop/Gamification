@@ -7,11 +7,11 @@ import { getCatalogForUser } from '../services/catalog.service';
 
 export const getProjects = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const isGuest = !req.user?.userId;
         const projects = await prisma.project.findMany({
             where: {
-                status: {
-                    not: 'archived'
-                }
+                status: { not: 'archived' },
+                ...(isGuest && { visibility: { in: ['PUBLIC_VIEW', 'PUBLIC_LIKE', 'PUBLIC_OPEN'] } }),
             },
             include: {
                 members: true,
@@ -90,6 +90,7 @@ export const getProjectDetails = async (req: Request, res: Response, next: NextF
     try {
         const { id } = req.params;
         const userId = req.user?.userId;
+        const isGuest = !userId;
         const project = await prisma.project.findUnique({
             where: { id },
             include: {
@@ -101,6 +102,32 @@ export const getProjectDetails = async (req: Request, res: Response, next: NextF
             }
         });
         if (!project) return res.status(404).json({ message: 'Project not found' });
+        if (isGuest && project.visibility === 'PRIVATE') {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+        if (isGuest) {
+            return res.json({
+                id: project.id,
+                title: project.title,
+                description: project.description,
+                category: project.category,
+                coverUrl: project.coverUrl,
+                color: project.color,
+                visibility: project.visibility,
+                isJoiningOpen: project.isJoiningOpen,
+                status: project.status,
+                leader: project.leader,
+                Group: project.Group,
+                likeCount: project.likeCount,
+                liked: false,
+                stats: {
+                    membersCount: project.members.length,
+                    tasksCount: project.tasks.length,
+                    tasksCompleted: project.tasks.filter((t: any) => t.status === TaskStatus.done).length,
+                },
+                guestPreview: true,
+            });
+        }
 
         let liked = false;
         if (userId) {
@@ -259,7 +286,7 @@ export const getExploreProjects = async (_req: Request, res: Response, next: Nex
 
 export const getCatalog = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = req.user!.userId;
+        const userId = req.user?.userId;
         const catalog = await getCatalogForUser(userId);
         res.json(catalog);
     } catch (error) {

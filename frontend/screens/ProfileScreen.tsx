@@ -419,7 +419,7 @@ const ProfileScreen = () => {
                                 <div className="flex w-full items-center gap-2 sm:w-auto">
                                     <button
                                         onClick={() => {
-                                            const landingBase = import.meta.env.VITE_LANDING_PAGE_URL || 'https://connecta-landing-page.onrender.com';
+                                            const landingBase = import.meta.env.VITE_LANDING_PAGE_URL || 'https://connectaci.com.br';
                                             const url = `${landingBase}/#/cv/${user.id}`;
                                             navigator.clipboard.writeText(url);
                                             toast.success('Link do currículo copiado!');
@@ -431,7 +431,7 @@ const ProfileScreen = () => {
                                     </button>
                                     <button
                                         onClick={() => {
-                                            const landingBase = import.meta.env.VITE_LANDING_PAGE_URL || 'https://connecta-landing-page.onrender.com';
+                                            const landingBase = import.meta.env.VITE_LANDING_PAGE_URL || 'https://connectaci.com.br';
                                             const url = `${landingBase}/#/cv/${user.id}`;
                                             window.open(url, '_blank');
                                         }}

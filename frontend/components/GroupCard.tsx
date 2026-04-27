@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, BookOpen, Heart, FlaskConical, Sparkles, ArrowRight, Lock, Globe } from 'lucide-react';
 import type { Group } from '../services/group.service';
+import { useLoginRequired } from './LoginRequiredModal';
 
 interface GroupCardProps {
   group: Group;
@@ -11,6 +12,8 @@ interface GroupCardProps {
 
 const GroupCard: React.FC<GroupCardProps> = ({ group, isMember, preview = false }) => {
   const navigate = useNavigate();
+  const loginRequired = useLoginRequired();
+  const isGuest = !localStorage.getItem('token');
   const color = group.color || '#29B6F6';
   const memberCount = group._count?.GroupMember || 0;
   const projectCount = group._count?.Project || 0;
@@ -18,6 +21,10 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, isMember, preview = false 
 
   const handleNavigate = () => {
     if (preview) return;
+    if (isGuest) {
+      loginRequired.open('Faça login para ver os detalhes deste grupo.');
+      return;
+    }
     navigate(`/groups/${group.id}`);
   };
 
@@ -99,13 +106,17 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, isMember, preview = false 
             onClick={(e) => {
               e.stopPropagation();
               if (preview) return;
+              if (isGuest) {
+                loginRequired.open('Faça login para ver os detalhes deste grupo.');
+                return;
+              }
               navigate(`/groups/${group.id}`);
             }}
             disabled={preview}
             className={`flex w-full items-center justify-center gap-2 rounded-lg py-2 text-sm font-bold text-white transition-transform ${preview ? 'cursor-default opacity-90' : 'hover:scale-[1.02]'}`}
             style={{ backgroundColor: color, boxShadow: `0 6px 18px -6px ${color}88` }}
           >
-            Acessar Grupo
+            {isGuest ? 'Entrar para acessar' : 'Acessar Grupo'}
             <ArrowRight size={14} />
           </button>
         </div>

@@ -18,10 +18,13 @@ import { getCatalog, CatalogProject } from '../services/catalog.service';
 import { Skeleton } from '../components/Skeleton';
 import { PageHero, EmptyState } from '../components/ui';
 import ProjectCarousel from '../components/ProjectCarousel';
+import { useLoginRequired } from '../components/LoginRequiredModal';
 
 const ProjectsScreen = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const { open: openLoginModal } = useLoginRequired();
+  const isGuest = !localStorage.getItem('token');
 
   const { data: catalog, isLoading } = useQuery({
     queryKey: ['catalog'],
@@ -71,7 +74,13 @@ const ProjectsScreen = () => {
         />
       </div>
       <button
-        onClick={() => navigate('/new-project')}
+        onClick={() => {
+          if (isGuest) {
+            openLoginModal('Faça login para criar seu próprio projeto e começar a colaborar.');
+          } else {
+            navigate('/new-project');
+          }
+        }}
         className="flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-sky-500"
       >
         <Plus size={16} /> Novo projeto
@@ -155,18 +164,20 @@ const ProjectsScreen = () => {
       ) : (
         filteredCatalog && (
           <div className="space-y-10">
-            <ProjectCarousel
-              title="Seus projetos"
-              subtitle="Onde você é líder ou membro"
-              icon={<UserCheck size={20} />}
-              accentColor="#29B6F6"
-              projects={filteredCatalog.yours}
-              emptyMessage={
-                search
-                  ? undefined
-                  : 'Você ainda não está em nenhum projeto. Crie um ou peça pra entrar em algum!'
-              }
-            />
+            {!isGuest && (
+              <ProjectCarousel
+                title="Seus projetos"
+                subtitle="Onde você é líder ou membro"
+                icon={<UserCheck size={20} />}
+                accentColor="#29B6F6"
+                projects={filteredCatalog.yours}
+                emptyMessage={
+                  search
+                    ? undefined
+                    : 'Você ainda não está em nenhum projeto. Crie um ou peça pra entrar em algum!'
+                }
+              />
+            )}
 
             <ProjectCarousel
               title="Em alta"
@@ -213,13 +224,15 @@ const ProjectsScreen = () => {
               />
             ))}
 
-            <ProjectCarousel
-              title="Do seu grupo"
-              subtitle="Dos seus grupos onde você ainda não participa"
-              icon={<Users size={20} />}
-              accentColor="#F59E0B"
-              projects={filteredCatalog.fromYourGroups}
-            />
+            {!isGuest && (
+              <ProjectCarousel
+                title="Do seu grupo"
+                subtitle="Dos seus grupos onde você ainda não participa"
+                icon={<Users size={20} />}
+                accentColor="#F59E0B"
+                projects={filteredCatalog.fromYourGroups}
+              />
+            )}
           </div>
         )
       )}

@@ -17,28 +17,29 @@ import {
 } from '../controllers/project.controller';
 import { toggleLike, getLikeStatus } from '../controllers/like.controller';
 import { unifiedAuth } from '../middlewares/unifiedAuth';
+import { optionalAuth } from '../middlewares/optionalAuth';
 import upload from '../middlewares/upload.middleware';
 
 const router = Router();
 
-router.use(unifiedAuth);
+// Rotas públicas (com auth opcional para enriquecer resposta quando logado)
+router.get('/catalog', optionalAuth, getCatalog);
+router.get('/', optionalAuth, getProjects);
+router.get('/:id', optionalAuth, getProjectDetails);
+router.get('/:id/like', optionalAuth, getLikeStatus);
 
-// Public (authenticated) routes
-router.post('/upload-cover', upload.single('image') as any, uploadProjectCover);
-router.get('/catalog', getCatalog);
-router.get('/', getProjects);
-router.get('/:id', getProjectDetails);
-router.post('/', createProject);
-router.patch('/:id', updateProject);
-router.post('/:id/join', joinProject);
-router.post('/:id/interest', registerInterest);
-router.post('/:id/request-join', requestJoinProjectController);
-router.get('/:id/join-requests', listProjectJoinRequestsController);
-router.post('/join-requests/:requestId/respond', respondToProjectJoinRequestController);
-router.post('/:id/like', toggleLike);
-router.get('/:id/like', getLikeStatus);
-router.delete('/:id/leave', leaveProject);
-router.put('/:id/transfer-ownership', transferOwnership);
-router.delete('/:id', deleteProject);
+// Rotas protegidas (exigem login)
+router.post('/upload-cover', unifiedAuth, upload.single('image') as any, uploadProjectCover);
+router.post('/', unifiedAuth, createProject);
+router.patch('/:id', unifiedAuth, updateProject);
+router.post('/:id/join', unifiedAuth, joinProject);
+router.post('/:id/interest', unifiedAuth, registerInterest);
+router.post('/:id/request-join', unifiedAuth, requestJoinProjectController);
+router.get('/:id/join-requests', unifiedAuth, listProjectJoinRequestsController);
+router.post('/join-requests/:requestId/respond', unifiedAuth, respondToProjectJoinRequestController);
+router.post('/:id/like', unifiedAuth, toggleLike);
+router.delete('/:id/leave', unifiedAuth, leaveProject);
+router.put('/:id/transfer-ownership', unifiedAuth, transferOwnership);
+router.delete('/:id', unifiedAuth, deleteProject);
 
 export default router;
