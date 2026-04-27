@@ -146,7 +146,7 @@ const Layout = () => {
                     <SidebarItem to="/projects" icon={FolderOpen} label="Projetos" />
                     <SidebarItem to="/groups" icon={Network} label="Grupos" />
                     <SidebarItem to="/jobs" icon={Briefcase} label="Vagas" />
-                    <SidebarItem to="/ranking" icon={Trophy} label="Ranking" />
+                    {isGuest && <SidebarItem to="/ranking" icon={Trophy} label="Ranking" />}
                     {!isGuest && <SidebarItem to="/achievements" icon={Medal} label="Conquistas" />}
                     {!isGuest && <SidebarItem to="/activities" icon={Calendar} label="Atividades" />}
                     {!isGuest && <SidebarItem to="/profile" icon={User} label="Perfil" />}
