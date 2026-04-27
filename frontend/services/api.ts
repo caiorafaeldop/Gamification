@@ -1,7 +1,15 @@
 import axios from 'axios';
 
+// --- Configuração de Backends com Fallback ---
+const PRIMARY_URL   = import.meta.env.VITE_BASE_URL     || 'http://localhost:3333/api/v1';
+const FALLBACK_URL  = import.meta.env.VITE_FALLBACK_URL || null;
+
+// Erros que indicam que o servidor está fora do ar (não erros de negócio)
+const SERVER_DOWN_CODES = new Set([0, 502, 503, 504]);
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_BASE_URL || 'http://localhost:3333/api/v1', // Fallback for safety
+  baseURL: PRIMARY_URL,
+  timeout: 10000, // 10s — evita esperar para sempre antes de tentar o fallback
   headers: {
     'Content-Type': 'application/json',
   },
@@ -24,6 +32,23 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const hasToken = !!localStorage.getItem('token');
+
+    // --- Fallback para o segundo backend ---
+    const isServerDown =
+      !error.response ||                                    // erro de rede / timeout
+      SERVER_DOWN_CODES.has(error.response?.status);        // 502 / 503 / 504
+
+    if (isServerDown && FALLBACK_URL && !originalRequest._fallbackRetry) {
+      originalRequest._fallbackRetry = true;
+      console.warn(`[API] Backend primário indisponível. Tentando fallback: ${FALLBACK_URL}`);
+
+      // Reescreve a URL da requisição para apontar ao backend secundário
+      originalRequest.baseURL = FALLBACK_URL;
+      originalRequest.url = originalRequest.url?.replace(PRIMARY_URL, '') ?? originalRequest.url;
+
+      return axios(originalRequest);
+    }
+    // --- /Fallback ---
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
