@@ -60,7 +60,7 @@ const LandingScreen = () => {
             </div>
 
             <h1 className="text-5xl md:text-7xl font-display font-black text-secondary dark:text-white leading-[1.1] mb-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
-              Onde seu <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-sky-500">impacto</span> é reconhecido.
+              Onde o seu <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-sky-500">Impacto</span> é reconhecido
             </h1>
 
             <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
