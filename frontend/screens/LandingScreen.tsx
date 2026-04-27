@@ -16,6 +16,7 @@ import { listGroups } from '../services/group.service';
 import { listJobPostings } from '../services/jobPosting.service';
 import ProjectCard from '../components/ProjectCard';
 import GroupCard from '../components/GroupCard';
+import logo from '../assets/logo.webp';
 
 const LandingScreen = () => {
   const navigate = useNavigate();
@@ -313,13 +314,13 @@ const LandingScreen = () => {
       <footer className="py-12 border-t border-gray-100 dark:border-gray-900 text-center">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-white font-black text-xl shadow-lg shadow-primary/20">
-              G
-            </div>
-            <span className="font-display font-black text-xl text-secondary dark:text-white uppercase tracking-tighter">Gamification</span>
+            <img src={logo} alt="ConnectaHub" className="h-8 w-auto rounded-xl shadow-sm" />
+            <span className="font-display font-bold text-xl text-secondary dark:text-white tracking-tight">
+              Connecta<span className="text-primary">Hub</span>
+            </span>
           </div>
           <p className="text-gray-400 text-xs">
-            © {new Date().getFullYear()} Gamification Hub. Desenvolvido para impulsionar a inovação.
+            © {new Date().getFullYear()} ConnectaHub. Networking acadêmico onde empresas se conectam com a academia.
           </p>
         </div>
       </footer>
