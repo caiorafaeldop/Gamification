@@ -1,4 +1,4 @@
-import { GroupRole, Role } from '@prisma/client';
+import { GroupCategory, GroupRole, Role } from '@prisma/client';
 import prisma from '../utils/prisma';
 import { randomUUID } from 'crypto';
 
@@ -9,6 +9,7 @@ interface CreateGroupInput {
   logoUrl?: string;
   bannerUrl?: string;
   isRestricted?: boolean;
+  category?: GroupCategory;
 }
 
 interface UpdateGroupInput {
@@ -18,7 +19,23 @@ interface UpdateGroupInput {
   logoUrl?: string;
   bannerUrl?: string;
   isRestricted?: boolean;
+  category?: GroupCategory;
 }
+
+const resolveCategory = (
+  requested: GroupCategory | undefined,
+  requesterRole: Role,
+): GroupCategory | undefined => {
+  if (requested === undefined) return undefined;
+  const isSystemAdmin = requesterRole === Role.ADMIN;
+  if (!isSystemAdmin && requested !== GroupCategory.COMUNIDADE) {
+    throw {
+      statusCode: 403,
+      message: 'Apenas administradores podem definir grupos como Institucional ou Externo.',
+    };
+  }
+  return requested;
+};
 
 const groupInclude = {
   GroupMember: {
@@ -76,9 +93,15 @@ export const getGroupDetails = async (id: string, userId?: string) => {
   return group;
 };
 
-export const createGroup = async (data: CreateGroupInput, creatorId: string) => {
+export const createGroup = async (
+  data: CreateGroupInput,
+  creatorId: string,
+  creatorRole: Role,
+) => {
   const existing = await prisma.group.findUnique({ where: { name: data.name } });
   if (existing) throw { statusCode: 409, message: 'Já existe um grupo com esse nome.' };
+
+  const category = resolveCategory(data.category, creatorRole) ?? GroupCategory.COMUNIDADE;
 
   return prisma.$transaction(async (tx) => {
     const group = await tx.group.create({
@@ -90,6 +113,7 @@ export const createGroup = async (data: CreateGroupInput, creatorId: string) => 
         logoUrl: data.logoUrl,
         bannerUrl: data.bannerUrl,
         isRestricted: data.isRestricted ?? false,
+        category,
         GroupMember: {
           create: {
             userId: creatorId,
@@ -119,6 +143,8 @@ export const updateGroup = async (
     throw { statusCode: 403, message: 'Apenas admins do grupo podem editá-lo.' };
   }
 
+  const category = resolveCategory(data.category, requestingUserRole);
+
   return prisma.group.update({
     where: { id },
     data: {
@@ -128,6 +154,7 @@ export const updateGroup = async (
       ...(data.logoUrl !== undefined && { logoUrl: data.logoUrl }),
       ...(data.bannerUrl !== undefined && { bannerUrl: data.bannerUrl }),
       ...(data.isRestricted !== undefined && { isRestricted: data.isRestricted }),
+      ...(category !== undefined && { category }),
       updatedAt: new Date(),
     },
     include: groupInclude,

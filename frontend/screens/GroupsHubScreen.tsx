@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, FlaskConical, Search, Compass, Users } from 'lucide-react';
+import { Plus, FlaskConical, Search, Users } from 'lucide-react';
 import { useGroups } from '../hooks/useGroups';
 import { Skeleton } from '../components/Skeleton';
 import { PageHero, EmptyState } from '../components/ui';
 import GroupCarousel from '../components/GroupCarousel';
 import { useLoginRequired } from '../components/LoginRequiredModal';
+import { GROUP_CATEGORIES, groupCategoryMeta, resolveCategory } from '../utils/groupCategory';
+import type { GroupCategory } from '../services/group.service';
 
 const GroupsHubScreen = () => {
   const navigate = useNavigate();
@@ -25,10 +27,14 @@ const GroupsHubScreen = () => {
     }
   }, []);
 
-  const { myGroups, exploreGroups, myGroupIdMappings } = useMemo(() => {
+  const { myGroups, byCategory, myGroupIdMappings } = useMemo(() => {
     const mappings: Record<string, boolean> = {};
     const mine: typeof groups = [];
-    const explore: typeof groups = [];
+    const buckets: Record<GroupCategory, typeof groups> = {
+      INSTITUCIONAL: [],
+      COMUNIDADE: [],
+      EXTERNO: [],
+    };
 
     const filtered = groups
       .filter((g) =>
@@ -42,12 +48,11 @@ const GroupsHubScreen = () => {
       if (isMember) {
         mappings[g.id] = true;
         mine.push(g);
-      } else {
-        explore.push(g);
       }
+      buckets[resolveCategory(g.category)].push(g);
     });
 
-    return { myGroups: mine, exploreGroups: explore, myGroupIdMappings: mappings };
+    return { myGroups: mine, byCategory: buckets, myGroupIdMappings: mappings };
   }, [groups, searchTerm, currentUserId]);
 
   const heroActions = (
@@ -144,14 +149,26 @@ const GroupsHubScreen = () => {
             />
           )}
 
-          <GroupCarousel
-            title="Explorar Comunidade"
-            subtitle="Grupos abertos e restritos disponíveis para participação"
-            icon={<Compass size={20} />}
-            accentColor="#10B981"
-            groups={exploreGroups}
-            myGroupIdMappings={myGroupIdMappings}
-          />
+          {GROUP_CATEGORIES.map((cat) => {
+            const meta = groupCategoryMeta[cat];
+            const Icon = meta.icon;
+            return (
+              <GroupCarousel
+                key={cat}
+                title={meta.label}
+                subtitle={meta.description}
+                icon={<Icon size={20} />}
+                accentColor={meta.accentColor}
+                groups={byCategory[cat]}
+                myGroupIdMappings={myGroupIdMappings}
+                emptyMessage={
+                  searchTerm
+                    ? undefined
+                    : `Nenhum grupo nesta categoria ainda.`
+                }
+              />
+            );
+          })}
         </div>
       )}
     </div>

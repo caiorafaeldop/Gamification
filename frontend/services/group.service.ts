@@ -21,6 +21,8 @@ export interface GroupMemberSummary {
   User: { id: string; name: string; avatarUrl: string | null; avatarColor: string | null };
 }
 
+export type GroupCategory = 'INSTITUCIONAL' | 'COMUNIDADE' | 'EXTERNO';
+
 export interface Group {
   id: string;
   name: string;
@@ -31,6 +33,7 @@ export interface Group {
   totalXp: number | null;
   totalLikes?: number;
   isRestricted?: boolean;
+  category?: GroupCategory;
   createdAt: string;
   updatedAt: string;
   GroupMember?: GroupMemberSummary[];
@@ -46,6 +49,7 @@ export interface CreateGroupPayload {
   logoUrl?: string;
   bannerUrl?: string;
   isRestricted?: boolean;
+  category?: GroupCategory;
 }
 
 export const listGroups = async (): Promise<Group[]> => {

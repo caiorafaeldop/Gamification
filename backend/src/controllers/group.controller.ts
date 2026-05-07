@@ -24,13 +24,15 @@ export const getGroup = async (req: Request, res: Response, next: NextFunction) 
 export const createGroup = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.userId;
-    const { name, description, color, logoUrl, bannerUrl } = req.body;
+    const userRole = req.user!.role;
+    const { name, description, color, logoUrl, bannerUrl, isRestricted, category } = req.body;
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return res.status(400).json({ message: 'Nome do grupo é obrigatório.' });
     }
     const group = await groupService.createGroup(
-      { name: name.trim(), description, color, logoUrl, bannerUrl },
-      userId
+      { name: name.trim(), description, color, logoUrl, bannerUrl, isRestricted, category },
+      userId,
+      userRole,
     );
     res.status(201).json(group);
   } catch (error) {

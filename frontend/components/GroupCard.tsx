@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, BookOpen, Heart, FlaskConical, Sparkles, ArrowRight, Lock, Globe } from 'lucide-react';
 import type { Group } from '../services/group.service';
+import { groupCategoryMeta, resolveCategory } from '../utils/groupCategory';
 import { useLoginRequired } from './LoginRequiredModal';
 
 interface GroupCardProps {
@@ -18,6 +19,9 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, isMember, preview = false 
   const memberCount = group._count?.GroupMember || 0;
   const projectCount = group._count?.Project || 0;
   const totalLikes = group.totalLikes ?? 0;
+  const category = resolveCategory(group.category);
+  const catMeta = groupCategoryMeta[category];
+  const CategoryIcon = catMeta.icon;
 
   const handleNavigate = () => {
     if (preview) return;
@@ -47,7 +51,11 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, isMember, preview = false 
               "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
           }}
         />
-        <div className="absolute left-3 top-3 z-10">
+        <div className="absolute left-3 top-3 z-10 flex flex-col items-start gap-1.5">
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest shadow-sm" style={{ color: catMeta.accentColor }}>
+            <CategoryIcon size={10} />
+            {catMeta.shortLabel}
+          </span>
           <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-sm">
             {group.isRestricted ? <Lock size={10} /> : <Globe size={10} />}
             {group.isRestricted ? 'Restrito' : 'Aberto'}

@@ -13,6 +13,7 @@ import {
   Tag,
   UserCheck,
   Rocket,
+  Flame,
 } from 'lucide-react';
 import { getCatalog, CatalogProject } from '../services/catalog.service';
 import { Skeleton } from '../components/Skeleton';
@@ -47,6 +48,7 @@ const ProjectsScreen = () => {
     return {
       yours: filterList(catalog.yours),
       trending: filterList(catalog.trending),
+      mostActive: filterList(catalog.mostActive),
       recent: filterList(catalog.recent),
       openForJoining: filterList(catalog.openForJoining),
       byGroup: catalog.byGroup
@@ -93,6 +95,7 @@ const ProjectsScreen = () => {
         [
           ...catalog.yours,
           ...catalog.trending,
+          ...catalog.mostActive,
           ...catalog.recent,
           ...catalog.openForJoining,
           ...catalog.fromYourGroups,
@@ -106,6 +109,7 @@ const ProjectsScreen = () => {
     filteredCatalog &&
     filteredCatalog.yours.length === 0 &&
     filteredCatalog.trending.length === 0 &&
+    filteredCatalog.mostActive.length === 0 &&
     filteredCatalog.recent.length === 0 &&
     filteredCatalog.openForJoining.length === 0 &&
     filteredCatalog.byGroup.length === 0 &&
@@ -185,6 +189,14 @@ const ProjectsScreen = () => {
               icon={<TrendingUp size={20} />}
               accentColor="#F43F5E"
               projects={filteredCatalog.trending}
+            />
+
+            <ProjectCarousel
+              title="Projetos mais ativos"
+              subtitle="Ranqueados pelo total de pontos distribuídos aos membros"
+              icon={<Flame size={20} />}
+              accentColor="#F97316"
+              projects={filteredCatalog.mostActive}
             />
 
             <ProjectCarousel

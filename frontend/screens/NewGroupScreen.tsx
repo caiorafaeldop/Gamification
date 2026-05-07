@@ -6,7 +6,9 @@ import { PageHero, SurfaceCard, SectionHeader, ColorPicker, LogoUpload } from '.
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select';
 import { Lock, Globe } from 'lucide-react';
 import GroupCard from '../components/GroupCard';
-import type { Group } from '../services/group.service';
+import type { Group, GroupCategory } from '../services/group.service';
+import { GROUP_CATEGORIES, groupCategoryMeta } from '../utils/groupCategory';
+import { useAuth } from '../hooks/useAuth';
 
 const NewGroupScreen = () => {
   const navigate = useNavigate();
@@ -16,13 +18,23 @@ const NewGroupScreen = () => {
   const createGroup = useCreateGroup();
   const updateGroup = useUpdateGroup(id || '');
   const { group, loading: loadingGroup } = useGroup(id);
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'ADMIN';
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    color: string;
+    logoUrl: string;
+    isRestricted: boolean;
+    category: GroupCategory;
+  }>({
     name: '',
     description: '',
     color: '#29B6F6',
     logoUrl: '',
     isRestricted: false,
+    category: 'COMUNIDADE',
   });
 
   useEffect(() => {
@@ -33,6 +45,7 @@ const NewGroupScreen = () => {
         color: group.color || '#29B6F6',
         logoUrl: group.logoUrl || '',
         isRestricted: group.isRestricted || false,
+        category: (group.category as GroupCategory) || 'COMUNIDADE',
       });
     }
   }, [isEditing, group]);
@@ -45,6 +58,8 @@ const NewGroupScreen = () => {
     e.preventDefault();
     if (!formData.name.trim()) return;
 
+    const categoryToSend: GroupCategory = isSuperAdmin ? formData.category : 'COMUNIDADE';
+
     if (isEditing && id) {
       await updateGroup.mutateAsync({
         name: formData.name.trim(),
@@ -52,6 +67,7 @@ const NewGroupScreen = () => {
         color: formData.color,
         logoUrl: formData.logoUrl || undefined,
         isRestricted: formData.isRestricted,
+        category: categoryToSend,
       });
       navigate(`/groups/${id}`);
       return;
@@ -63,6 +79,7 @@ const NewGroupScreen = () => {
       color: formData.color,
       logoUrl: formData.logoUrl || undefined,
       isRestricted: formData.isRestricted,
+      category: categoryToSend,
     });
     navigate(`/groups/${group.id}`);
   };
@@ -89,10 +106,11 @@ const NewGroupScreen = () => {
     totalXp: null,
     totalLikes: 0,
     isRestricted: formData.isRestricted,
+    category: isSuperAdmin ? formData.category : 'COMUNIDADE',
     createdAt: '',
     updatedAt: '',
     _count: { GroupMember: 1, Project: 0 },
-  }), [formData.name, formData.description, formData.logoUrl, formData.isRestricted, previewColor]);
+  }), [formData.name, formData.description, formData.logoUrl, formData.isRestricted, formData.category, isSuperAdmin, previewColor]);
 
   return (
     <div className="mx-auto max-w-[1480px] space-y-8 p-4 sm:p-6 lg:p-8">
@@ -165,6 +183,52 @@ const NewGroupScreen = () => {
                   placeholder="Ex: Laboratório de IA Aplicada"
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
                 />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">
+                  Categoria
+                </label>
+                {isSuperAdmin ? (
+                  <Select
+                    value={formData.category}
+                    onValueChange={(val) => setFormData(prev => ({ ...prev, category: val as GroupCategory }))}
+                  >
+                    <SelectTrigger className="h-12 w-full border-slate-200 bg-slate-50 shadow-inner dark:border-slate-700 dark:bg-background-dark">
+                      <SelectValue placeholder="Selecione a categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GROUP_CATEGORIES.map((cat) => {
+                        const meta = groupCategoryMeta[cat];
+                        const Icon = meta.icon;
+                        return (
+                          <SelectItem key={cat} value={cat}>
+                            <div className="flex items-center gap-2">
+                              <Icon size={16} style={{ color: meta.accentColor }} /> {meta.label}
+                              <span className="text-xs text-slate-500">— {meta.description}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="flex h-12 w-full items-center gap-3 rounded-md border border-slate-200 bg-slate-100 px-3 text-sm font-medium text-slate-600 dark:border-slate-700 dark:bg-surface-darker dark:text-slate-300">
+                    {(() => {
+                      const meta = groupCategoryMeta.COMUNIDADE;
+                      const Icon = meta.icon;
+                      return (
+                        <>
+                          <Icon size={16} style={{ color: meta.accentColor }} />
+                          <span>{meta.label}</span>
+                          <span className="ml-auto text-xs text-slate-400">
+                            Apenas administradores podem mudar a categoria
+                          </span>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
 
               <div>

@@ -43,6 +43,7 @@ export const getCatalogForUser = async (userId?: string) => {
     recentRaw,
     openRaw,
     trendingAgg,
+    mostActiveAgg,
     fromYourGroupsRaw,
     allGroups,
     distinctCategories,
@@ -87,6 +88,15 @@ export const getCatalogForUser = async (userId?: string) => {
       where: { createdAt: { gte: trendingSince } },
       _count: { projectId: true },
       orderBy: { _count: { projectId: 'desc' } },
+      take: ROW_LIMIT,
+    }),
+
+    // 2b. Mais ativos: soma de pontos positivos distribuídos via ActivityLog
+    prisma.activityLog.groupBy({
+      by: ['projectId'],
+      where: { projectId: { not: null }, pointsChange: { gt: 0 } },
+      _sum: { pointsChange: true },
+      orderBy: { _sum: { pointsChange: 'desc' } },
       take: ROW_LIMIT,
     }),
 
@@ -136,6 +146,24 @@ export const getCatalogForUser = async (userId?: string) => {
     .map((id) => trendingMap.get(id))
     .filter((p): p is NonNullable<typeof p> => Boolean(p));
 
+  // Hidrata "Mais ativos" com os projetos completos
+  const mostActiveIds = mostActiveAgg
+    .map((a) => a.projectId)
+    .filter((id): id is string => Boolean(id));
+  const mostActiveProjects = mostActiveIds.length
+    ? await prisma.project.findMany({
+        where: baseSelectableProject({
+          id: { in: mostActiveIds },
+          visibility: visibleToOutsider,
+        }),
+        include: projectInclude,
+      })
+    : [];
+  const mostActiveMap = new Map(mostActiveProjects.map((p) => [p.id, p]));
+  const mostActive = mostActiveIds
+    .map((id) => mostActiveMap.get(id))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p));
+
   // Por grupo: 1 query paralela por grupo
   const byGroup = await Promise.all(
     allGroups.map(async (g) => ({
@@ -177,6 +205,7 @@ export const getCatalogForUser = async (userId?: string) => {
   return {
     yours: decorateList(yoursRaw),
     trending: decorateList(trending),
+    mostActive: decorateList(mostActive),
     recent: decorateList(recentRaw),
     openForJoining: decorateList(openRaw),
     byGroup: byGroup

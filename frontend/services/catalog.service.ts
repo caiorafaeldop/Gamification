@@ -30,6 +30,7 @@ export interface GroupRowGroup {
 export interface CatalogResponse {
   yours: CatalogProject[];
   trending: CatalogProject[];
+  mostActive: CatalogProject[];
   recent: CatalogProject[];
   openForJoining: CatalogProject[];
   byGroup: { group: GroupRowGroup; projects: CatalogProject[] }[];

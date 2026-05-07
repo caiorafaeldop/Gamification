@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Briefcase,
@@ -8,6 +8,8 @@ import {
   FlaskConical,
   Mail,
   ExternalLink,
+  Phone,
+  Share2,
   Trash2,
   Pencil,
   CheckCircle2,
@@ -19,6 +21,7 @@ import {
   listJobPostings,
   deleteJobPosting,
   updateJobPosting,
+  getJobPosting,
   JobPosting,
   JobPostingStatus,
 } from '../services/jobPosting.service';
@@ -35,17 +38,100 @@ const statusMeta: Record<
   FILLED: { label: 'Preenchida', color: '#0EA5E9', icon: <CheckCircle2 size={11} /> },
 };
 
-const isExternalLink = (s: string) => /^(https?:)?\/\//.test(s.trim());
+type ContactKind = 'link' | 'phone' | 'email';
+
+interface ContactInfo {
+  kind: ContactKind;
+  href: string;
+  label: string;
+  hint: string;
+}
+
+const detectContact = (raw: string): ContactInfo => {
+  const value = raw.trim();
+
+  if (/^(https?:)?\/\//i.test(value)) {
+    return {
+      kind: 'link',
+      href: value.startsWith('//') ? `https:${value}` : value,
+      label: value,
+      hint: 'Acesse o link acima para se candidatar',
+    };
+  }
+
+  const digits = value.replace(/\D/g, '');
+  const looksLikePhone =
+    digits.length >= 8 &&
+    digits.length <= 15 &&
+    /^[+\d\s().-]+$/.test(value);
+
+  if (looksLikePhone) {
+    return {
+      kind: 'phone',
+      href: `https://wa.me/${digits}`,
+      label: value,
+      hint: 'Conversar no WhatsApp',
+    };
+  }
+
+  return {
+    kind: 'email',
+    href: `mailto:${value}`,
+    label: value,
+    hint: 'Envie um e-mail para este endereço',
+  };
+};
+
+const buildJobShareUrl = (jobId: string) => {
+  const url = new URL(window.location.href);
+  url.pathname = '/jobs';
+  url.search = `?id=${encodeURIComponent(jobId)}`;
+  url.hash = '';
+  return url.toString();
+};
+
+const shareJob = async (job: JobPosting) => {
+  const url = buildJobShareUrl(job.id);
+  const shareData = {
+    title: job.title,
+    text: `Confira esta vaga: ${job.title}`,
+    url,
+  };
+  if (typeof navigator !== 'undefined' && (navigator as any).share) {
+    try {
+      await (navigator as any).share(shareData);
+      return;
+    } catch (err: any) {
+      if (err?.name === 'AbortError') return;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    toast.success('Link da vaga copiado!');
+  } catch {
+    toast.error('Não foi possível compartilhar a vaga.');
+  }
+};
 
 const JobsBoardScreen = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | JobPostingStatus>('OPEN');
   const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null);
   const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
   const { open: openLoginModal } = useLoginRequired();
   const isGuest = !localStorage.getItem('token');
+
+  const handleCloseSelected = () => {
+    setSelectedJob(null);
+    if (searchParams.get('id')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('id');
+      setSearchParams(next, { replace: true });
+    }
+  };
 
   const { currentUserId, isSuperAdmin } = useMemo(() => {
     try {
@@ -67,6 +153,31 @@ const JobsBoardScreen = () => {
       listJobPostings(statusFilter === 'ALL' ? {} : { status: statusFilter }),
     staleTime: 30 * 1000,
   });
+
+  useEffect(() => {
+    const sharedId = searchParams.get('id');
+    if (!sharedId || selectedJob?.id === sharedId) return;
+    const fromList = jobs?.find((j) => j.id === sharedId);
+    if (fromList) {
+      setSelectedJob(fromList);
+      return;
+    }
+    let cancelled = false;
+    getJobPosting(sharedId)
+      .then((job) => {
+        if (!cancelled) setSelectedJob(job);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        toast.error('Vaga não encontrada.');
+        const next = new URLSearchParams(searchParams);
+        next.delete('id');
+        setSearchParams(next, { replace: true });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, jobs, selectedJob?.id, setSearchParams]);
 
   const filtered = useMemo(() => {
     if (!jobs) return [];
@@ -131,7 +242,7 @@ const JobsBoardScreen = () => {
 
   return (
     <>
-      {selectedJob && <JobModal job={selectedJob} onClose={() => setSelectedJob(null)} />}
+      {selectedJob && <JobModal job={selectedJob} onClose={handleCloseSelected} />}
       {editingJob && (
         <EditJobModal
           job={editingJob}
@@ -361,7 +472,8 @@ const JobCard: React.FC<JobCardProps> = ({ job, canManage, onDelete, onEdit, onC
 const JobModal = ({ job, onClose }: { job: JobPosting; onClose: () => void }) => {
   const meta = statusMeta[job.status];
   const groupColor = job.group?.color || '#29B6F6';
-  const isLink = isExternalLink(job.contact);
+  const contact = detectContact(job.contact);
+  const ContactIcon = contact.kind === 'link' ? ExternalLink : contact.kind === 'phone' ? Phone : Mail;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
@@ -391,9 +503,19 @@ const JobModal = ({ job, onClose }: { job: JobPosting; onClose: () => void }) =>
               </span>
             )}
           </div>
-          <button onClick={onClose} className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200">
-            <XCircle size={20} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => shareJob(job)}
+              className="rounded-full p-2 text-gray-400 transition-colors hover:bg-sky-100 hover:text-sky-600 dark:hover:bg-sky-500/10 dark:hover:text-sky-300"
+              aria-label="Compartilhar vaga"
+              title="Compartilhar vaga"
+            >
+              <Share2 size={18} />
+            </button>
+            <button onClick={onClose} className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200" aria-label="Fechar">
+              <XCircle size={20} />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
@@ -419,41 +541,29 @@ const JobModal = ({ job, onClose }: { job: JobPosting; onClose: () => void }) =>
             {job.description}
           </div>
 
-          <div 
+          <div
             className="mt-8 rounded-xl border p-4"
             style={{ borderColor: `${groupColor}40`, backgroundColor: `${groupColor}10` }}
           >
             <h4 className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: groupColor }}>Contato para a vaga</h4>
             <div className="flex items-center gap-3">
-              <div 
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm dark:bg-surface-darker"
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-sm dark:bg-surface-darker"
                 style={{ color: groupColor }}
               >
-                {isLink ? <ExternalLink size={20} /> : <Mail size={20} />}
+                <ContactIcon size={20} />
               </div>
               <div className="flex-1 min-w-0">
-                {isLink ? (
-                  <a 
-                    href={job.contact} 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    className="block truncate text-sm font-bold text-slate-800 dark:text-slate-200 hover:underline"
-                    style={{ color: groupColor }}
-                  >
-                    {job.contact}
-                  </a>
-                ) : (
-                  <a 
-                    href={`mailto:${job.contact}`} 
-                    className="block truncate text-sm font-bold text-slate-800 dark:text-slate-200 hover:underline"
-                    style={{ color: groupColor }}
-                  >
-                    {job.contact}
-                  </a>
-                )}
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {isLink ? 'Acesse o link acima para se candidatar' : 'Envie um e-mail para este endereço'}
-                </p>
+                <a
+                  href={contact.href}
+                  target={contact.kind === 'email' ? undefined : '_blank'}
+                  rel={contact.kind === 'email' ? undefined : 'noreferrer'}
+                  className="block truncate text-sm font-bold text-slate-800 dark:text-slate-200 hover:underline"
+                  style={{ color: groupColor }}
+                >
+                  {contact.label}
+                </a>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{contact.hint}</p>
               </div>
             </div>
           </div>
