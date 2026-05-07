@@ -47,8 +47,9 @@ export const detail = async (req: Request, res: Response, next: NextFunction) =>
 export const update = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.userId;
+    const userRole = req.user!.role;
     const { title, description, contact, groupId, status } = req.body;
-    const job = await updateJobPosting(req.params.id, userId, {
+    const job = await updateJobPosting(req.params.id, userId, userRole, {
       title,
       description,
       contact,
@@ -64,7 +65,8 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
 export const remove = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.userId;
-    const result = await deleteJobPosting(req.params.id, userId);
+    const userRole = req.user!.role;
+    const result = await deleteJobPosting(req.params.id, userId, userRole);
     res.json(result);
   } catch (error) {
     next(error);

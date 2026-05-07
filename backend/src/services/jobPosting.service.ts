@@ -1,4 +1,4 @@
-import { JobPostingStatus } from '@prisma/client';
+import { JobPostingStatus, Role } from '@prisma/client';
 import prisma from '../utils/prisma';
 
 interface CreateJobPostingInput {
@@ -78,20 +78,27 @@ export const getJobPostingById = async (id: string) => {
   return job;
 };
 
-export const updateJobPosting = async (id: string, requesterId: string, data: UpdateJobPostingInput) => {
+export const updateJobPosting = async (
+  id: string,
+  requesterId: string,
+  requesterRole: Role,
+  data: UpdateJobPostingInput,
+) => {
   const existing = await prisma.jobPosting.findUnique({ where: { id } });
   if (!existing) {
     throw { statusCode: 404, message: 'Vaga não encontrada.' };
   }
-  if (existing.authorId !== requesterId) {
-    throw { statusCode: 403, message: 'Apenas o autor pode editar esta vaga.' };
+  const isAuthor = existing.authorId === requesterId;
+  const isSystemAdmin = requesterRole === Role.ADMIN;
+  if (!isAuthor && !isSystemAdmin) {
+    throw { statusCode: 403, message: 'Apenas o autor ou um administrador pode editar esta vaga.' };
   }
 
   if (data.groupId !== undefined && data.groupId !== null && data.groupId !== existing.groupId) {
     const membership = await prisma.groupMember.findUnique({
       where: { userId_groupId: { userId: requesterId, groupId: data.groupId } },
     });
-    if (!membership) {
+    if (!membership && !isSystemAdmin) {
       throw { statusCode: 403, message: 'Você só pode vincular a grupos dos quais é membro.' };
     }
   }
@@ -112,13 +119,15 @@ export const updateJobPosting = async (id: string, requesterId: string, data: Up
   });
 };
 
-export const deleteJobPosting = async (id: string, requesterId: string) => {
+export const deleteJobPosting = async (id: string, requesterId: string, requesterRole: Role) => {
   const existing = await prisma.jobPosting.findUnique({ where: { id } });
   if (!existing) {
     throw { statusCode: 404, message: 'Vaga não encontrada.' };
   }
-  if (existing.authorId !== requesterId) {
-    throw { statusCode: 403, message: 'Apenas o autor pode remover esta vaga.' };
+  const isAuthor = existing.authorId === requesterId;
+  const isSystemAdmin = requesterRole === Role.ADMIN;
+  if (!isAuthor && !isSystemAdmin) {
+    throw { statusCode: 403, message: 'Apenas o autor ou um administrador pode remover esta vaga.' };
   }
   await prisma.jobPosting.delete({ where: { id } });
   return { id };

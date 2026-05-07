@@ -9,6 +9,7 @@ import {
   Mail,
   ExternalLink,
   Trash2,
+  Pencil,
   CheckCircle2,
   XCircle,
   Clock,
@@ -41,15 +42,19 @@ const JobsBoardScreen = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | JobPostingStatus>('OPEN');
   const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null);
+  const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
 
-  const currentUserId = useMemo(() => {
+  const { currentUserId, isSuperAdmin } = useMemo(() => {
     try {
       const raw = localStorage.getItem('user');
-      if (!raw) return null;
+      if (!raw) return { currentUserId: null, isSuperAdmin: false };
       const parsed = JSON.parse(raw);
-      return parsed?.id || parsed?.userId || null;
+      return {
+        currentUserId: parsed?.id || parsed?.userId || null,
+        isSuperAdmin: parsed?.role === 'ADMIN',
+      };
     } catch {
-      return null;
+      return { currentUserId: null, isSuperAdmin: false };
     }
   }, []);
 
@@ -118,6 +123,16 @@ const JobsBoardScreen = () => {
   return (
     <>
       {selectedJob && <JobModal job={selectedJob} onClose={() => setSelectedJob(null)} />}
+      {editingJob && (
+        <EditJobModal
+          job={editingJob}
+          onClose={() => setEditingJob(null)}
+          onSaved={() => {
+            setEditingJob(null);
+            queryClient.invalidateQueries({ queryKey: ['jobs'] });
+          }}
+        />
+      )}
       <div className="mx-auto max-w-[1480px] space-y-8 p-4 sm:p-6 lg:p-8">
         <PageHero
         icon={Briefcase}
@@ -178,10 +193,11 @@ const JobsBoardScreen = () => {
             <JobCard
               key={job.id}
               job={job}
-              isAuthor={currentUserId === job.authorId}
+              canManage={currentUserId === job.authorId || isSuperAdmin}
               onDelete={() => {
                 if (window.confirm('Remover esta vaga?')) removeMutation.mutate(job.id);
               }}
+              onEdit={() => setEditingJob(job)}
               onChangeStatus={(status) =>
                 updateStatusMutation.mutate({ id: job.id, status })
               }
@@ -197,13 +213,14 @@ const JobsBoardScreen = () => {
 
 interface JobCardProps {
   job: JobPosting;
-  isAuthor: boolean;
+  canManage: boolean;
   onDelete: () => void;
+  onEdit: () => void;
   onChangeStatus: (status: JobPostingStatus) => void;
   onClickDetails: () => void;
 }
 
-const JobCard: React.FC<JobCardProps> = ({ job, isAuthor, onDelete, onChangeStatus, onClickDetails }) => {
+const JobCard: React.FC<JobCardProps> = ({ job, canManage, onDelete, onEdit, onChangeStatus, onClickDetails }) => {
   const meta = statusMeta[job.status];
   const groupColor = job.group?.color || '#29B6F6';
   const isLink = isExternalLink(job.contact);
@@ -237,14 +254,23 @@ const JobCard: React.FC<JobCardProps> = ({ job, isAuthor, onDelete, onChangeStat
             {job.title}
           </h3>
         </div>
-        {isAuthor && (
-          <button
-            onClick={onDelete}
-            className="rounded-full p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
-            aria-label="Remover vaga"
-          >
-            <Trash2 size={16} />
-          </button>
+        {canManage && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onEdit}
+              className="rounded-full p-1.5 text-gray-400 transition-colors hover:bg-sky-50 hover:text-sky-500 dark:hover:bg-sky-500/10"
+              aria-label="Editar vaga"
+            >
+              <Pencil size={16} />
+            </button>
+            <button
+              onClick={onDelete}
+              className="rounded-full p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
+              aria-label="Remover vaga"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
         )}
       </header>
 
@@ -289,7 +315,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, isAuthor, onDelete, onChangeStat
         Saiba mais
       </button>
 
-      {isAuthor && job.status === 'OPEN' && (
+      {canManage && job.status === 'OPEN' && (
         <div className="mt-2 flex gap-2">
           <button
             onClick={() => onChangeStatus('FILLED')}
@@ -305,7 +331,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, isAuthor, onDelete, onChangeStat
           </button>
         </div>
       )}
-      {isAuthor && job.status !== 'OPEN' && (
+      {canManage && job.status !== 'OPEN' && (
         <button
           onClick={() => onChangeStatus('OPEN')}
           className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 py-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-500/10 dark:text-emerald-300"
@@ -415,6 +441,140 @@ const JobModal = ({ job, onClose }: { job: JobPosting; onClose: () => void }) =>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+interface EditJobModalProps {
+  job: JobPosting;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+const EditJobModal: React.FC<EditJobModalProps> = ({ job, onClose, onSaved }) => {
+  const [title, setTitle] = useState(job.title);
+  const [description, setDescription] = useState(job.description);
+  const [contact, setContact] = useState(job.contact);
+  const [status, setStatus] = useState<JobPostingStatus>(job.status);
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      updateJobPosting(job.id, {
+        title: title.trim(),
+        description: description.trim(),
+        contact: contact.trim(),
+        status,
+      }),
+    onSuccess: () => {
+      toast.success('Vaga atualizada');
+      onSaved();
+    },
+    onError: (err: any) =>
+      toast.error(err?.response?.data?.message || 'Falha ao atualizar vaga'),
+  });
+
+  const canSubmit =
+    title.trim().length > 0 &&
+    description.trim().length > 0 &&
+    contact.trim().length > 0 &&
+    !mutation.isPending;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    mutation.mutate();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-surface-light shadow-2xl dark:bg-surface-dark animate-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-black/20">
+          <h3 className="text-lg font-display font-bold text-secondary dark:text-white">
+            Editar vaga
+          </h3>
+          <button
+            onClick={onClose}
+            className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+          >
+            <XCircle size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4 p-6">
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">
+              Título
+            </label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              maxLength={120}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">
+              Descrição
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={6}
+              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">
+                Forma de Contato
+              </label>
+              <input
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
+                maxLength={300}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">
+                Status
+              </label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as JobPostingStatus)}
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
+              >
+                <option value="OPEN">Aberta</option>
+                <option value="CLOSED">Fechada</option>
+                <option value="FILLED">Preenchida</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={mutation.isPending}
+              className="rounded-xl border border-slate-200 bg-white/50 px-4 py-2.5 text-sm font-bold text-slate-600 transition-all hover:bg-slate-100 dark:border-slate-700 dark:bg-surface-dark dark:text-slate-400 dark:hover:bg-white/5 disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+            >
+              {mutation.isPending ? 'Salvando...' : 'Salvar'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
