@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { register, login, refresh, resetPassword, googleLogin } from '../controllers/auth.controller';
+import { register, login, refresh, googleLogin } from '../controllers/auth.controller';
 import { validate } from '../middlewares/validation.middleware';
-import { loginSchema, registerSchema, refreshTokenSchema, resetPasswordSchema } from '../schemas/auth.schema';
+import { loginSchema, registerSchema, refreshTokenSchema } from '../schemas/auth.schema';
 
 const router = Router();
 
@@ -96,36 +96,11 @@ router.post('/login', validate(loginSchema), login);
  */
 router.post('/refresh', validate(refreshTokenSchema), refresh);
 
-/**
- * @swagger
- * /auth/reset-password:
- *   post:
- *     summary: Reset user password
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - newPassword
- *               - secretWord
- *             properties:
- *               email:
- *                 type: string
- *               newPassword:
- *                 type: string
- *               secretWord:
- *                 type: string
- *     responses:
- *       200:
- *         description: Password reset successfully
- *       400:
- *         description: Validation error
- */
-router.post('/reset-password', validate(resetPasswordSchema), resetPassword);
+router.post('/reset-password', (_req, res) => {
+  res.status(410).json({
+    message: 'Esta rota foi desativada. Solicite redefinição de senha por outro canal.',
+  });
+});
 
 /**
  * @swagger

@@ -2,7 +2,8 @@ import prisma from '../utils/prisma';
 
 export const getSystemOverview = async () => {
     const users = await prisma.user.findMany({
-        select: { id: true, name: true, email: true, role: true, isActive: true, avatarColor: true, avatarUrl: true, linkedinUrl: true, githubUrl: true },
+        where: { isActive: true },
+        select: { id: true, name: true, avatarColor: true, avatarUrl: true },
         orderBy: { name: 'asc' }
     });
     const projects = await prisma.project.findMany({

@@ -120,7 +120,7 @@ export const registerUser = async (data: RegisterInput) => {
     name: data.name,
     email: email,
     passwordHash: hashedPassword,
-    role: data.role,
+    role: Role.MEMBER,
     connectaPoints: 0,
     tier: { connect: { id: initialTier.id } },
   });
@@ -180,26 +180,3 @@ export const refreshAuthToken = async (refreshToken: string) => {
   return { accessToken: newAccessToken, refreshToken: newRefreshToken };
 };
 
-export const resetPassword = async (email: string, newPassword: string, secretWord: string) => {
-  if (secretWord !== 'ciconectado') {
-    throw { statusCode: 403, message: 'Invalid secret word.' };
-  }
-
-  const user = await findUserByEmail(email);
-  if (!user) {
-    throw { statusCode: 404, message: 'User not found.' };
-  }
-
-  const hashedPassword = await hashPassword(newPassword);
-
-  try {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { passwordHash: hashedPassword },
-    });
-  } catch (error) {
-    throw error;
-  }
-
-  return { message: 'Password reset successfully.' };
-};
