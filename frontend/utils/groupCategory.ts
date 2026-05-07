@@ -35,5 +35,9 @@ export const groupCategoryMeta: Record<GroupCategory, CategoryMeta> = {
   },
 };
 
-export const resolveCategory = (category: GroupCategory | undefined): GroupCategory =>
-  category ?? 'COMUNIDADE';
+export const resolveCategory = (category: GroupCategory | string | null | undefined): GroupCategory => {
+  if (typeof category === 'string' && (GROUP_CATEGORIES as string[]).includes(category)) {
+    return category as GroupCategory;
+  }
+  return 'COMUNIDADE';
+};
