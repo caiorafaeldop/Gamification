@@ -10,6 +10,8 @@ import {
   ExternalLink,
   Phone,
   Share2,
+  Copy,
+  Check,
   Trash2,
   Pencil,
   CheckCircle2,
@@ -83,34 +85,13 @@ const detectContact = (raw: string): ContactInfo => {
 };
 
 const buildJobShareUrl = (jobId: string) => {
-  const url = new URL(window.location.href);
-  url.pathname = '/jobs';
-  url.search = `?id=${encodeURIComponent(jobId)}`;
-  url.hash = '';
-  return url.toString();
+  const { origin } = window.location;
+  return `${origin}/#/jobs?id=${encodeURIComponent(jobId)}`;
 };
 
-const shareJob = async (job: JobPosting) => {
+const buildJobShareMessage = (job: JobPosting) => {
   const url = buildJobShareUrl(job.id);
-  const shareData = {
-    title: job.title,
-    text: `Confira esta vaga: ${job.title}`,
-    url,
-  };
-  if (typeof navigator !== 'undefined' && (navigator as any).share) {
-    try {
-      await (navigator as any).share(shareData);
-      return;
-    } catch (err: any) {
-      if (err?.name === 'AbortError') return;
-    }
-  }
-  try {
-    await navigator.clipboard.writeText(url);
-    toast.success('Link da vaga copiado!');
-  } catch {
-    toast.error('Não foi possível compartilhar a vaga.');
-  }
+  return `🚀 ${job.title}\n\nConfira essa oportunidade no ConnectaHub e candidate-se:\n${url}`;
 };
 
 const JobsBoardScreen = () => {
@@ -121,6 +102,7 @@ const JobsBoardScreen = () => {
   const [statusFilter, setStatusFilter] = useState<'ALL' | JobPostingStatus>('OPEN');
   const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null);
   const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
+  const [sharingJob, setSharingJob] = useState<JobPosting | null>(null);
   const { open: openLoginModal } = useLoginRequired();
   const isGuest = !localStorage.getItem('token');
 
@@ -242,7 +224,16 @@ const JobsBoardScreen = () => {
 
   return (
     <>
-      {selectedJob && <JobModal job={selectedJob} onClose={handleCloseSelected} />}
+      {selectedJob && (
+        <JobModal
+          job={selectedJob}
+          onClose={handleCloseSelected}
+          onShare={() => setSharingJob(selectedJob)}
+        />
+      )}
+      {sharingJob && (
+        <ShareJobModal job={sharingJob} onClose={() => setSharingJob(null)} />
+      )}
       {editingJob && (
         <EditJobModal
           job={editingJob}
@@ -468,7 +459,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, canManage, onDelete, onEdit, onC
   );
 };
 
-const JobModal = ({ job, onClose }: { job: JobPosting; onClose: () => void }) => {
+const JobModal = ({ job, onClose, onShare }: { job: JobPosting; onClose: () => void; onShare: () => void }) => {
   const meta = statusMeta[job.status];
   const groupColor = job.group?.color || '#29B6F6';
   const contact = detectContact(job.contact);
@@ -504,7 +495,7 @@ const JobModal = ({ job, onClose }: { job: JobPosting; onClose: () => void }) =>
           </div>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => shareJob(job)}
+              onClick={onShare}
               className="rounded-full p-2 text-gray-400 transition-colors hover:bg-sky-100 hover:text-sky-600 dark:hover:bg-sky-500/10 dark:hover:text-sky-300"
               aria-label="Compartilhar vaga"
               title="Compartilhar vaga"
@@ -566,6 +557,73 @@ const JobModal = ({ job, onClose }: { job: JobPosting; onClose: () => void }) =>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ShareJobModal: React.FC<{ job: JobPosting; onClose: () => void }> = ({ job, onClose }) => {
+  const message = useMemo(() => buildJobShareMessage(job), [job]);
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(message);
+      setCopied(true);
+      toast.success('Mensagem copiada!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Não foi possível copiar. Selecione o texto manualmente.');
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-surface-light shadow-2xl dark:bg-surface-dark animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-black/20">
+          <h3 className="flex items-center gap-2 text-lg font-display font-bold text-secondary dark:text-white">
+            <Share2 size={18} className="text-primary" />
+            Compartilhar vaga
+          </h3>
+          <button
+            onClick={onClose}
+            className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+            aria-label="Fechar"
+          >
+            <XCircle size={20} />
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-4 overflow-y-auto p-6">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Copie a mensagem abaixo e cole onde quiser divulgar a vaga.
+          </p>
+
+          <textarea
+            readOnly
+            value={message}
+            onFocus={(e) => e.currentTarget.select()}
+            rows={6}
+            className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 shadow-inner focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
+          />
+
+          <button
+            type="button"
+            onClick={copy}
+            className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:-translate-y-0.5 ${
+              copied ? 'bg-emerald-500' : 'bg-primary hover:bg-blue-600'
+            }`}
+          >
+            {copied ? <Check size={18} /> : <Copy size={18} />}
+            {copied ? 'Copiado!' : 'Copiar mensagem'}
+          </button>
         </div>
       </div>
     </div>
