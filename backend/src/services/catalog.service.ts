@@ -18,17 +18,21 @@ const baseSelectableProject = (extra: Record<string, any> = {}) => ({
 
 const visibleToOutsider = { in: ['PUBLIC_VIEW', 'PUBLIC_LIKE', 'PUBLIC_OPEN'] as const };
 
-export const getCatalogForUser = async (userId: string) => {
-  const userGroupMemberships = await prisma.groupMember.findMany({
-    where: { userId },
-    select: { groupId: true },
-  });
+export const getCatalogForUser = async (userId?: string) => {
+  const userGroupMemberships = userId
+    ? await prisma.groupMember.findMany({
+        where: { userId },
+        select: { groupId: true },
+      })
+    : [];
   const userGroupIds = userGroupMemberships.map((m) => m.groupId);
 
-  const userLikes = await prisma.projectLike.findMany({
-    where: { userId },
-    select: { projectId: true },
-  });
+  const userLikes = userId
+    ? await prisma.projectLike.findMany({
+        where: { userId },
+        select: { projectId: true },
+      })
+    : [];
   const likedSet = new Set(userLikes.map((l) => l.projectId));
 
   const trendingSince = new Date(Date.now() - TRENDING_WINDOW_DAYS * 24 * 60 * 60 * 1000);
@@ -43,15 +47,17 @@ export const getCatalogForUser = async (userId: string) => {
     allGroups,
     distinctCategories,
   ] = await Promise.all([
-    // 1. Seus projetos (líder ou membro)
-    prisma.project.findMany({
-      where: baseSelectableProject({
-        OR: [{ leaderId: userId }, { members: { some: { userId } } }],
-      }),
-      include: projectInclude,
-      orderBy: { updatedAt: 'desc' },
-      take: ROW_LIMIT,
-    }),
+    // 1. Seus projetos (líder ou membro) — vazio para guest
+    userId
+      ? prisma.project.findMany({
+          where: baseSelectableProject({
+            OR: [{ leaderId: userId }, { members: { some: { userId } } }],
+          }),
+          include: projectInclude,
+          orderBy: { updatedAt: 'desc' },
+          take: ROW_LIMIT,
+        })
+      : Promise.resolve([] as any[]),
 
     // 3. Recém-lançados
     prisma.project.findMany({
@@ -84,8 +90,8 @@ export const getCatalogForUser = async (userId: string) => {
       take: ROW_LIMIT,
     }),
 
-    // 7. Do seu grupo (projetos do meu grupo onde não sou membro)
-    userGroupIds.length > 0
+    // 7. Do seu grupo (projetos do meu grupo onde não sou membro) — vazio para guest
+    userId && userGroupIds.length > 0
       ? prisma.project.findMany({
           where: baseSelectableProject({
             groupId: { in: userGroupIds },

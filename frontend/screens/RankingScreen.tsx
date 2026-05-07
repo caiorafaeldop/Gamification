@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom';
 import { useLeaderboard } from '../hooks/useRanking';
 import { useProfile } from '../hooks/useProfile';
 import { useProjects } from '../hooks/useProjects';
+import { useLoginRequired } from '../components/LoginRequiredModal';
 
 const FILTERS = [
   { id: 'daily', label: 'Diário' },
@@ -28,6 +29,8 @@ const RankingScreen = () => {
 
   const { data: currentUser } = useProfile();
   const { projects } = useProjects();
+  const { open: openLoginModal } = useLoginRequired();
+  const isGuest = !localStorage.getItem('token');
   const { data: leaderboardRaw, isLoading: loading, error: queryError } = useLeaderboard(
     activeFilter,
     100,
@@ -197,7 +200,7 @@ const RankingScreen = () => {
               </div>
             </SurfaceCard>
 
-            {currentUserRankData && (
+            {currentUserRankData ? (
               <SurfaceCard padding="md" className="border-primary/30 bg-primary/5 dark:bg-primary/10">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Sua posição</p>
                 <p className="mt-1 text-2xl font-display font-black text-secondary dark:text-white">
@@ -207,7 +210,17 @@ const RankingScreen = () => {
                   </span>
                 </p>
               </SurfaceCard>
-            )}
+            ) : isGuest ? (
+              <SurfaceCard padding="md" className="border-dashed border-gray-200 bg-gray-50/30 dark:border-gray-800 dark:bg-white/5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Sua posição</p>
+                <button 
+                  onClick={() => openLoginModal('Faça login para ver sua posição no ranking e acumular pontos.')}
+                  className="mt-2 text-sm font-bold text-primary hover:underline"
+                >
+                  Entrar para ver sua posição →
+                </button>
+              </SurfaceCard>
+            ) : null}
           </div>
 
           <SurfaceCard padding="none" className="overflow-hidden lg:col-span-7">
@@ -246,9 +259,18 @@ const RankingScreen = () => {
                             {student.rank}
                           </span>
                         </div>
+                        <div
+                          onClick={(e) => {
+                            if (isGuest) {
+                              e.preventDefault();
+                              openLoginModal('Faça login para visualizar perfis detalhados de outros membros.');
+                            }
+                          }}
+                          className="group col-span-7 sm:col-span-8"
+                        >
                         <Link
                           to={`/profile/${student.id}`}
-                          className="group col-span-7 flex min-w-0 cursor-pointer items-center gap-3 rounded-lg p-1 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 sm:col-span-8"
+                          className="flex min-w-0 cursor-pointer items-center gap-3 rounded-lg p-1 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
                         >
                           <img
                             src={student.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`}
@@ -263,6 +285,7 @@ const RankingScreen = () => {
                             {student.name} {isMe && <span className="text-xs font-medium text-gray-500">(Você)</span>}
                           </span>
                         </Link>
+                        </div>
                         <div className="col-span-3 text-right font-black text-primary">
                           {Math.max(0, student.connectaPoints || student.points || 0).toLocaleString()} 🪙
                         </div>

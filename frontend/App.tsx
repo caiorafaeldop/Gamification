@@ -1,8 +1,9 @@
 import React from 'react';
-// import { AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
+import RequireAuth from './components/RequireAuth';
 import LoginScreen from './screens/LoginScreen';
+import LandingScreen from './screens/LandingScreen';
 import DashboardScreen from './screens/DashboardScreen';
 import ProjectDetailsScreen from './screens/ProjectDetailsScreen';
 import RankingScreen from './screens/RankingScreen';
@@ -28,64 +29,76 @@ import ProjectRequestsScreen from './screens/ProjectRequestsScreen';
 
 import { Toaster } from 'react-hot-toast';
 import { BrandingProvider } from './contexts/BrandingContext';
+import { LoginRequiredProvider } from './components/LoginRequiredModal';
+
+const HomeRoute = () => {
+  const hasToken = !!localStorage.getItem('token');
+  return hasToken ? <Navigate to="/dashboard" replace /> : <LandingScreen />;
+};
 
 const App = () => {
   return (
     <HashRouter>
       <BrandingProvider>
-      <Toaster
-        position="top-center"
-        reverseOrder={false}
-        toastOptions={{
-          style: {
-            borderRadius: '10px',
-            background: '#333',
-            color: '#fff',
-          },
-        }}
-      />
-      <Routes>
-        <Route path="/" element={<LoginScreen />} />
-        <Route path="/sign-up" element={<SignUpScreen />} />
-        {/* <Route path="/sso-callback" element={<AuthenticateWithRedirectCallback afterSignInUrl="/dashboard" afterSignUpUrl="/dashboard" />} /> */}
+        <LoginRequiredProvider>
+        <Toaster
+          position="top-center"
+          reverseOrder={false}
+          toastOptions={{
+            style: {
+              borderRadius: '10px',
+              background: '#333',
+              color: '#fff',
+            },
+          }}
+        />
+        <Routes>
+          <Route path="/login" element={<LoginScreen />} />
+          <Route path="/sign-up" element={<SignUpScreen />} />
 
-        <Route element={<Layout />}>
-          <Route path="/dashboard" element={<DashboardScreen />} />
-          <Route path="/projects" element={<ProjectsScreen />} />
-          <Route path="/project-details/:id" element={<ProjectDetailsScreen />} />
-          <Route path="/kanban/:id" element={<ProjectDetailsScreen />} />{/* Reusing details for kanban view */}
-          <Route path="/ranking" element={<RankingScreen />} />
-          <Route path="/achievements" element={<AchievementsScreen />} />
-          <Route path="/activities" element={<ActivitiesScreen />} />
+          <Route element={<Layout />}>
+            {/* Home pública (landing pra guest, redirect pra dashboard pra logado) */}
+            <Route path="/" element={<HomeRoute />} />
 
-          <Route path="/new-task" element={<NewTaskScreen />} />
-          <Route path="/edit-task/:id" element={<NewTaskScreen />} />
-          <Route path="/new-project" element={<NewProjectScreen />} />
-          <Route path="/edit-project/:id" element={<NewProjectScreen />} />
-          <Route path="/join-project" element={<JoinProjectScreen />} />
-          <Route path="/eventos/novo" element={<NewEventScreen />} />
-          <Route path="/eventos/editar/:id" element={<NewEventScreen />} />
-          <Route path="/profile" element={<ProfileScreen />} />
-          <Route path="/profile/:id" element={<ProfileScreen />} />
-          <Route path="/project-requests/:id" element={<ProjectRequestsScreen />} />
+            {/* Públicas (com auth opcional) */}
+            <Route path="/projects" element={<ProjectsScreen />} />
+            <Route path="/groups" element={<GroupsHubScreen />} />
+            <Route path="/jobs" element={<JobsBoardScreen />} />
+            <Route path="/ranking" element={<RankingScreen />} />
 
-          <Route path="/project-landing/:id" element={<ProjectLandingScreen />} />
-          <Route path="/groups" element={<GroupsHubScreen />} />
-          <Route path="/groups/new" element={<NewGroupScreen />} />
-          <Route path="/groups/:id/edit" element={<NewGroupScreen />} />
-          <Route path="/groups/:id" element={<GroupDetailScreen />} />
-          <Route path="/jobs" element={<JobsBoardScreen />} />
-          <Route path="/jobs/new" element={<NewJobPostingScreen />} />
+            {/* Autenticadas */}
+            <Route path="/dashboard" element={<RequireAuth><DashboardScreen /></RequireAuth>} />
+            <Route path="/project-details/:id" element={<RequireAuth><ProjectDetailsScreen /></RequireAuth>} />
+            <Route path="/kanban/:id" element={<RequireAuth><ProjectDetailsScreen /></RequireAuth>} />
+            <Route path="/achievements" element={<RequireAuth><AchievementsScreen /></RequireAuth>} />
+            <Route path="/activities" element={<RequireAuth><ActivitiesScreen /></RequireAuth>} />
 
-          {/* Admin Routes */}
-          <Route path="/admin/users" element={<AdminUsersScreen />} />
-          <Route path="/admin/projects" element={<AdminProjectsScreen />} />
+            <Route path="/new-task" element={<RequireAuth><NewTaskScreen /></RequireAuth>} />
+            <Route path="/edit-task/:id" element={<RequireAuth><NewTaskScreen /></RequireAuth>} />
+            <Route path="/new-project" element={<RequireAuth><NewProjectScreen /></RequireAuth>} />
+            <Route path="/edit-project/:id" element={<RequireAuth><NewProjectScreen /></RequireAuth>} />
+            <Route path="/join-project" element={<RequireAuth><JoinProjectScreen /></RequireAuth>} />
+            <Route path="/eventos/novo" element={<RequireAuth><NewEventScreen /></RequireAuth>} />
+            <Route path="/eventos/editar/:id" element={<RequireAuth><NewEventScreen /></RequireAuth>} />
+            <Route path="/profile" element={<RequireAuth><ProfileScreen /></RequireAuth>} />
+            <Route path="/profile/:id" element={<RequireAuth><ProfileScreen /></RequireAuth>} />
+            <Route path="/project-requests/:id" element={<RequireAuth><ProjectRequestsScreen /></RequireAuth>} />
 
-          {/* Catch-all: any unknown authenticated route falls back to dashboard
-              instead of rendering a blank screen. */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Route>
-      </Routes>
+            <Route path="/project-landing/:id" element={<RequireAuth><ProjectLandingScreen /></RequireAuth>} />
+            <Route path="/groups/new" element={<RequireAuth><NewGroupScreen /></RequireAuth>} />
+            <Route path="/groups/:id/edit" element={<RequireAuth><NewGroupScreen /></RequireAuth>} />
+            <Route path="/groups/:id" element={<RequireAuth><GroupDetailScreen /></RequireAuth>} />
+            <Route path="/jobs/new" element={<RequireAuth><NewJobPostingScreen /></RequireAuth>} />
+
+            {/* Admin */}
+            <Route path="/admin/users" element={<RequireAuth><AdminUsersScreen /></RequireAuth>} />
+            <Route path="/admin/projects" element={<RequireAuth><AdminProjectsScreen /></RequireAuth>} />
+
+            {/* Catch-all: cai pra home (landing/dashboard) */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+        </LoginRequiredProvider>
       </BrandingProvider>
     </HashRouter>
   );

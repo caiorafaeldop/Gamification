@@ -24,6 +24,7 @@ import {
 } from '../services/jobPosting.service';
 import { Skeleton } from '../components/Skeleton';
 import { PageHero, EmptyState } from '../components/ui';
+import { useLoginRequired } from '../components/LoginRequiredModal';
 
 const statusMeta: Record<
   JobPostingStatus,
@@ -42,7 +43,12 @@ const JobsBoardScreen = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | JobPostingStatus>('OPEN');
   const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null);
+<<<<<<< HEAD
   const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
+=======
+  const { open: openLoginModal } = useLoginRequired();
+  const isGuest = !localStorage.getItem('token');
+>>>>>>> 7f7fe252b78a3a35f90605701b58d23d2c08e031
 
   const { currentUserId, isSuperAdmin } = useMemo(() => {
     try {
@@ -112,7 +118,13 @@ const JobsBoardScreen = () => {
         />
       </div>
       <button
-        onClick={() => navigate('/jobs/new')}
+        onClick={() => {
+          if (isGuest) {
+            openLoginModal('Faça login para publicar uma nova vaga no mural.');
+          } else {
+            navigate('/jobs/new');
+          }
+        }}
         className="flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-sky-500"
       >
         <Plus size={16} /> Publicar vaga
@@ -180,7 +192,13 @@ const JobsBoardScreen = () => {
           }
           action={
             <button
-              onClick={() => navigate('/jobs/new')}
+              onClick={() => {
+                if (isGuest) {
+                  openLoginModal('Faça login para publicar uma nova vaga no mural.');
+                } else {
+                  navigate('/jobs/new');
+                }
+              }}
               className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-sky-500"
             >
               <Plus size={16} /> Publicar vaga

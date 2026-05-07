@@ -1,6 +1,6 @@
-import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { getProfile } from '../services/user.service';
+import { clearSession } from '../utils/session';
 
 /**
  * Hook de autenticação com hidratação instantânea do localStorage.
@@ -9,8 +9,6 @@ import { getProfile } from '../services/user.service';
  * - `logout` limpa token, refreshToken, user
  */
 export const useAuth = () => {
-  const navigate = useNavigate();
-
   const [localUser, setLocalUser] = useState<any>(() => {
     try {
       const cached = localStorage.getItem('user');
@@ -45,12 +43,9 @@ export const useAuth = () => {
     }
   }, [hasToken]);
 
-  const logout = async () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+  const logout = () => {
     setLocalUser(null);
-    navigate('/');
+    clearSession({ reload: true });
   };
 
   return {

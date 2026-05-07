@@ -1,18 +1,26 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, User, KeyRound, Code2, Braces, Rocket, Users, Globe } from 'lucide-react';
 import { login, register, resetPassword } from '../services/auth.service';
 import toast from 'react-hot-toast';
 import logo from '../assets/logo.webp';
 // import { useGoogleLogin } from '@react-oauth/google';
 import api from '../services/api';
+import { clearSession } from '../utils/session';
 
 type View = 'login' | 'register' | 'forgot-password';
 
 const LoginScreen = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const returnTo = (() => {
+    const raw = params.get('returnTo');
+    return raw ? decodeURIComponent(raw) : '/dashboard';
+  })();
+  const initialView: View = params.get('view') === 'register' ? 'register' : 'login';
 
-  const [view, setView] = useState<View>('login');
+  const [view, setView] = useState<View>(initialView);
 
   // Form States
   const [email, setEmail] = useState('');
@@ -77,10 +85,12 @@ const LoginScreen = () => {
     setLoading(true);
     try {
       const data = await login(email, password);
+      // Zera cache da sessão anterior antes de gravar tokens da nova conta.
+      clearSession();
       localStorage.setItem('token', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
       localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/dashboard');
+      navigate(returnTo);
     } catch (err: any) {
       console.error(err);
       toast.error(err.response?.data?.message || 'Erro ao entrar.');
