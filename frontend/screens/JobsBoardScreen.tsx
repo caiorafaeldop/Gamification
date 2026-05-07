@@ -364,10 +364,12 @@ const JobModal = ({ job, onClose }: { job: JobPosting; onClose: () => void }) =>
   const isLink = isExternalLink(job.contact);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-surface-light shadow-2xl dark:bg-surface-dark animate-in zoom-in-95 duration-200">
-        
-        <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-black/20">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+      <div
+        className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-surface-light shadow-2xl dark:bg-surface-dark animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-black/20">
           <div className="flex items-center gap-2">
             <span
               className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white"
@@ -394,7 +396,7 @@ const JobModal = ({ job, onClose }: { job: JobPosting; onClose: () => void }) =>
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           <h2 className="mb-4 text-2xl font-display font-bold text-secondary dark:text-white">{job.title}</h2>
           
           <div className="mb-6 flex items-center gap-3">
@@ -413,7 +415,7 @@ const JobModal = ({ job, onClose }: { job: JobPosting; onClose: () => void }) =>
             </div>
           </div>
 
-          <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 mb-8 whitespace-pre-wrap">
+          <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 mb-8 whitespace-pre-wrap break-words">
             {job.description}
           </div>
 
@@ -502,9 +504,12 @@ const EditJobModal: React.FC<EditJobModalProps> = ({ job, onClose, onSaved }) =>
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-surface-light shadow-2xl dark:bg-surface-dark animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-black/20">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+      <div
+        className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-surface-light shadow-2xl dark:bg-surface-dark animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-black/20">
           <h3 className="text-lg font-display font-bold text-secondary dark:text-white">
             Editar vaga
           </h3>
@@ -516,7 +521,7 @@ const EditJobModal: React.FC<EditJobModalProps> = ({ job, onClose, onSaved }) =>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 p-6">
+        <form onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto p-6">
           <div>
             <label className="mb-2 block text-sm font-bold text-slate-700 dark:text-slate-300">
               Título
