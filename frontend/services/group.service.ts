@@ -21,6 +21,17 @@ export interface GroupMemberSummary {
   User: { id: string; name: string; avatarUrl: string | null; avatarColor: string | null };
 }
 
+export interface GroupJobPostingSummary {
+  id: string;
+  title: string;
+  description: string;
+  contact: string;
+  status: 'OPEN' | 'CLOSED' | 'FILLED';
+  authorId: string;
+  createdAt: string;
+  author: { id: string; name: string; avatarUrl?: string | null; avatarColor?: string | null };
+}
+
 export type GroupCategory = 'INSTITUCIONAL' | 'COMUNIDADE' | 'EXTERNO';
 
 export interface Group {
@@ -38,6 +49,7 @@ export interface Group {
   updatedAt: string;
   GroupMember?: GroupMemberSummary[];
   Project?: GroupProjectSummary[];
+  jobPostings?: GroupJobPostingSummary[];
   joinRequests?: any[];
   _count?: { GroupMember: number; Project: number };
 }

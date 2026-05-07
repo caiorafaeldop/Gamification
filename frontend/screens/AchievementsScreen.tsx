@@ -32,7 +32,7 @@ const AchievementsScreen = () => {
             ? 'Imortalize-se na comunidade Connecta'
             : activeTab === 'achievements'
             ? 'Sua trajetória em medalhas'
-            : 'Arte & Criatividade dos projetos'
+            : 'Top 3 da semana pronto pra divulgar'
         }
         title={
           activeTab === 'ranking'
@@ -50,7 +50,7 @@ const AchievementsScreen = () => {
             ? 'Reconhecimento dos estudantes que se destacaram em colaboração, consistência e impacto.'
             : activeTab === 'achievements'
             ? 'Acompanhe seu progresso e desbloqueie novas recompensas ao longo da sua jornada Connecta.'
-            : 'Curadoria das melhores peças criativas produzidas nos projetos da comunidade.'
+            : 'Imagens e legendas prontas para postar o pódio da semana no Instagram e LinkedIn.'
         }
         actionButtons={
           <div className="grid grid-cols-2 gap-2 rounded-2xl border border-gray-200 bg-gray-100/70 p-1.5 shadow-inner dark:border-gray-700 dark:bg-white/5 sm:w-80 md:w-96 lg:w-[480px]">

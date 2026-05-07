@@ -43,6 +43,19 @@ const groupInclude = {
       _count: { select: { members: true, tasks: true } },
     },
   },
+  jobPostings: {
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      contact: true,
+      status: true,
+      authorId: true,
+      createdAt: true,
+      author: { select: { id: true, name: true, avatarUrl: true, avatarColor: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  },
   _count: { select: { GroupMember: true, Project: true } },
 } as const;
 

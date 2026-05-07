@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FlaskConical, Users, BookOpen, ArrowLeft, Star, ArrowRight, UserPlus, LogOut, Settings, Globe, Lock, Trophy, Target, Medal, Clock } from 'lucide-react';
+import { FlaskConical, Users, BookOpen, ArrowLeft, Star, ArrowRight, UserPlus, LogOut, Settings, Globe, Lock, Trophy, Target, Medal, Clock, Briefcase, CheckCircle2, XCircle } from 'lucide-react';
 import { useGroup, useJoinGroup, useLeaveGroup, useGroups, useRequestJoinGroup } from '../hooks/useGroups';
 import { useProfile } from '../hooks/useProfile';
 import { useGroupBranding } from '../contexts/BrandingContext';
@@ -194,27 +194,60 @@ const GroupDetailScreen = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left Column: Projects */}
-        <div className="lg:col-span-2 space-y-4">
-          <SectionHeader
-            icon={<Target size={18} style={{ color }} />}
-            title="Projetos do Grupo"
-            description="Iniciativas que estão sendo desenvolvidas por este grupo."
-          />
-
-          {!group.Project || group.Project.length === 0 ? (
-            <EmptyState
-              icon={BookOpen}
-              title="Sem projetos ainda"
-              description="Nenhum projeto foi vinculado a este grupo ainda."
+        {/* Left Column: Projects + Jobs */}
+        <div className="lg:col-span-2 space-y-8">
+          <div className="space-y-4">
+            <SectionHeader
+              icon={<Target size={18} style={{ color }} />}
+              title="Projetos do Grupo"
+              description="Iniciativas que estão sendo desenvolvidas por este grupo."
             />
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {group.Project.map((project) => (
-                <GroupProjectCard key={project.id} project={project} color={color} />
-              ))}
-            </div>
-          )}
+
+            {!group.Project || group.Project.length === 0 ? (
+              <EmptyState
+                icon={BookOpen}
+                title="Sem projetos ainda"
+                description="Nenhum projeto foi vinculado a este grupo ainda."
+              />
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {group.Project.map((project) => (
+                  <GroupProjectCard key={project.id} project={project} color={color} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <SectionHeader
+              icon={<Briefcase size={18} style={{ color }} />}
+              title="Vagas do Grupo"
+              description="Oportunidades publicadas pelos membros deste grupo."
+            />
+
+            {!group.jobPostings || group.jobPostings.length === 0 ? (
+              <EmptyState
+                icon={Briefcase}
+                title="Sem vagas ainda"
+                description="Nenhuma vaga foi publicada para este grupo."
+                action={
+                  <button
+                    onClick={() => navigate('/jobs/new')}
+                    className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white shadow-md transition-colors hover:opacity-90"
+                    style={{ backgroundColor: color }}
+                  >
+                    <Briefcase size={14} /> Publicar vaga
+                  </button>
+                }
+              />
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {group.jobPostings.map((job) => (
+                  <GroupJobCard key={job.id} job={job} color={color} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Column: Internal Ranking */}
@@ -338,6 +371,55 @@ const GroupProjectCard: React.FC<{ project: any; color: string }> = ({ project, 
           <ArrowRight size={14} className="text-gray-400 transition-transform group-hover:translate-x-1 group-hover:text-[var(--project-color)]" />
         </div>
       </div>
+    </article>
+  );
+};
+
+const jobStatusMeta: Record<'OPEN' | 'CLOSED' | 'FILLED', { label: string; color: string; icon: React.ReactNode }> = {
+  OPEN: { label: 'Aberta', color: '#10B981', icon: <Clock size={10} /> },
+  CLOSED: { label: 'Fechada', color: '#6B7280', icon: <XCircle size={10} /> },
+  FILLED: { label: 'Preenchida', color: '#0EA5E9', icon: <CheckCircle2 size={10} /> },
+};
+
+const GroupJobCard: React.FC<{ job: any; color: string }> = ({ job, color }) => {
+  const navigate = useNavigate();
+  const meta = jobStatusMeta[job.status as 'OPEN' | 'CLOSED' | 'FILLED'];
+
+  return (
+    <article
+      onClick={() => navigate(`/jobs?id=${encodeURIComponent(job.id)}`)}
+      className="group flex cursor-pointer items-start gap-3 rounded-xl border border-gray-100 bg-surface-light p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[var(--group-color)] hover:shadow-md dark:border-gray-800 dark:bg-surface-dark"
+      style={{ ['--group-color' as any]: color }}
+    >
+      <div
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+        style={{ backgroundColor: `${color}15`, color }}
+      >
+        <Briefcase size={18} />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white"
+            style={{ backgroundColor: meta.color }}
+          >
+            {meta.icon} {meta.label}
+          </span>
+          <span className="truncate text-[10px] text-gray-400">
+            {new Date(job.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+          </span>
+        </div>
+        <h4 className="mt-1.5 line-clamp-1 text-sm font-bold text-secondary transition-colors group-hover:text-[var(--group-color)] dark:text-gray-100">
+          {job.title}
+        </h4>
+        <p className="mt-0.5 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">{job.description}</p>
+        <div className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-gray-500 dark:text-gray-400">
+          <Users size={11} /> {job.author?.name || 'Anônimo'}
+        </div>
+      </div>
+
+      <ArrowRight size={14} className="mt-1 shrink-0 text-gray-400 transition-transform group-hover:translate-x-1 group-hover:text-[var(--group-color)]" />
     </article>
   );
 };

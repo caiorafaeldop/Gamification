@@ -1,21 +1,23 @@
 import logoUrl from '../assets/logo.webp';
 
-// Brand Colors (Primary = azul escuro, Secondary = azul claro)
+// ConnectaHub brand palette (matches tailwind.config in index.html)
 const COLORS = {
-  primaryDark: '#0F172A',
-  primaryMid: '#1E293B',
-  secondary: '#38BDF8',
+  primaryDark: '#021B35',   // secondary / navy
+  primaryMid: '#0A2038',    // surface-darker
+  secondary: '#29B6F6',     // primary sky blue
   secondaryLight: '#7DD3FC',
-  gold: '#F59E0B',
-  goldDark: '#B45309',
-  silver: '#9CA3AF',
-  silverDark: '#6B7280',
-  bronze: '#D97706',
-  bronzeDark: '#92400E',
+  gold: '#FFC107',
+  goldDark: '#B8860B',
+  silver: '#C0C0C0',
+  silverDark: '#7A7A7A',
+  bronze: '#CD7F32',
+  bronzeDark: '#8B5A2B',
   white: '#FFFFFF',
   whiteAlpha: 'rgba(255,255,255,0.9)',
   textLight: 'rgba(255,255,255,0.6)',
 };
+
+const DISPLAY_FONT = '"Montserrat", "Inter", "Segoe UI", sans-serif';
 
 export interface PodiumWinner {
   position: number;
@@ -62,8 +64,8 @@ function drawBackground(ctx: CanvasRenderingContext2D, w: number, h: number) {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, w, h);
 
-  // Subtle dots pattern
-  ctx.fillStyle = 'rgba(56, 189, 248, 0.03)';
+  // Subtle dots pattern (ConnectaHub sky blue)
+  ctx.fillStyle = 'rgba(41, 182, 246, 0.04)';
   for (let i = 0; i < w; i += 30) {
     for (let j = 0; j < h; j += 30) {
       ctx.beginPath();
@@ -74,8 +76,8 @@ function drawBackground(ctx: CanvasRenderingContext2D, w: number, h: number) {
 
   // Glow
   const glowGrad = ctx.createRadialGradient(w / 2, h * 0.4, 0, w / 2, h * 0.4, w * 0.5);
-  glowGrad.addColorStop(0, 'rgba(56, 189, 248, 0.08)');
-  glowGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+  glowGrad.addColorStop(0, 'rgba(41, 182, 246, 0.10)');
+  glowGrad.addColorStop(1, 'rgba(41, 182, 246, 0)');
   ctx.fillStyle = glowGrad;
   ctx.fillRect(0, 0, w, h);
 }
@@ -128,7 +130,7 @@ async function drawAvatar(
   ctx.fill();
 
   ctx.fillStyle = COLORS.primaryDark;
-  ctx.font = `bold ${radius}px "Inter", "Segoe UI", sans-serif`;
+  ctx.font = `bold ${radius}px ${DISPLAY_FONT}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(name.charAt(0).toUpperCase(), centerX, centerY + 2);
@@ -170,7 +172,7 @@ async function drawPodiumBar(
   // Position number & medal
   const posY = y + 45 * scale;
   ctx.fillStyle = COLORS.white;
-  ctx.font = `bold ${38 * scale}px "Inter", "Segoe UI", sans-serif`;
+  ctx.font = `bold ${38 * scale}px ${DISPLAY_FONT}`;
   ctx.textAlign = 'center';
   ctx.fillText(`${position}º`, x + barW / 2, posY);
 
@@ -188,10 +190,10 @@ async function drawPodiumBar(
   // Função helper: calcula tamanho de fonte que cabe na largura
   function fitFontSize(text: string, maxW: number, idealSize: number, minSize: number): number {
     let size = idealSize;
-    ctx.font = `bold ${size}px "Inter", "Segoe UI", sans-serif`;
+    ctx.font = `bold ${size}px ${DISPLAY_FONT}`;
     while (ctx.measureText(text).width > maxW && size > minSize) {
       size -= 1;
-      ctx.font = `bold ${size}px "Inter", "Segoe UI", sans-serif`;
+      ctx.font = `bold ${size}px ${DISPLAY_FONT}`;
     }
     return size;
   }
@@ -199,20 +201,20 @@ async function drawPodiumBar(
   // Primeiro nome
   ctx.fillStyle = COLORS.white;
   const firstNameSize = fitFontSize(firstName, maxTextWidth, 26 * scale, 16 * scale);
-  ctx.font = `bold ${firstNameSize}px "Inter", "Segoe UI", sans-serif`;
+  ctx.font = `bold ${firstNameSize}px ${DISPLAY_FONT}`;
   ctx.fillText(firstName, centerX, y + barH - 75 * scale);
 
   // Sobrenome (abaixo)
   if (surname) {
     ctx.fillStyle = 'rgba(255,255,255,0.75)';
     const surnameSize = fitFontSize(surname, maxTextWidth, 22 * scale, 14 * scale);
-    ctx.font = `bold ${surnameSize}px "Inter", "Segoe UI", sans-serif`;
+    ctx.font = `bold ${surnameSize}px ${DISPLAY_FONT}`;
     ctx.fillText(surname, centerX, y + barH - 48 * scale);
   }
 
   // Points (GRANDE e destacado)
   ctx.fillStyle = COLORS.secondaryLight;
-  ctx.font = `bold ${28 * scale}px "Inter", "Segoe UI", sans-serif`;
+  ctx.font = `bold ${28 * scale}px ${DISPLAY_FONT}`;
   ctx.fillText(`${winner.points} XP`, centerX, y + barH - 14 * scale);
 }
 
@@ -254,18 +256,18 @@ export async function generatePodiumImage(
       ctx.drawImage(logoImg, (W - logoW) / 2, 60, logoW, logoH);
     } else {
       ctx.fillStyle = COLORS.secondary;
-      ctx.font = `bold 36px "Inter", "Segoe UI", sans-serif`;
+      ctx.font = `bold 36px ${DISPLAY_FONT}`;
       ctx.textAlign = 'center';
-      ctx.fillText('CONNECTHUB', W / 2, 100);
+      ctx.fillText('CONNECTAHUB', W / 2, 100);
     }
 
     const titleY = 200;
     ctx.fillStyle = COLORS.white;
-    ctx.font = `bold 46px "Inter", "Segoe UI", sans-serif`;
+    ctx.font = `bold 46px ${DISPLAY_FONT}`;
     ctx.textAlign = 'center';
     ctx.fillText('🏆 TOP 3 DA SEMANA', W / 2, titleY + 14);
 
-    ctx.font = `bold 22px "Inter", "Segoe UI", sans-serif`;
+    ctx.font = `bold 22px ${DISPLAY_FONT}`;
     const badgeW = ctx.measureText(badgeText).width + 48;
     const badgeX = (W - badgeW) / 2;
     const badgeY = titleY + 34;
@@ -275,17 +277,17 @@ export async function generatePodiumImage(
     ctx.fill();
 
     ctx.fillStyle = COLORS.primaryDark;
-    ctx.font = `bold 20px "Inter", "Segoe UI", sans-serif`;
+    ctx.font = `bold 20px ${DISPLAY_FONT}`;
     ctx.textAlign = 'center';
     ctx.fillText(badgeText, W / 2, badgeY + 27);
 
   } else {
     // --- Layout na mesma linha (Horizontal) do LinkedIn ---
     const titleText = '🏆 TOP 3 DA SEMANA';
-    ctx.font = `bold ${36 * scale}px "Inter", "Segoe UI", sans-serif`; 
+    ctx.font = `bold ${36 * scale}px ${DISPLAY_FONT}`; 
     const titleW = ctx.measureText(titleText).width;
 
-    ctx.font = `bold ${22 * scale}px "Inter", "Segoe UI", sans-serif`;
+    ctx.font = `bold ${22 * scale}px ${DISPLAY_FONT}`;
     const badgeW = ctx.measureText(badgeText).width + 48 * scale;
     
     const logoH = 45 * scale;
@@ -301,17 +303,17 @@ export async function generatePodiumImage(
       ctx.drawImage(logoImg, currentX, centerY - logoH / 2, logoW, logoH);
     } else {
       ctx.fillStyle = COLORS.secondary;
-      ctx.font = `bold ${28 * scale}px "Inter", "Segoe UI", sans-serif`;
+      ctx.font = `bold ${28 * scale}px ${DISPLAY_FONT}`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText('CONNECTHUB', currentX, centerY);
+      ctx.fillText('CONNECTAHUB', currentX, centerY);
       ctx.textBaseline = 'alphabetic'; // reset
     }
     currentX += logoW + gap;
 
     // Draw Title
     ctx.fillStyle = COLORS.white;
-    ctx.font = `bold ${36 * scale}px "Inter", "Segoe UI", sans-serif`;
+    ctx.font = `bold ${36 * scale}px ${DISPLAY_FONT}`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(titleText, currentX, centerY);
@@ -325,7 +327,7 @@ export async function generatePodiumImage(
     ctx.fill();
 
     ctx.fillStyle = COLORS.primaryDark;
-    ctx.font = `bold ${20 * scale}px "Inter", "Segoe UI", sans-serif`;
+    ctx.font = `bold ${20 * scale}px ${DISPLAY_FONT}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(badgeText, currentX + badgeW / 2, centerY + 2 * scale);
@@ -363,9 +365,9 @@ export async function generatePodiumImage(
 
   // 5. Footer
   ctx.fillStyle = COLORS.textLight;
-  ctx.font = `${14 * scale}px "Inter", "Segoe UI", sans-serif`;
+  ctx.font = `${14 * scale}px ${DISPLAY_FONT}`;
   ctx.textAlign = 'center';
-  ctx.fillText(`ConnectHub • ${year}`, W / 2, H - (format === 'instagram' ? 45 : 15));
+  ctx.fillText(`ConnectaHub • ${year}`, W / 2, H - (format === 'instagram' ? 45 : 15));
 
   // Footer decorative line
   ctx.strokeStyle = COLORS.secondary;
