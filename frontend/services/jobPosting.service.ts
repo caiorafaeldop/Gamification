@@ -7,6 +7,7 @@ export interface JobPosting {
   title: string;
   description: string;
   contact: string;
+  links: string | null;
   status: JobPostingStatus;
   authorId: string;
   groupId: string | null;
@@ -21,6 +22,7 @@ export interface CreateJobPostingInput {
   description: string;
   contact: string;
   groupId?: string | null;
+  links?: string[];
 }
 
 export interface UpdateJobPostingInput {
@@ -29,7 +31,20 @@ export interface UpdateJobPostingInput {
   contact?: string;
   groupId?: string | null;
   status?: JobPostingStatus;
+  links?: string[];
 }
+
+export const parseJobLinks = (raw: string | null | undefined): string[] => {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.filter((s) => typeof s === 'string' && s.trim().length > 0);
+    if (typeof parsed === 'string' && parsed.trim()) return [parsed];
+  } catch {
+    if (raw.trim()) return [raw.trim()];
+  }
+  return [];
+};
 
 export const listJobPostings = async (filters?: {
   status?: JobPostingStatus;

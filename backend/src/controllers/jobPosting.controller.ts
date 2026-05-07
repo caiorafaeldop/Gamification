@@ -11,8 +11,8 @@ import {
 export const create = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.userId;
-    const { title, description, contact, groupId } = req.body;
-    const job = await createJobPosting(userId, { title, description, contact, groupId });
+    const { title, description, contact, groupId, links } = req.body;
+    const job = await createJobPosting(userId, { title, description, contact, groupId, links });
     res.status(201).json(job);
   } catch (error) {
     next(error);
@@ -48,13 +48,14 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
   try {
     const userId = req.user!.userId;
     const userRole = req.user!.role;
-    const { title, description, contact, groupId, status } = req.body;
+    const { title, description, contact, groupId, status, links } = req.body;
     const job = await updateJobPosting(req.params.id, userId, userRole, {
       title,
       description,
       contact,
       groupId,
       status,
+      links,
     });
     res.json(job);
   } catch (error) {

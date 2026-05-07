@@ -24,11 +24,13 @@ import {
   deleteJobPosting,
   updateJobPosting,
   getJobPosting,
+  parseJobLinks,
   JobPosting,
   JobPostingStatus,
 } from '../services/jobPosting.service';
 import { Skeleton } from '../components/Skeleton';
-import { PageHero, EmptyState } from '../components/ui';
+import { PageHero, EmptyState, LinkListEditor } from '../components/ui';
+import { formatLink } from '../components/RichEditor';
 import { useLoginRequired } from '../components/LoginRequiredModal';
 
 const statusMeta: Record<
@@ -464,6 +466,7 @@ const JobModal = ({ job, onClose, onShare }: { job: JobPosting; onClose: () => v
   const groupColor = job.group?.color || '#29B6F6';
   const contact = detectContact(job.contact);
   const ContactIcon = contact.kind === 'link' ? ExternalLink : contact.kind === 'phone' ? Phone : Mail;
+  const jobLinks = useMemo(() => parseJobLinks(job.links), [job.links]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
@@ -530,6 +533,32 @@ const JobModal = ({ job, onClose, onShare }: { job: JobPosting; onClose: () => v
           <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 mb-8 whitespace-pre-wrap break-words">
             {job.description}
           </div>
+
+          {jobLinks.length > 0 && (
+            <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-background-dark">
+              <h4 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                <ExternalLink size={12} /> Links e Anexos ({jobLinks.length})
+              </h4>
+              <ul className="space-y-2">
+                {jobLinks.map((url, idx) => (
+                  <li
+                    key={idx}
+                    className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-surface-dark"
+                  >
+                    <ExternalLink size={12} className="flex-shrink-0 text-blue-500" />
+                    <a
+                      href={formatLink(url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 truncate text-xs text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      {url}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div
             className="mt-8 rounded-xl border p-4"
@@ -633,6 +662,7 @@ const EditJobModal: React.FC<EditJobModalProps> = ({ job, onClose, onSaved }) =>
   const [description, setDescription] = useState(job.description);
   const [contact, setContact] = useState(job.contact);
   const [status, setStatus] = useState<JobPostingStatus>(job.status);
+  const [links, setLinks] = useState<string[]>(() => parseJobLinks(job.links));
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -641,6 +671,7 @@ const EditJobModal: React.FC<EditJobModalProps> = ({ job, onClose, onSaved }) =>
         description: description.trim(),
         contact: contact.trim(),
         status,
+        links,
       }),
     onSuccess: () => {
       toast.success('Vaga atualizada');
@@ -735,6 +766,8 @@ const EditJobModal: React.FC<EditJobModalProps> = ({ job, onClose, onSaved }) =>
               </select>
             </div>
           </div>
+
+          <LinkListEditor value={links} onChange={setLinks} label="Links / Anexos" />
 
           <div className="flex justify-end gap-3 pt-2">
             <button

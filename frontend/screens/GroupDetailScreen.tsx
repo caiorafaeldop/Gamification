@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FlaskConical, Users, BookOpen, ArrowLeft, Star, ArrowRight, UserPlus, LogOut, Settings, Globe, Lock, Trophy, Target, Medal, Clock, Briefcase, CheckCircle2, XCircle } from 'lucide-react';
+import { FlaskConical, Users, BookOpen, ArrowLeft, Star, ArrowRight, UserPlus, LogOut, Settings, Globe, Lock, Trophy, Target, Medal, Clock, Briefcase, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useGroup, useJoinGroup, useLeaveGroup, useGroups, useRequestJoinGroup } from '../hooks/useGroups';
 import { useProfile } from '../hooks/useProfile';
 import { useGroupBranding } from '../contexts/BrandingContext';
 import { PageHero, SurfaceCard, SectionHeader, EmptyState } from '../components/ui';
 import { Skeleton } from '../components/Skeleton';
+
+const PROJECTS_PER_PAGE = 6;
 
 const GroupDetailScreen = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +18,7 @@ const GroupDetailScreen = () => {
   const joinMutation = useJoinGroup();
   const requestJoinMutation = useRequestJoinGroup();
   const leaveMutation = useLeaveGroup();
+  const [projectsPage, setProjectsPage] = useState(0);
 
   useGroupBranding(group);
 
@@ -67,6 +70,14 @@ const GroupDetailScreen = () => {
 
   // Internal Ranking
   const sortedMembers = [...(group.GroupMember || [])].sort((a, b) => (b.User.connectaPoints || 0) - (a.User.connectaPoints || 0));
+
+  const totalProjects = group.Project?.length || 0;
+  const totalProjectPages = Math.max(1, Math.ceil(totalProjects / PROJECTS_PER_PAGE));
+  const safeProjectsPage = Math.min(projectsPage, totalProjectPages - 1);
+  const pagedProjects = (group.Project || []).slice(
+    safeProjectsPage * PROJECTS_PER_PAGE,
+    (safeProjectsPage + 1) * PROJECTS_PER_PAGE,
+  );
 
   const heroHighlight = (
     <div
@@ -194,30 +205,8 @@ const GroupDetailScreen = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left Column: Projects + Jobs */}
+        {/* Left Column: Jobs + Projects */}
         <div className="lg:col-span-2 space-y-8">
-          <div className="space-y-4">
-            <SectionHeader
-              icon={<Target size={18} style={{ color }} />}
-              title="Projetos do Grupo"
-              description="Iniciativas que estão sendo desenvolvidas por este grupo."
-            />
-
-            {!group.Project || group.Project.length === 0 ? (
-              <EmptyState
-                icon={BookOpen}
-                title="Sem projetos ainda"
-                description="Nenhum projeto foi vinculado a este grupo ainda."
-              />
-            ) : (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {group.Project.map((project) => (
-                  <GroupProjectCard key={project.id} project={project} color={color} />
-                ))}
-              </div>
-            )}
-          </div>
-
           <div className="space-y-4">
             <SectionHeader
               icon={<Briefcase size={18} style={{ color }} />}
@@ -246,6 +235,60 @@ const GroupDetailScreen = () => {
                   <GroupJobCard key={job.id} job={job} color={color} />
                 ))}
               </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <SectionHeader
+              icon={<Target size={18} style={{ color }} />}
+              title="Projetos do Grupo"
+              description="Iniciativas que estão sendo desenvolvidas por este grupo."
+            />
+
+            {totalProjects === 0 ? (
+              <EmptyState
+                icon={BookOpen}
+                title="Sem projetos ainda"
+                description="Nenhum projeto foi vinculado a este grupo ainda."
+              />
+            ) : (
+              <>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {pagedProjects.map((project) => (
+                    <GroupProjectCard key={project.id} project={project} color={color} />
+                  ))}
+                </div>
+
+                {totalProjectPages > 1 && (
+                  <div className="flex items-center justify-between gap-3 pt-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Página {safeProjectsPage + 1} de {totalProjectPages} · {totalProjects} projetos
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setProjectsPage((p) => Math.max(0, p - 1))}
+                        disabled={safeProjectsPage === 0}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-colors hover:border-[var(--group-color)] hover:text-[var(--group-color)] disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-surface-dark dark:text-gray-300"
+                        style={{ ['--group-color' as any]: color }}
+                        aria-label="Página anterior"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setProjectsPage((p) => Math.min(totalProjectPages - 1, p + 1))}
+                        disabled={safeProjectsPage >= totalProjectPages - 1}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-colors hover:border-[var(--group-color)] hover:text-[var(--group-color)] disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-surface-dark dark:text-gray-300"
+                        style={{ ['--group-color' as any]: color }}
+                        aria-label="Próxima página"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

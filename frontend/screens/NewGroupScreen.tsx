@@ -80,15 +80,6 @@ const NewGroupScreen = () => {
   };
 
   const isPending = createGroup.isPending || updateGroup.isPending;
-
-  if (isEditing && loadingGroup) {
-    return (
-      <div className="flex flex-1 items-center justify-center p-10">
-        <Loader className="animate-spin text-primary" size={40} />
-      </div>
-    );
-  }
-
   const previewColor = formData.color || '#29B6F6';
 
   const previewGroup = useMemo<Group>(() => ({
@@ -106,6 +97,14 @@ const NewGroupScreen = () => {
     updatedAt: '',
     _count: { GroupMember: 1, Project: 0 },
   }), [formData.name, formData.description, formData.logoUrl, formData.isRestricted, formData.category, previewColor]);
+
+  if (isEditing && loadingGroup) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-10">
+        <Loader className="animate-spin text-primary" size={40} />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1480px] space-y-8 p-4 sm:p-6 lg:p-8">

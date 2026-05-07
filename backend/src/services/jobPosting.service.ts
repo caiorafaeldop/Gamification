@@ -6,6 +6,7 @@ interface CreateJobPostingInput {
   description: string;
   contact: string;
   groupId?: string | null;
+  links?: string[];
 }
 
 interface UpdateJobPostingInput {
@@ -14,7 +15,14 @@ interface UpdateJobPostingInput {
   contact?: string;
   groupId?: string | null;
   status?: JobPostingStatus;
+  links?: string[];
 }
+
+const sanitizeLinks = (links: string[] | undefined): string | null | undefined => {
+  if (links === undefined) return undefined;
+  const cleaned = links.map((l) => String(l).trim()).filter(Boolean);
+  return cleaned.length ? JSON.stringify(cleaned) : null;
+};
 
 export const createJobPosting = async (authorId: string, data: CreateJobPostingInput) => {
   if (!data.title?.trim() || !data.description?.trim() || !data.contact?.trim()) {
@@ -36,6 +44,7 @@ export const createJobPosting = async (authorId: string, data: CreateJobPostingI
       description: data.description.trim(),
       contact: data.contact.trim(),
       groupId: data.groupId ?? null,
+      links: sanitizeLinks(data.links) ?? null,
       authorId,
     },
     include: {
@@ -103,6 +112,8 @@ export const updateJobPosting = async (
     }
   }
 
+  const sanitizedLinks = sanitizeLinks(data.links);
+
   return prisma.jobPosting.update({
     where: { id },
     data: {
@@ -111,6 +122,7 @@ export const updateJobPosting = async (
       contact: data.contact?.trim(),
       groupId: data.groupId,
       status: data.status,
+      ...(sanitizedLinks !== undefined && { links: sanitizedLinks }),
     },
     include: {
       author: { select: { id: true, name: true, avatarUrl: true, avatarColor: true } },

@@ -365,6 +365,7 @@ model JobPosting {
   title       String
   description String
   contact     String
+  links       String?
   status      JobPostingStatus @default(OPEN)
   authorId    String
   groupId     String?

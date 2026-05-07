@@ -5,7 +5,7 @@ import { Briefcase, ArrowLeft, Users, Info, Check, Sparkles, Send } from 'lucide
 import toast from 'react-hot-toast';
 import { useGroups } from '../hooks/useGroups';
 import { createJobPosting } from '../services/jobPosting.service';
-import { PageHero, SurfaceCard, SectionHeader } from '../components/ui';
+import { PageHero, SurfaceCard, SectionHeader, LinkListEditor } from '../components/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select';
 
 const NewJobPostingScreen = () => {
@@ -17,6 +17,7 @@ const NewJobPostingScreen = () => {
   const [description, setDescription] = useState('');
   const [contact, setContact] = useState('');
   const [groupId, setGroupId] = useState<string>('none');
+  const [links, setLinks] = useState<string[]>([]);
 
   const currentUserId = useMemo(() => {
     try {
@@ -43,6 +44,7 @@ const NewJobPostingScreen = () => {
         description,
         contact,
         groupId: groupId === 'none' ? null : groupId,
+        links,
       }),
     onSuccess: () => {
       toast.success('Vaga publicada com sucesso!');
@@ -194,6 +196,8 @@ const NewJobPostingScreen = () => {
                   )}
                 </div>
               </div>
+
+              <LinkListEditor value={links} onChange={setLinks} label="Links / Anexos" />
             </div>
           </SurfaceCard>
         </div>
