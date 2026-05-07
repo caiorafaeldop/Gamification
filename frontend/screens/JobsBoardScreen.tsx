@@ -602,17 +602,9 @@ const ShareJobModal: React.FC<{ job: JobPosting; onClose: () => void }> = ({ job
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-6">
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            Copie a mensagem abaixo e cole onde quiser divulgar a vaga.
-          </p>
-
-          <textarea
-            readOnly
-            value={message}
-            onFocus={(e) => e.currentTarget.select()}
-            rows={6}
-            className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 shadow-inner focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
-          />
+          <div className="whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-700 dark:border-slate-700 dark:bg-background-dark dark:text-slate-200">
+            {message}
+          </div>
 
           <button
             type="button"
