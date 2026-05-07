@@ -43,12 +43,9 @@ const JobsBoardScreen = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | JobPostingStatus>('OPEN');
   const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null);
-<<<<<<< HEAD
   const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
-=======
   const { open: openLoginModal } = useLoginRequired();
   const isGuest = !localStorage.getItem('token');
->>>>>>> 7f7fe252b78a3a35f90605701b58d23d2c08e031
 
   const { currentUserId, isSuperAdmin } = useMemo(() => {
     try {
