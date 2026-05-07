@@ -22,20 +22,6 @@ interface UpdateGroupInput {
   category?: GroupCategory;
 }
 
-const resolveCategory = (
-  requested: GroupCategory | undefined,
-  requesterRole: Role,
-): GroupCategory | undefined => {
-  if (requested === undefined) return undefined;
-  const isSystemAdmin = requesterRole === Role.ADMIN;
-  if (!isSystemAdmin && requested !== GroupCategory.COMUNIDADE) {
-    throw {
-      statusCode: 403,
-      message: 'Apenas administradores podem definir grupos como Institucional ou Externo.',
-    };
-  }
-  return requested;
-};
 
 const groupInclude = {
   GroupMember: {
@@ -96,12 +82,11 @@ export const getGroupDetails = async (id: string, userId?: string) => {
 export const createGroup = async (
   data: CreateGroupInput,
   creatorId: string,
-  creatorRole: Role,
 ) => {
   const existing = await prisma.group.findUnique({ where: { name: data.name } });
   if (existing) throw { statusCode: 409, message: 'Já existe um grupo com esse nome.' };
 
-  const category = resolveCategory(data.category, creatorRole) ?? GroupCategory.COMUNIDADE;
+  const category = data.category ?? GroupCategory.COMUNIDADE;
 
   return prisma.$transaction(async (tx) => {
     const group = await tx.group.create({
@@ -143,8 +128,6 @@ export const updateGroup = async (
     throw { statusCode: 403, message: 'Apenas admins do grupo podem editá-lo.' };
   }
 
-  const category = resolveCategory(data.category, requestingUserRole);
-
   return prisma.group.update({
     where: { id },
     data: {
@@ -154,7 +137,7 @@ export const updateGroup = async (
       ...(data.logoUrl !== undefined && { logoUrl: data.logoUrl }),
       ...(data.bannerUrl !== undefined && { bannerUrl: data.bannerUrl }),
       ...(data.isRestricted !== undefined && { isRestricted: data.isRestricted }),
-      ...(category !== undefined && { category }),
+      ...(data.category !== undefined && { category: data.category }),
       updatedAt: new Date(),
     },
     include: groupInclude,

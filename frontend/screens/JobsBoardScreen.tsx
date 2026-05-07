@@ -349,7 +349,6 @@ interface JobCardProps {
 const JobCard: React.FC<JobCardProps> = ({ job, canManage, onDelete, onEdit, onChangeStatus, onClickDetails }) => {
   const meta = statusMeta[job.status];
   const groupColor = job.group?.color || '#29B6F6';
-  const isLink = isExternalLink(job.contact);
 
   return (
     <article className="flex flex-col rounded-2xl border border-gray-100 bg-surface-light p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg dark:border-gray-800 dark:bg-surface-dark">
