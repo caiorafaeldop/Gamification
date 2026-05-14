@@ -10,6 +10,7 @@ import {
   leaveGroup,
   requestJoinGroup,
   respondToJoinRequest,
+  listGroupJoinRequests,
   CreateGroupPayload,
 } from '../services/group.service';
 
@@ -131,9 +132,26 @@ export const useRespondToJoinRequest = (groupId: string) => {
       respondToJoinRequest(groupId, requestId, action),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['group', groupId] });
+      qc.invalidateQueries({ queryKey: ['group-requests', groupId] });
       qc.invalidateQueries({ queryKey: ['groups'] });
       toast.success('Solicitação processada com sucesso!');
     },
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Erro ao processar solicitação.'),
   });
+};
+
+export const useGroupRequests = (groupId?: string) => {
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['group-requests', groupId],
+    queryFn: () => listGroupJoinRequests(groupId!),
+    enabled: !!groupId,
+    staleTime: 1 * 60 * 1000,
+  });
+
+  return {
+    requests: data ?? [],
+    loading: isLoading,
+    error: error ? (error as any).message || 'Falha ao carregar solicitações' : null,
+    refetch,
+  };
 };

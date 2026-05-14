@@ -108,3 +108,8 @@ export const respondToJoinRequest = async (id: string, requestId: string, action
   const { data } = await api.post(`/groups/${id}/requests/${requestId}/respond`, { action });
   return data;
 };
+
+export const listGroupJoinRequests = async (id: string) => {
+  const { data } = await api.get(`/groups/${id}/requests`);
+  return data;
+};

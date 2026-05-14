@@ -8,7 +8,8 @@ import {
   joinGroup,
   leaveGroup,
   requestJoinGroup,
-  respondToJoinRequest
+  respondToJoinRequest,
+  getGroupJoinRequests
 } from '../controllers/group.controller';
 import { unifiedAuth } from '../middlewares/unifiedAuth';
 import { optionalAuth } from '../middlewares/optionalAuth';
@@ -26,6 +27,7 @@ router.delete('/:id', unifiedAuth, deleteGroup);
 router.post('/:id/join', unifiedAuth, joinGroup);
 router.delete('/:id/leave', unifiedAuth, leaveGroup);
 router.post('/:id/request', unifiedAuth, requestJoinGroup);
+router.get('/:id/requests', unifiedAuth, getGroupJoinRequests);
 router.post('/:id/requests/:requestId/respond', unifiedAuth, respondToJoinRequest);
 
 export default router;

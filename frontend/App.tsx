@@ -26,6 +26,7 @@ import ProjectsScreen from './screens/ProjectsScreen';
 import JobsBoardScreen from './screens/JobsBoardScreen';
 import NewJobPostingScreen from './screens/NewJobPostingScreen';
 import ProjectRequestsScreen from './screens/ProjectRequestsScreen';
+import GroupRequestsScreen from './screens/GroupRequestsScreen';
 
 import { Toaster } from 'react-hot-toast';
 import { BrandingProvider } from './contexts/BrandingContext';
@@ -88,6 +89,7 @@ const App = () => {
             <Route path="/groups/new" element={<RequireAuth><NewGroupScreen /></RequireAuth>} />
             <Route path="/groups/:id/edit" element={<RequireAuth><NewGroupScreen /></RequireAuth>} />
             <Route path="/groups/:id" element={<RequireAuth><GroupDetailScreen /></RequireAuth>} />
+            <Route path="/groups/:id/requests" element={<RequireAuth><GroupRequestsScreen /></RequireAuth>} />
             <Route path="/jobs/new" element={<RequireAuth><NewJobPostingScreen /></RequireAuth>} />
 
             {/* Admin */}

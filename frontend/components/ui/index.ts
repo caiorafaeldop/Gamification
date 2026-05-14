@@ -7,3 +7,14 @@ export { StatCard } from './StatCard';
 export { ColorPicker } from './ColorPicker';
 export { LogoUpload } from './LogoUpload';
 export { LinkListEditor } from './LinkListEditor';
+export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+} from './Select';
+

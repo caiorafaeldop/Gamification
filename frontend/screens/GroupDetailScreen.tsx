@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FlaskConical, Users, BookOpen, ArrowLeft, Star, ArrowRight, UserPlus, LogOut, Settings, Globe, Lock, Trophy, Target, Medal, Clock, Briefcase, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useGroup, useJoinGroup, useLeaveGroup, useGroups, useRequestJoinGroup } from '../hooks/useGroups';
+import { useGroup, useJoinGroup, useLeaveGroup, useGroups, useRequestJoinGroup, useGroupRequests } from '../hooks/useGroups';
 import { useProfile } from '../hooks/useProfile';
 import { useGroupBranding } from '../contexts/BrandingContext';
 import { PageHero, SurfaceCard, SectionHeader, EmptyState } from '../components/ui';
@@ -18,6 +18,8 @@ const GroupDetailScreen = () => {
   const joinMutation = useJoinGroup();
   const requestJoinMutation = useRequestJoinGroup();
   const leaveMutation = useLeaveGroup();
+  const isAdminEarly = group?.GroupMember?.some((m) => m.userId === currentUser?.id && m.role === 'ADMIN') || false;
+  const { requests: pendingRequests } = useGroupRequests(isAdminEarly ? id : undefined);
   const [projectsPage, setProjectsPage] = useState(0);
 
   useGroupBranding(group);
@@ -59,7 +61,7 @@ const GroupDetailScreen = () => {
   const memberCount = group._count?.GroupMember || group.GroupMember?.length || 0;
   const projectCount = group._count?.Project || group.Project?.length || 0;
   const isMember = group.GroupMember?.some((m) => m.userId === currentUser?.id) || false;
-  const isAdmin = group.GroupMember?.some((m) => m.userId === currentUser?.id && m.role === 'ADMIN') || false;
+  const isAdmin = isAdminEarly;
   const pendingRequest = group.joinRequests?.find((r) => r.userId === currentUser?.id && r.status === 'PENDING');
   const hasPendingRequest = Boolean(pendingRequest);
 
@@ -69,7 +71,7 @@ const GroupDetailScreen = () => {
   const rankingText = rankIndex >= 0 ? `${rankIndex + 1}º Lugar` : '-';
 
   // Internal Ranking
-  const sortedMembers = [...(group.GroupMember || [])].sort((a, b) => (b.User.connectaPoints || 0) - (a.User.connectaPoints || 0));
+  const sortedMembers = [...(group.GroupMember || [])].sort((a, b) => (((b.User as any).connectaPoints || 0) - ((a.User as any).connectaPoints || 0)));
 
   const totalProjects = group.Project?.length || 0;
   const totalProjectPages = Math.max(1, Math.ceil(totalProjects / PROJECTS_PER_PAGE));
@@ -102,6 +104,25 @@ const GroupDetailScreen = () => {
 
   return (
     <div className="mx-auto max-w-[1480px] space-y-6 p-4 sm:p-6 lg:p-8">
+      {isAdmin && pendingRequests.length > 0 && (
+        <div className="flex items-center justify-between gap-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3 text-amber-700 dark:text-amber-500">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20">
+              <Clock size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-bold">Solicitações Pendentes</p>
+              <p className="text-xs opacity-80">Há {pendingRequests.length} {pendingRequests.length === 1 ? 'pessoa querendo' : 'pessoas querendo'} entrar neste grupo.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate(`/groups/${id}/requests`)}
+            className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-amber-600 hover:shadow-md"
+          >
+            Ver Solicitações
+          </button>
+        </div>
+      )}
       <PageHero
         icon={FlaskConical}
         tagLabel={
@@ -341,7 +362,7 @@ const GroupDetailScreen = () => {
                     </div>
                     
                     <div className="rounded bg-gray-100 px-2 py-1 text-[10px] font-bold text-gray-600 dark:bg-surface-darker dark:text-gray-400">
-                      {m.User.connectaPoints || 0} <span className="font-medium opacity-70">pts</span>
+                      {(m.User as any).connectaPoints || 0} <span className="font-medium opacity-70">pts</span>
                     </div>
                   </div>
                 ))}

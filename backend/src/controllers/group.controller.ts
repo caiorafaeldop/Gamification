@@ -110,3 +110,14 @@ export const respondToJoinRequest = async (req: Request, res: Response, next: Ne
     next(error);
   }
 };
+
+export const getGroupJoinRequests = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.userId;
+    const userRole = req.user!.role;
+    const requests = await groupService.listGroupJoinRequests(req.params.id, userId, userRole);
+    res.json(requests);
+  } catch (error) {
+    next(error);
+  }
+};

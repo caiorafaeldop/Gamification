@@ -361,39 +361,33 @@ export const requestJoinProject = async (projectId: string, userId: string) => {
   }
 
   // CASE B — PUBLIC (PUBLIC_LIKE / PUBLIC_VIEW): request flow
-
-  // Sub-case B3 — not a group member, group restricted: request to JOIN THE GROUP
-  if (!isGroupMember && group.isRestricted) {
-    const existing = await prisma.groupJoinRequest.findUnique({
-      where: { userId_groupId: { userId, groupId } },
-    });
-    if (existing && existing.status === 'PENDING') {
-      throw {
-        statusCode: 409,
-        message: `Você já tem uma solicitação pendente para entrar no grupo "${group.name}".`,
-      };
+  await prisma.$transaction(async (tx) => {
+    // Sub-case B3 — not a group member: handle based on restriction
+    if (!isGroupMember) {
+      if (group.isRestricted) {
+        // Create group join request if doesn't exist
+        const existingGroupRequest = await tx.groupJoinRequest.findUnique({
+          where: { userId_groupId: { userId, groupId } }
+        });
+        if (!existingGroupRequest) {
+          await tx.groupJoinRequest.create({ data: { userId, groupId } });
+          await tx.notification.create({
+            data: {
+              userId: group.GroupMember.find(m => m.role === 'ADMIN')?.userId || userId,
+              title: 'Nova solicitação de grupo',
+              message: `Um usuário solicitou entrar no grupo "${group.name}" através do projeto "${project.title}".`,
+              type: 'GROUP_JOIN_REQUEST',
+            }
+          });
+        }
+      } else {
+        // Auto-join group if not restricted
+        await tx.groupMember.create({
+          data: { userId, groupId, role: GroupRole.MEMBER },
+        });
+      }
     }
-    if (existing) {
-      await prisma.groupJoinRequest.update({
-        where: { userId_groupId: { userId, groupId } },
-        data: { status: 'PENDING', updatedAt: new Date() },
-      });
-    } else {
-      await prisma.groupJoinRequest.create({ data: { userId, groupId } });
-    }
-
-    return {
-      status: 'group-request-sent' as const,
-      message: `Este grupo é restrito. Sua solicitação foi enviada para entrar no grupo "${group.name}". Quando aprovada, você poderá pedir para entrar no projeto.`,
-    };
-  }
-
-  // Sub-case B2 — not a group member, group is open: auto-join group, then request to join project
-  if (!isGroupMember && !group.isRestricted) {
-    await prisma.groupMember.create({
-      data: { userId, groupId, role: GroupRole.MEMBER },
-    });
-  }
+  });
 
   // Sub-case B1 / B2 continued — create or refresh ProjectJoinRequest
   const existingProjectRequest = await (prisma as any).projectJoinRequest.findUnique({
@@ -408,7 +402,7 @@ export const requestJoinProject = async (projectId: string, userId: string) => {
 
   const projectRequest = existingProjectRequest
     ? await (prisma as any).projectJoinRequest.update({
-        where: { userId_projectId: { userId, projectId } },
+        where: { id: existingProjectRequest.id },
         data: { status: 'PENDING', updatedAt: new Date() },
       })
     : await (prisma as any).projectJoinRequest.create({
@@ -475,7 +469,7 @@ export const respondToProjectJoinRequest = async (
 ) => {
   const joinRequest = await (prisma as any).projectJoinRequest.findUnique({
     where: { id: requestId },
-    include: { project: { select: { id: true, title: true, leaderId: true } } },
+    include: { project: { select: { id: true, title: true, leaderId: true, groupId: true } } },
   });
   if (!joinRequest) throw { statusCode: 404, message: 'Solicitação não encontrada.' };
   if (joinRequest.status !== 'PENDING') {
@@ -504,6 +498,35 @@ export const respondToProjectJoinRequest = async (
         await tx.projectMember.create({
           data: { userId: joinRequest.userId, projectId: joinRequest.projectId },
         });
+
+        // Also ensure user is in the group
+        if (joinRequest.project.groupId) {
+          const groupMembership = await tx.groupMember.findUnique({
+            where: {
+              userId_groupId: { userId: joinRequest.userId, groupId: joinRequest.project.groupId }
+            }
+          });
+          if (!groupMembership) {
+            await tx.groupMember.create({
+              data: {
+                userId: joinRequest.userId,
+                groupId: joinRequest.project.groupId,
+                role: GroupRole.MEMBER
+              }
+            });
+            // If there was a pending group request, mark it as approved
+            const groupRequest = await tx.groupJoinRequest.findUnique({
+              where: { userId_groupId: { userId: joinRequest.userId, groupId: joinRequest.project.groupId } }
+            });
+            if (groupRequest && groupRequest.status === 'PENDING') {
+              await tx.groupJoinRequest.update({
+                where: { id: groupRequest.id },
+                data: { status: 'APPROVED', updatedAt: new Date() }
+              });
+            }
+          }
+        }
+
         await createActivityLog({
           user: { connect: { id: joinRequest.userId } },
           type: ActivityType.USER_JOINED_PROJECT,

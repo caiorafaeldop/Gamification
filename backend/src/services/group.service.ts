@@ -292,3 +292,23 @@ export const leaveGroup = async (groupId: string, userId: string) => {
     where: { userId_groupId: { userId, groupId } },
   });
 };
+
+export const listGroupJoinRequests = async (groupId: string, requestingUserId: string, requestingUserRole: Role) => {
+  const membership = await prisma.groupMember.findUnique({
+    where: { userId_groupId: { userId: requestingUserId, groupId } },
+  });
+  const isGroupAdmin = membership?.role === GroupRole.ADMIN;
+  const isSystemAdmin = requestingUserRole === Role.ADMIN;
+
+  if (!isGroupAdmin && !isSystemAdmin) {
+    throw { statusCode: 403, message: 'Apenas admins do grupo podem ver solicitações.' };
+  }
+
+  return prisma.groupJoinRequest.findMany({
+    where: { groupId, status: 'PENDING' },
+    include: {
+      user: { select: { id: true, name: true, avatarUrl: true, avatarColor: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+};
