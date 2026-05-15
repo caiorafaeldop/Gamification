@@ -295,7 +295,7 @@ export const requestJoinProject = async (projectId: string, userId: string) => {
       visibility: true,
       leaderId: true,
       groupId: true,
-      Group: { select: { id: true, name: true, isRestricted: true } },
+      Group: { select: { id: true, name: true, isRestricted: true, GroupMember: { select: { userId: true, role: true } } } },
     },
   });
   if (!project) {
