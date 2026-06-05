@@ -717,11 +717,11 @@ const ProjectWorkspaceScreen: React.FC<ProjectWorkspaceScreenProps> = ({ default
         </SurfaceCard>
       )}
 
-      {activeTab === 'board' && (
+      <div style={{ display: activeTab === 'board' ? 'block' : 'none' }}>
         <div className="-mx-4 -mb-8 min-h-[720px] overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-surface-dark sm:-mx-6 lg:-mx-8">
           <ProjectDetailsScreen initialVersionFilter={selectedVersionId || selectedVersion?.id} />
         </div>
-      )}
+      </div>
 
       {isTaskModalOpen && (
         <TaskModal
