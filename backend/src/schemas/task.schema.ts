@@ -9,6 +9,7 @@ export const createTaskSchema = z.object({
     difficulty: z.number().int('Difficulty must be an integer').min(1, 'Difficulty must be between 1 and 10').max(10, 'Difficulty must be between 1 and 10').optional().default(2),
     estimatedTimeMinutes: z.coerce.number().int('Estimated time must be an integer').min(1, 'Estimated time must be at least 1 minute').optional().nullable(),
     projectId: uuidSchema,
+    versionId: optionalUuidSchema,
     columnId: optionalUuidSchema,
     assignedToId: optionalUuidSchema,
     dueDate: z.string().datetime().optional().nullable(),
@@ -47,6 +48,7 @@ export const updateTaskSchema = z.object({
     tags: z.array(z.string()).optional(),
     requiredTierId: optionalUuidSchema,
     isExternalDemand: z.boolean().optional(),
+    versionId: optionalUuidSchema,
     columnId: optionalUuidSchema,
     // Novos campos estilo Trello
     startDate: z.string().datetime().optional().nullable(),

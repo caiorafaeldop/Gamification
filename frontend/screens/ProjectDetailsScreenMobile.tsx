@@ -23,7 +23,8 @@ const ProjectDetailsScreenMobile = () => {
         handleAddColumn,
         handleMoveTask, handleToggleCompletion,
         handleDeleteTask, confirmDeleteTask, taskToDelete, setTaskToDelete,
-        isRequestsModalOpen, setIsRequestsModalOpen, pendingRequestsCount, fetchRequestsCount
+        isRequestsModalOpen, setIsRequestsModalOpen, pendingRequestsCount, fetchRequestsCount,
+        versions, versionFilter, setVersionFilter
     } = useProjectKanban(id!);
 
     const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
@@ -128,7 +129,25 @@ const isProjectMember = user && project?.members?.some((m: any) => m.user?.id ==
                     </button>
                     <div className="overflow-hidden flex-1">
                         <h1 className="font-bold text-lg text-secondary dark:text-gray-100 leading-tight truncate">{project.title}</h1>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{project.members?.length || 0} membros</p>
+                        <div className="flex items-center gap-1.5 mt-0.5 overflow-x-auto no-scrollbar whitespace-nowrap">
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">{project.members?.length || 0} membros</span>
+                            {versionFilter !== 'none' && versions && versions.length > 0 && (
+                                <>
+                                    <span className="text-gray-300 dark:text-gray-700">•</span>
+                                    <select
+                                        value={versionFilter}
+                                        onChange={(e) => setVersionFilter(e.target.value)}
+                                        className="text-[11px] font-black text-primary bg-transparent border-none p-0 outline-none cursor-pointer focus:ring-0"
+                                    >
+                                        {versions.map((v: any) => (
+                                            <option key={v.id} value={v.id} className="text-secondary dark:text-white bg-white dark:bg-surface-dark font-medium">
+                                                {v.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0 ml-2">
@@ -200,7 +219,22 @@ const isProjectMember = user && project?.members?.some((m: any) => m.user?.id ==
                     </div>
                 )}
 
-                {activeColumn?.tasks?.length === 0 ? (
+                {versionFilter === 'none' ? (
+                    <div className="flex flex-col items-center justify-center py-20 px-4 text-center gap-4">
+                        <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-lg shadow-primary/5">
+                            <span className="material-icons text-3xl">milestone</span>
+                        </div>
+                        <div className="space-y-1">
+                            <h3 className="font-bold text-secondary dark:text-gray-100">Sem versões ativas</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto leading-relaxed">
+                                No modo **Versionamento First**, toda tarefa do quadro Kanban deve fazer parte de um marco de entrega (Versão).
+                            </p>
+                        </div>
+                        <p className="text-xs text-primary font-bold bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10">
+                            Acesse o Workspace via Desktop para criar versões!
+                        </p>
+                    </div>
+                ) : activeColumn?.tasks?.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
                         <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                             <span className="material-icons text-3xl opacity-50">assignment</span>

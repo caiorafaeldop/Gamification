@@ -14,6 +14,19 @@ const calculateTaskPoints = (difficulty: number): number => {
   return 200; // Dificuldade 3 ou superior
 };
 
+const ensureVersionBelongsToProject = async (projectId: string, versionId?: string | null) => {
+  if (!versionId) return;
+
+  const version = await prisma.projectVersion.findFirst({
+    where: { id: versionId, projectId },
+    select: { id: true },
+  });
+
+  if (!version) {
+    throw { statusCode: 400, message: 'A versão selecionada não pertence a este projeto.' };
+  }
+};
+
 export const createNewTask = async (data: CreateTaskInput, createdById: string) => {
   const project = await findProjectById(data.projectId);
   if (!project) {
@@ -41,6 +54,7 @@ export const createNewTask = async (data: CreateTaskInput, createdById: string) 
 
   const difficulty = data.difficulty || 2;
   const pointsReward = calculateTaskPoints(difficulty);
+  await ensureVersionBelongsToProject(data.projectId, data.versionId);
 
   const taskResult = await prisma.$transaction(async (tx) => {
     const task = await createTask({
@@ -58,6 +72,7 @@ export const createNewTask = async (data: CreateTaskInput, createdById: string) 
       attachmentUrl: data.attachmentUrl || null,
       createdBy: { connect: { id: createdById } },
       project: { connect: { id: data.projectId } },
+      version: data.versionId ? { connect: { id: data.versionId } } : undefined,
       assignedTo: data.assignedToId ? { connect: { id: data.assignedToId } } : undefined,
       KanbanColumn: data.columnId ? ({ connect: { id: data.columnId } } as any) : undefined,
       requiredTier: data.requiredTierId ? { connect: { id: data.requiredTierId } } : undefined,
@@ -91,7 +106,7 @@ export const createNewTask = async (data: CreateTaskInput, createdById: string) 
     }
 
     return task;
-  });
+  }, { maxWait: 10000, timeout: 20000 });
 
   console.log(`[TRIGGER] Task created, checking achievements for ${createdById} (Async)`);
   // Run outside the main transaction to avoid timeouts
@@ -139,6 +154,7 @@ export const updateTaskDetails = async (id: string, data: UpdateTaskInput, reque
 
   // Extrair assignees e assigneeIds do data antes de passar para o Prisma
   const { assignees, assigneeIds, ...taskData } = data as any;
+  await ensureVersionBelongsToProject(task.projectId, taskData.versionId);
 
   // Normalizar assignees
   let assigneesToProcess = assignees;
@@ -159,6 +175,15 @@ export const updateTaskDetails = async (id: string, data: UpdateTaskInput, reque
     }
 
     // Tratar columnId para conexão
+    if (taskData.versionId !== undefined) {
+      if (taskData.versionId) {
+        updateData.version = { connect: { id: taskData.versionId } };
+      } else {
+        updateData.version = { disconnect: true };
+      }
+      delete updateData.versionId;
+    }
+
     if (taskData.columnId !== undefined) {
       if (taskData.columnId) {
         updateData.KanbanColumn = { connect: { id: taskData.columnId } };
@@ -208,7 +233,7 @@ export const updateTaskDetails = async (id: string, data: UpdateTaskInput, reque
     }
 
     return updatedTask;
-  });
+  }, { maxWait: 10000, timeout: 20000 });
 };
 
 export const moveTaskStatus = async (id: string, data: MoveTaskInput, requestingUserId: string, requestingUserRole: Role) => {
@@ -263,7 +288,7 @@ export const moveTaskStatus = async (id: string, data: MoveTaskInput, requesting
     }, tx);
 
     return updatedTask;
-  });
+  }, { maxWait: 10000, timeout: 20000 });
 };
 
 export const deleteTaskById = async (id: string, requestingUserId: string, requestingUserRole: Role) => {
@@ -324,7 +349,7 @@ export const deleteTaskById = async (id: string, requestingUserId: string, reque
       description: `Deleted task "${task.title}". Points revoked.`,
     }, tx);
     return task;
-  });
+  }, { maxWait: 10000, timeout: 20000 });
 };
 
 export const getKanbanBoardForProject = async (projectId: string) => {

@@ -1,4 +1,20 @@
 export type ProjectStatus = 'active' | 'archived' | 'inactive' | 'planning';
+export type ProjectVersionStatus = 'PLANNED' | 'IN_PROGRESS' | 'LOCKED' | 'RELEASED' | 'ARCHIVED';
+
+export interface ProjectVersion {
+  id: string;
+  name: string;
+  description?: string | null;
+  status: ProjectVersionStatus;
+  startDate?: string | null;
+  dueDate?: string | null;
+  releasedAt?: string | null;
+  projectId: string;
+  createdAt?: string;
+  updatedAt?: string;
+  _count?: { tasks: number };
+  tasks?: Array<{ id: string; status: string; completedAt?: string | null }>;
+}
 
 export interface Project {
   id: string;
@@ -15,6 +31,7 @@ export interface Project {
   leaderId?: string;
   createdAt?: string;
   updatedAt?: string;
+  versions?: ProjectVersion[];
 }
 
 export const statusStyles: Record<ProjectStatus, string> = {
@@ -81,6 +98,8 @@ export interface Task {
   difficulty: number;
   pointsReward: number;
   projectId: string;
+  versionId?: string | null;
+  version?: ProjectVersion | null;
   assignedToId?: string;
   dueDate?: string;
   tags?: string[];

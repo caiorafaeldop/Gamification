@@ -4,7 +4,7 @@ import { DragDropContext, Draggable } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '../components/StrictModeDroppable';
 import { deleteTask, getProjectKanban, updateTaskStatus, toggleTaskCompletion, createColumn, updateColumn, deleteColumn, reorderColumns, createQuickTask } from '../services/task.service';
 import { getProfile } from '../services/user.service';
-import { uploadProjectCover, updateProject, leaveProject, transferProjectOwnership, deleteProject, joinProject } from '../services/project.service';
+import { updateProject, leaveProject, transferProjectOwnership, joinProject, getProjectVersions } from '../services/project.service';
 import { useProjectDetails } from '../hooks/useProjects';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/Select';
 import { cn } from '../utils/cn';
@@ -12,7 +12,7 @@ import { Skeleton } from '../components/Skeleton';
 import TaskModal from '../components/TaskModal';
 import TaskDetailModal from '../components/TaskDetailModal';
 import MemberSelect from '../components/MemberSelect';
-import { Camera, Loader, Edit } from 'lucide-react';
+import { Edit } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../components/ConfirmationModal';
 import MembersListModal from '../components/MembersListModal';
@@ -22,7 +22,7 @@ import { ProjectStatus, statusLabels, statusStyles } from '../types';
 import ProjectDetailsScreenMobile from './ProjectDetailsScreenMobile';
 import api from '@/services/api';
 
-const ProjectDetailsScreen = () => {
+const ProjectDetailsScreen = ({ initialVersionFilter }: { initialVersionFilter?: string }) => {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
     useEffect(() => {
@@ -41,9 +41,10 @@ const ProjectDetailsScreen = () => {
     const [columns, setColumns] = useState<any>(null);
     const [loadingKanban, setLoadingKanban] = useState(true);
     const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
-    const [uploadingCover, setUploadingCover] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [initialColumnId, setInitialColumnId] = useState<string | undefined>(undefined);
+    const [versions, setVersions] = useState<any[]>([]);
+    const [versionFilter, setVersionFilter] = useState<string>(initialVersionFilter || 'all');
 
     // Column Editing State
     const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
@@ -91,11 +92,7 @@ const ProjectDetailsScreen = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedMemberFilters, setSelectedMemberFilters] = useState<string[]>([]);
     const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
-    const [isOpenPointsMenuOpen, setIsOpenPointsMenuOpen] = useState(false);
-    const [isCompletedPointsMenuOpen, setIsCompletedPointsMenuOpen] = useState(false);
     const filterMenuRef = useRef<HTMLDivElement>(null);
-    const openPointsMenuRef = useRef<HTMLDivElement>(null);
-    const completedPointsMenuRef = useRef<HTMLDivElement>(null);
     const [isHeaderMinimized, setIsHeaderMinimized] = useState(false);
     const kanbanRef = useRef<HTMLDivElement>(null);
 
@@ -150,21 +147,15 @@ const ProjectDetailsScreen = () => {
             if (filterMenuRef.current && !filterMenuRef.current.contains(event.target as Node)) {
                 setIsFilterMenuOpen(false);
             }
-            if (openPointsMenuRef.current && !openPointsMenuRef.current.contains(event.target as Node)) {
-                setIsOpenPointsMenuOpen(false);
-            }
-            if (completedPointsMenuRef.current && !completedPointsMenuRef.current.contains(event.target as Node)) {
-                setIsCompletedPointsMenuOpen(false);
-            }
         };
 
-        if (isFilterMenuOpen || isOpenPointsMenuOpen || isCompletedPointsMenuOpen) {
+        if (isFilterMenuOpen) {
             document.addEventListener('mousedown', handleClickOutside);
         }
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isFilterMenuOpen, isOpenPointsMenuOpen, isCompletedPointsMenuOpen]);
+    }, [isFilterMenuOpen]);
 
     useEffect(() => {
         if (editingColumnId && inputRef.current) {
@@ -209,9 +200,6 @@ const ProjectDetailsScreen = () => {
     const [selectedNewLeaderId, setSelectedNewLeaderId] = useState<string>('');
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
 
-    // Project Deletion State
-    const [isDeleteProjectModalOpen, setIsDeleteProjectModalOpen] = useState(false);
-    const [isDeletingProject, setIsDeletingProject] = useState(false);
     const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false);
     const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 
@@ -230,12 +218,41 @@ const ProjectDetailsScreen = () => {
     }, [id, isLeaderOrAdmin]);
 
     useEffect(() => {
+        if (!id) return;
+        getProjectVersions(id)
+            .then((data) => {
+                const activeVersions = data.filter((v: any) => v.status !== 'ARCHIVED');
+                setVersions(activeVersions);
+                if (!initialVersionFilter && activeVersions.length > 0) {
+                    const defaultVer = activeVersions.find((v: any) => v.status === 'IN_PROGRESS') ||
+                        activeVersions.find((v: any) => v.status === 'PLANNED') ||
+                        activeVersions[0];
+                    if (defaultVer) {
+                        setVersionFilter(defaultVer.id);
+                    }
+                }
+            })
+            .catch((err) => console.error("Failed to fetch versions in screen", err));
+    }, [id, initialVersionFilter]);
+
+    useEffect(() => {
+        if (initialVersionFilter) {
+            setVersionFilter(initialVersionFilter);
+        }
+    }, [initialVersionFilter]);
+
+    useEffect(() => {
         if (id) fetchKanban();
-    }, [id]);
+    }, [id, versionFilter]);
 
     const fetchKanban = async () => {
+        if (versionFilter === 'none') {
+            setColumns([]);
+            setLoadingKanban(false);
+            return;
+        }
         try {
-            const data = await getProjectKanban(id!);
+            const data = await getProjectKanban(id!, versionFilter);
             setColumns(data);
         } catch (err) {
             console.error("Failed to fetch kanban", err);
@@ -297,30 +314,6 @@ const ProjectDetailsScreen = () => {
         setInlineTaskTitle('');
     };
 
-    const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-
-            if (file.size > 5 * 1024 * 1024) {
-                toast.error('A imagem deve ter no máximo 5MB');
-                return;
-            }
-
-            setUploadingCover(true);
-            try {
-                const response = await uploadProjectCover(file);
-                await updateProject(id!, { coverUrl: response.url });
-                // We should refresh project details or just local state
-                window.location.reload(); // Quickest way to refresh everything including hook state
-                toast.success('Capa do projeto atualizada!');
-            } catch (error) {
-                console.error('Error upload:', error);
-                toast.error('Erro ao fazer upload da imagem.');
-            } finally {
-                setUploadingCover(false);
-            }
-        }
-    };
 
     const handleDeleteTask = (taskId: string) => {
         setTaskToDelete(taskId);
@@ -634,19 +627,19 @@ const ProjectDetailsScreen = () => {
         if (column.color && COLUMN_COLORS[column.color as keyof typeof COLUMN_COLORS]) {
             const accentMap: Record<string, string> = {
                 DEFAULT: '',
-                BLUE:   'bg-blue-500',
-                RED:    'bg-red-500',
+                BLUE: 'bg-blue-500',
+                RED: 'bg-red-500',
                 PURPLE: 'bg-purple-500',
-                AMBER:  'bg-amber-500',
-                GREEN:  'bg-emerald-500',
-                PINK:   'bg-pink-500',
+                AMBER: 'bg-amber-500',
+                GREEN: 'bg-emerald-500',
+                PINK: 'bg-pink-500',
                 INDIGO: 'bg-indigo-500',
-                CYAN:   'bg-cyan-500',
-                TEAL:   'bg-teal-500',
+                CYAN: 'bg-cyan-500',
+                TEAL: 'bg-teal-500',
                 ORANGE: 'bg-orange-500',
-                LIME:   'bg-lime-500',
-                ROSE:   'bg-rose-500',
-                SLATE:  'bg-slate-500',
+                LIME: 'bg-lime-500',
+                ROSE: 'bg-rose-500',
+                SLATE: 'bg-slate-500',
             };
             return {
                 accentColor: accentMap[column.color] || '',
@@ -745,19 +738,7 @@ const ProjectDetailsScreen = () => {
         }
     };
 
-    const handleDeleteProject = async () => {
-        setIsDeletingProject(true);
-        try {
-            await deleteProject(id!);
-            toast.success('Projeto excluído com sucesso.');
-            navigate('/projects');
-        } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Erro ao excluir projeto.');
-        } finally {
-            setIsDeletingProject(false);
-            setIsDeleteProjectModalOpen(false);
-        }
-    };
+
 
     return (
         <div className="flex-1 flex flex-col relative h-full">
@@ -771,12 +752,12 @@ const ProjectDetailsScreen = () => {
                             <span className="material-icons text-sm">group_add</span>
                         </div>
                         <span className="text-sm font-bold">
-                            {pendingRequestsCount === 1 
-                                ? "Existe 1 pessoa querendo entrar no projeto!" 
+                            {pendingRequestsCount === 1
+                                ? "Existe 1 pessoa querendo entrar no projeto!"
                                 : `Existem ${pendingRequestsCount} pessoas querendo entrar no projeto!`}
                         </span>
                     </div>
-                    <button 
+                    <button
                         onClick={() => setIsRequestsModalOpen(true)}
                         className="bg-primary text-white px-4 py-1.5 rounded-xl text-xs font-bold hover:bg-sky-500 transition-all shadow-lg shadow-primary/20"
                     >
@@ -792,67 +773,66 @@ const ProjectDetailsScreen = () => {
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
             >
-                <div className="max-w-full mx-auto relative z-10">
-                    <div className="flex flex-row justify-between items-center gap-3">
-                        <div className={`min-w-0 flex-1 transition-all duration-300 ${isHeaderMinimized ? 'hidden lg:block' : 'block'}`}>
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <button
-                                    onClick={() => navigate('/projects')}
-                                    title="Voltar para Projetos"
-                                    className="text-[10px] text-gray-400 hover:text-primary uppercase tracking-wider font-bold"
-                                >
-                                    Projetos
-                                </button>
-                                <span className="text-gray-300 dark:text-gray-600">/</span>
-                                <h1
-                                    className={`${isHeaderMinimized ? 'text-sm truncate max-w-[240px]' : 'text-base'} transition-all duration-300 font-display font-extrabold text-secondary dark:text-white truncate max-w-[420px]`}
-                                    title={project.title}
-                                >
-                                    {project.title}
-                                </h1>
-                                {!isHeaderMinimized && (
-                                    isLeaderOrAdmin ? (
-                                        <div className="w-24">
-                                            <Select
-                                                value={project.status}
-                                                onValueChange={async (val) => {
-                                                    const newStatus = val as ProjectStatus;
-                                                    try {
-                                                        await updateProject(id!, { status: newStatus });
-                                                        setProject({ ...project, status: newStatus });
-                                                        toast.success(`Status alterado para ${statusLabels[newStatus]}`);
-                                                    } catch (err: any) {
-                                                        toast.error(err.response?.data?.message || 'Erro ao alterar status');
-                                                    }
-                                                }}
-                                            >
-                                                <SelectTrigger className={cn(
-                                                    "h-6 text-[10px] font-bold uppercase tracking-wide border rounded-full",
-                                                    statusStyles[project.status as ProjectStatus] || 'bg-gray-100 text-gray-700'
-                                                )}>
-                                                    <SelectValue placeholder="Status" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="active">Ativo</SelectItem>
-                                                    <SelectItem value="inactive">Inativo</SelectItem>
-                                                    <SelectItem value="archived">Arquivado</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    ) : (
-                                        <span className={`${statusStyles[project.status as ProjectStatus] || 'bg-green-100 text-green-700'} px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-current inline-flex items-center justify-center`}>
-                                            {statusLabels[project.status as ProjectStatus] || project.status}
-                                        </span>
-                                    )
-                                )}
-                                {project.type && !isHeaderMinimized && (
-                                    <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border border-purple-200 dark:border-purple-800">
-                                        {project.type}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
 
+
+                {/* Toolbar */}
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 flex-wrap">
+                        {/* Seletor de Versão em Destaque */}
+                        <Select
+                            value={versionFilter}
+                            onValueChange={(val) => setVersionFilter(val)}
+                        >
+                            <SelectTrigger className="h-10 w-64 rounded-xl border-2 border-primary bg-primary/5 text-sm font-black text-primary dark:border-primary/40 dark:bg-primary/10 transition-all hover:bg-primary/10 focus:ring-2 focus:ring-primary/20">
+                                <SelectValue placeholder="Selecione a versão" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {versions.map((v: any) => (
+                                    <SelectItem key={v.id} value={v.id}>
+                                        {v.name}
+                                    </SelectItem>
+                                ))}
+                                <SelectItem value="all">Todas as tarefas</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        {/* Join Requests - For Leader and Admin */}
+                        {isLeaderOrAdmin && (
+                            <button
+                                onClick={() => navigate(`/project-requests/${id}`)}
+                                className="flex items-center gap-1.5 px-2 py-1 text-xs text-primary hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
+                            >
+                                <span className="material-icons text-sm">group_add</span>
+                                <span>Solicitações</span>
+                            </button>
+                        )}
+
+                        {/* Join Project Button */}
+                        {user && !isProjectMember && (
+                            <button
+                                type="button"
+                                onClick={async (e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    try {
+                                        await joinProject(id!);
+                                        toast.success('Você entrou no projeto com sucesso!');
+                                        window.location.reload(); // Reload to fetch correct member permissions and kanban
+                                    } catch (err: any) {
+                                        toast.error(err.response?.data?.message || 'Erro ao entrar no projeto.');
+                                    }
+                                }}
+                                title="Entrar no Projeto"
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors cursor-pointer z-10 relative shadow-sm font-medium"
+                            >
+                                <span className="material-icons text-sm">login</span>
+                                <span>Entrar no Projeto</span>
+                            </button>
+                        )}
+
+                    </div>
+                    <div className="flex items-center gap-3">
+                        {/* Lista de Membros e Líder */}
                         <div className="flex items-center gap-2 shrink-0">
                             <div
                                 className="flex -space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
@@ -892,180 +872,7 @@ const ProjectDetailsScreen = () => {
                                 </span>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                {/* Toolbar */}
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-3 flex-wrap">
-                        {/* Points Display - For all project members */}
-                        {(user && (project?.leaderId === user.id || project?.leader?.id === user.id || project?.members?.some((m: any) => m.user?.id === user.id))) && (
-                            <>
-                                {/* Points per Open Task */}
-                                {(user && (project?.leaderId === user.id || project?.leader?.id === user.id)) ? (
-                                    <div className="relative" ref={openPointsMenuRef}>
-                                        <button
-                                            onClick={() => { setIsOpenPointsMenuOpen(!isOpenPointsMenuOpen); setIsCompletedPointsMenuOpen(false); }}
-                                            className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                                        >
-                                            <span>pontos por criar Task:</span>
-                                            <span className="font-bold text-primary">{project?.pointsPerOpenTask || 50}</span>
-                                            <span className="material-icons text-sm text-gray-400">expand_more</span>
-                                        </button>
-                                        {isOpenPointsMenuOpen && (
-                                            <div className="absolute left-0 top-7 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                                                {[25, 50, 100, 200].map((val) => (
-                                                    <button
-                                                        key={val}
-                                                        onClick={async () => {
-                                                            try {
-                                                                await updateProject(id!, { pointsPerOpenTask: val });
-                                                                setProject((prev: any) => ({ ...prev, pointsPerOpenTask: val }));
-                                                                toast.success(`Criação: ${val}`);
-                                                                setIsOpenPointsMenuOpen(false);
-                                                            } catch (err) {
-                                                                toast.error('Erro');
-                                                            }
-                                                        }}
-                                                        className={`w-full px-3 py-1 text-xs text-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${(project?.pointsPerOpenTask || 50) === val ? 'bg-primary/10 text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                                                    >
-                                                        {val}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300">
-                                        <span>pontos por criar Task:</span>
-                                        <span className="font-bold text-primary">{project?.pointsPerOpenTask || 50}</span>
-                                    </div>
-                                )}
-
-                                {/* Points per Completed Task */}
-                                {(user && (project?.leaderId === user.id || project?.leader?.id === user.id)) ? (
-                                    <div className="relative" ref={completedPointsMenuRef}>
-                                        <button
-                                            onClick={() => { setIsCompletedPointsMenuOpen(!isCompletedPointsMenuOpen); setIsOpenPointsMenuOpen(false); }}
-                                            className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                                        >
-                                            <span>pontos por conclusão:</span>
-                                            <span className="font-bold text-primary">{project?.pointsPerCompletedTask || 50}</span>
-                                            <span className="material-icons text-sm text-gray-400">expand_more</span>
-                                        </button>
-                                        {isCompletedPointsMenuOpen && (
-                                            <div className="absolute left-0 top-7 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                                                {[25, 50, 100, 200].map((val) => (
-                                                    <button
-                                                        key={val}
-                                                        onClick={async () => {
-                                                            try {
-                                                                await updateProject(id!, { pointsPerCompletedTask: val });
-                                                                setProject((prev: any) => ({ ...prev, pointsPerCompletedTask: val }));
-                                                                toast.success(`Conclusão: ${val}`);
-                                                                setIsCompletedPointsMenuOpen(false);
-                                                            } catch (err) {
-                                                                toast.error('Erro');
-                                                            }
-                                                        }}
-                                                        className={`w-full px-3 py-1 text-xs text-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${(project?.pointsPerCompletedTask || 50) === val ? 'bg-primary/10 text-primary font-bold' : 'text-gray-600 dark:text-gray-300'}`}
-                                                    >
-                                                        {val}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-300">
-                                        <span>pontos por conclusão:</span>
-                                        <span className="font-bold text-primary">{project?.pointsPerCompletedTask || 50}</span>
-                                    </div>
-                                )}
-                            </>
-                        )}
-
-                        {/* Transfer Leadership - Only for Leader */}
-                        {isLeader && (
-                            <div className="flex gap-1">
-                                <button
-                                    onClick={() => setIsTransferModalOpen(true)}
-                                    className="flex items-center gap-1.5 px-2 py-1 text-xs text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors cursor-pointer"
-                                >
-                                    <span className="material-icons text-sm">manage_accounts</span>
-                                    <span>Transferir Liderança</span>
-                                </button>
-                                <button
-                                    onClick={() => setIsDeleteProjectModalOpen(true)}
-                                    className="flex items-center gap-1.5 px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
-                                    title="Excluir Projeto"
-                                >
-                                    <span className="material-icons text-sm">delete_forever</span>
-                                    <span>Excluir</span>
-                                </button>
-                            </div>
-                        )}
-
-                        {/* Join Requests - For Leader and Admin */}
-                        {isLeaderOrAdmin && (
-                            <button
-                                onClick={() => navigate(`/project-requests/${id}`)}
-                                className="flex items-center gap-1.5 px-2 py-1 text-xs text-primary hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
-                            >
-                                <span className="material-icons text-sm">group_add</span>
-                                <span>Solicitações</span>
-                            </button>
-                        )}
-
-                        {/* Leave Project Button */}
-                        {user && isProjectMember && (
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    if (isLeader) {
-                                        toast.error('Líderes de projeto não podem sair sem antes transferir a liderança.');
-                                    } else {
-                                        setIsLeaveProjectModalOpen(true);
-                                    }
-                                }}
-                                title={isLeader ? "Líderes não podem sair sem transferir a liderança" : "Sair do Projeto"}
-                                className={`flex items-center gap-1.5 px-2 py-1 text-xs rounded-lg transition-colors cursor-pointer z-10 relative ${isLeader
-                                    ? 'text-gray-400 bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60'
-                                    : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                                    }`}
-                            >
-                                <span className="material-icons text-sm">logout</span>
-                                <span>Sair do Projeto</span>
-                            </button>
-                        )}
-
-                        {/* Join Project Button */}
-                        {user && !isProjectMember && (
-                            <button
-                                type="button"
-                                onClick={async (e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    try {
-                                        await joinProject(id!);
-                                        toast.success('Você entrou no projeto com sucesso!');
-                                        window.location.reload(); // Reload to fetch correct member permissions and kanban
-                                    } catch (err: any) {
-                                        toast.error(err.response?.data?.message || 'Erro ao entrar no projeto.');
-                                    }
-                                }}
-                                title="Entrar no Projeto"
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors cursor-pointer z-10 relative shadow-sm font-medium"
-                            >
-                                <span className="material-icons text-sm">login</span>
-                                <span>Entrar no Projeto</span>
-                            </button>
-                        )}
-
-                    </div>
-                    <div className="flex items-center gap-2">
                         <div className="relative">
                             <span className="material-icons absolute left-2.5 top-1.5 text-gray-400 text-sm">search</span>
                             <input
@@ -1149,32 +956,27 @@ const ProjectDetailsScreen = () => {
                             )}
                         </div>
 
-                        {/* Alterar Capa - Apenas para líder/admin */}
-                        {isLeaderOrAdmin && (
-                            <label
-                                className="cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors border border-gray-200 dark:border-gray-700 relative z-20"
+                        {/* Leave Project Button (Icon only, placed to the right of filter) */}
+                        {user && isProjectMember && (
+                            <button
+                                type="button"
                                 onClick={(e) => {
+                                    e.preventDefault();
                                     e.stopPropagation();
-                                    const input = e.currentTarget.querySelector('input');
-                                    if (input && !uploadingCover) input.click();
+                                    if (isLeader) {
+                                        toast.error('Líderes de projeto não podem sair sem antes transferir a liderança.');
+                                    } else {
+                                        setIsLeaveProjectModalOpen(true);
+                                    }
                                 }}
+                                title={isLeader ? "Líderes não podem sair sem transferir a liderança" : "Sair do Projeto"}
+                                className={`p-1.5 rounded-lg transition-colors cursor-pointer relative ${isLeader
+                                    ? 'text-gray-400 bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60'
+                                    : 'text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20'
+                                    }`}
                             >
-                                <input
-                                    type="file"
-                                    className="hidden absolute inset-0 opacity-0 w-0 h-0"
-                                    accept="image/*"
-                                    onChange={handleCoverUpload}
-                                    disabled={uploadingCover}
-                                />
-                                {uploadingCover ? (
-                                    <Loader className="animate-spin" size={14} />
-                                ) : (
-                                    <>
-                                        <Camera size={14} />
-                                        <span className="text-xs font-medium hidden sm:inline">Capa</span>
-                                    </>
-                                )}
-                            </label>
+                                <span className="material-icons text-lg">logout</span>
+                            </button>
                         )}
 
                         {/* Editar Projeto - Apenas para líder/admin */}
@@ -1361,9 +1163,8 @@ const ProjectDetailsScreen = () => {
                                                                                 {...provided.draggableProps}
                                                                                 {...provided.dragHandleProps}
                                                                                 onClick={() => { setSelectedTask(task); setIsTaskDetailsOpen(true); }}
-                                                                                className={`bg-white dark:bg-[#22272b] rounded-lg shadow-sm border border-[#dfe1e6]/80 dark:border-gray-700/60 hover:border-[#b3b9c4] dark:hover:border-gray-500 cursor-pointer group relative transition-all duration-150 p-3 ${
-                                                                                    snapshot.isDragging ? 'shadow-2xl ring-2 ring-blue-500/40 rotate-1 scale-[1.02] z-50' : ''
-                                                                                } ${task.completedAt ? 'opacity-75' : ''}`}
+                                                                                className={`bg-white dark:bg-[#22272b] rounded-lg shadow-sm border border-[#dfe1e6]/80 dark:border-gray-700/60 hover:border-[#b3b9c4] dark:hover:border-gray-500 cursor-pointer group relative transition-all duration-150 p-3 ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-blue-500/40 rotate-1 scale-[1.02] z-50' : ''
+                                                                                    } ${task.completedAt ? 'opacity-75' : ''}`}
                                                                                 style={{
                                                                                     ...provided.draggableProps.style,
                                                                                     cursor: snapshot.isDragging ? 'grabbing' : 'pointer',
@@ -1657,17 +1458,9 @@ const ProjectDetailsScreen = () => {
                 }}
             />
 
-            <ConfirmationModal
-                isOpen={isDeleteProjectModalOpen}
-                onClose={() => setIsDeleteProjectModalOpen(false)}
-                onConfirm={handleDeleteProject}
-                title="Excluir Projeto"
-                message={`Tem certeza que deseja excluir permanentemente o projeto "${project.title}"? Esta ação não pode ser desfeita e todos os dados relacionados (tarefas, comentários, etc.) serão perdidos.`}
-                confirmText={isDeletingProject ? "Excluindo..." : "Excluir Permanentemente"}
-                type="danger"
-            />
 
-            <ProjectRequestsModal 
+
+            <ProjectRequestsModal
                 isOpen={isRequestsModalOpen}
                 onClose={() => {
                     setIsRequestsModalOpen(false);

@@ -16,6 +16,13 @@ export const createProjectSchema = z.object({
     coverUrl: z.string().optional(),
     visibility: z.enum(['PRIVATE', 'PUBLIC_VIEW', 'PUBLIC_LIKE', 'PUBLIC_OPEN']).optional(),
     groupId: uuidSchema.optional(),
+    initialVersion: z.object({
+      name: z.string().min(1, 'Version name is required').max(120),
+      description: z.string().max(2000).optional().nullable(),
+      status: z.enum(['PLANNED', 'IN_PROGRESS', 'LOCKED', 'RELEASED', 'ARCHIVED']).optional(),
+      startDate: z.string().datetime().nullable().optional(),
+      dueDate: z.string().datetime().nullable().optional(),
+    }).optional(),
   }),
 });
 

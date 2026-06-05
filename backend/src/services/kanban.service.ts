@@ -2,7 +2,7 @@ import { TaskStatus, Role } from '@prisma/client';
 import prisma from '../utils/prisma';
 import { isUserProjectMember, findProjectById } from '../repositories/project.repository';
 
-export const getProjectBoard = async (projectId: string) => {
+export const getProjectBoard = async (projectId: string, versionFilter: string = 'all') => {
     let columns = await prisma.kanbanColumn.findMany({
         where: { projectId },
         orderBy: { order: 'asc' },
@@ -12,11 +12,26 @@ export const getProjectBoard = async (projectId: string) => {
         columns = await createDefaultColumns(projectId);
     }
 
+    const taskWhere: any = { projectId };
+    if (versionFilter === 'unversioned') {
+        taskWhere.versionId = null;
+    } else if (versionFilter && versionFilter !== 'all') {
+        const version = await prisma.projectVersion.findFirst({
+            where: { id: versionFilter, projectId },
+            select: { id: true },
+        });
+        if (!version) {
+            throw { statusCode: 404, message: 'Versão não encontrada neste projeto.' };
+        }
+        taskWhere.versionId = versionFilter;
+    }
+
     const tasks = await prisma.task.findMany({
-        where: { projectId },
+        where: taskWhere,
         include: {
             assignedTo: { select: { id: true, name: true, avatarUrl: true, avatarColor: true } },
             createdBy: { select: { id: true, name: true } },
+            version: { select: { id: true, name: true, status: true, dueDate: true } },
             assignees: {
                 include: {
                     user: { select: { id: true, name: true, avatarUrl: true } },

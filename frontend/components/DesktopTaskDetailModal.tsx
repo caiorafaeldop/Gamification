@@ -24,6 +24,9 @@ interface DesktopTaskDetailModalProps {
   handleColumnChange: (id: string) => void;
   showColumnDropdown: boolean;
   setShowColumnDropdown: (value: boolean) => void;
+  versionId: string;
+  versions: any[];
+  handleVersionChange: (id: string) => void;
   
   assignees: any[];
   toggleAssignee: (user: any, type: string) => void;
@@ -62,6 +65,7 @@ export const DesktopTaskDetailModal: React.FC<DesktopTaskDetailModalProps> = ({
   title, setTitle, handleTitleBlur, isEditingTitle, setIsEditingTitle,
   description, setDescription, handleDescriptionBlur, isEditingDescription, setIsEditingDescription, handleImageUpload, uploadingImage,
   currentColumn, columns, selectedColumnId, handleColumnChange, showColumnDropdown, setShowColumnDropdown,
+  versionId, versions, handleVersionChange,
   assignees, toggleAssignee, showMemberPicker, setShowMemberPicker, projectMembers, activeAddGroup, setActiveAddGroup,
   startDate, dueDate, handleDateChange,
   durationMinutes, setDurationMinutes, handleDurationChange,
@@ -210,29 +214,52 @@ export const DesktopTaskDetailModal: React.FC<DesktopTaskDetailModalProps> = ({
         {/* Header */}
         <div className="flex items-start justify-between p-4 pb-2 border-b border-gray-100 dark:border-gray-800">
           <div className="flex-1">
-            <div className="relative inline-block mb-2" ref={columnDropdownRef}>
-              <button
-                onClick={() => setShowColumnDropdown(!showColumnDropdown)}
-                className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors"
-              >
-                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                na lista <span className="font-semibold">{currentColumn?.title || 'Sem coluna'}</span>
-                <ChevronDown size={12} />
-              </button>
-              
-              {showColumnDropdown && (
-                <div className="absolute top-full left-0 mt-1 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 min-w-[160px]">
-                  {columns.map((col: any) => (
-                    <button
-                      key={col.id}
-                      onClick={() => handleColumnChange(col.id)}
-                      className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${col.id === selectedColumnId ? 'bg-primary/10 text-primary' : ''}`}
-                    >
-                      {col.title}
-                    </button>
-                  ))}
-                </div>
-              )}
+            <div className="mb-2 flex flex-wrap items-center gap-3">
+              <div className="relative inline-block" ref={columnDropdownRef}>
+                <button
+                  onClick={() => setShowColumnDropdown(!showColumnDropdown)}
+                  className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors"
+                >
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  na lista <span className="font-semibold">{currentColumn?.title || 'Sem coluna'}</span>
+                  <ChevronDown size={12} />
+                </button>
+                
+                {showColumnDropdown && (
+                  <div className="absolute top-full left-0 mt-1 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 min-w-[160px]">
+                    {columns.map((col: any) => (
+                      <button
+                        key={col.id}
+                        onClick={() => handleColumnChange(col.id)}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${col.id === selectedColumnId ? 'bg-primary/10 text-primary' : ''}`}
+                      >
+                        {col.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <label className="flex items-center gap-1 text-xs text-gray-500">
+                <span>versão</span>
+                <select
+                  value={versionId || 'unversioned'}
+                  onChange={(event) => handleVersionChange(event.target.value)}
+                  className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-700 outline-none transition-colors hover:border-primary focus:border-primary dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                >
+                  <option value="unversioned">Sem versão</option>
+                  {versions
+                    .filter((version: any) => (
+                      version.id === versionId ||
+                      (version.status !== 'RELEASED' && version.status !== 'ARCHIVED')
+                    ))
+                    .map((version: any) => (
+                      <option key={version.id} value={version.id}>
+                        {version.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
             </div>
             
             {isEditingTitle ? (

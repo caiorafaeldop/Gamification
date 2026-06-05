@@ -22,6 +22,32 @@ export interface Project {
   likeCount?: number;
   liked?: boolean;
   groupId?: string | null;
+  versions?: ProjectVersion[];
+}
+
+export type ProjectVersionStatus = 'PLANNED' | 'IN_PROGRESS' | 'LOCKED' | 'RELEASED' | 'ARCHIVED';
+
+export interface ProjectVersion {
+  id: string;
+  name: string;
+  description?: string | null;
+  status: ProjectVersionStatus;
+  startDate?: string | null;
+  dueDate?: string | null;
+  releasedAt?: string | null;
+  projectId: string;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { tasks: number };
+  tasks?: Array<{ id: string; status: string; completedAt?: string | null }>;
+}
+
+export interface InitialProjectVersionInput {
+  name: string;
+  description?: string | null;
+  status?: ProjectVersionStatus;
+  startDate?: string | null;
+  dueDate?: string | null;
 }
 
 export const getProjects = async () => {
@@ -34,7 +60,7 @@ export const getProjectDetails = async (id: string) => {
   return response.data;
 };
 
-export const createProject = async (data: Partial<Project>) => {
+export const createProject = async (data: Partial<Project> & { initialVersion?: InitialProjectVersionInput }) => {
   const response = await api.post('/projects', data);
   return response.data;
 };
@@ -71,5 +97,32 @@ export const deleteProject = async (projectId: string) => {
 
 export const transferProjectOwnership = async (projectId: string, newLeaderId: string) => {
   const response = await api.put(`/projects/${projectId}/transfer-ownership`, { newLeaderId });
+  return response.data;
+};
+
+export const getProjectVersions = async (projectId: string): Promise<ProjectVersion[]> => {
+  const response = await api.get(`/projects/${projectId}/versions`);
+  return response.data;
+};
+
+export const createProjectVersion = async (
+  projectId: string,
+  data: Partial<ProjectVersion>,
+): Promise<ProjectVersion> => {
+  const response = await api.post(`/projects/${projectId}/versions`, data);
+  return response.data;
+};
+
+export const updateProjectVersion = async (
+  projectId: string,
+  versionId: string,
+  data: Partial<ProjectVersion>,
+): Promise<ProjectVersion> => {
+  const response = await api.patch(`/projects/${projectId}/versions/${versionId}`, data);
+  return response.data;
+};
+
+export const deleteProjectVersion = async (projectId: string, versionId: string) => {
+  const response = await api.delete(`/projects/${projectId}/versions/${versionId}`);
   return response.data;
 };

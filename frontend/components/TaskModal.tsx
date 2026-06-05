@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, User, AlignLeft, Folder, X, Check, Clock, Zap, BarChart3, Paperclip, Send, Trash2, Image as ImageIcon, ChevronDown, ChevronUp, Tag, Plus, CheckSquare, Users, MoreVertical } from 'lucide-react';
+import { Calendar, User, AlignLeft, Folder, X, Check, Clock, Zap, Paperclip, Send, Trash2, Image as ImageIcon, ChevronDown, ChevronUp, Tag, Plus, CheckSquare, Users, MoreVertical } from 'lucide-react';
 import { createTask, updateTask, getTask } from '../services/task.service';
 import { getComments, createComment, deleteComment } from '../services/comment.service';
 import { uploadFile } from '../services/upload.service';
 import { useProjects } from '../hooks/useProjects';
+import { getProjectVersions, ProjectVersion } from '../services/project.service';
 import { getAllUsers, getProfile } from '../services/user.service';
 import MemberSelect from './MemberSelect';
 import toast from 'react-hot-toast';
@@ -17,10 +18,23 @@ interface TaskModalProps {
   task?: any; // Se passado, modo edição; se não, modo criação
   projectId?: string;
   initialColumnId?: string;
+  initialVersionId?: string;
   projectMembers?: any[];
 }
 
-const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProjectId, initialColumnId, projectMembers }: TaskModalProps) => {
+const pickTaskVersionId = (versions: ProjectVersion[], preferredId?: string) => {
+  if (preferredId && versions.some((version) => version.id === preferredId && version.status !== 'RELEASED' && version.status !== 'ARCHIVED')) {
+    return preferredId;
+  }
+
+  return (
+    versions.find((version) => version.status === 'IN_PROGRESS') ||
+    versions.find((version) => version.status === 'PLANNED') ||
+    versions.find((version) => version.status === 'LOCKED')
+  )?.id || '';
+};
+
+const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProjectId, initialColumnId, initialVersionId, projectMembers }: TaskModalProps) => {
   const isEditMode = !!task;
   const { projects, loading: loadingProjects } = useProjects();
   const [users, setUsers] = useState<any[]>([]);
@@ -35,6 +49,8 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
   const [description, setDescription] = useState('');
   const [projectId, setProjectId] = useState(defaultProjectId || '');
   const [assignedToId, setAssignedToId] = useState('');
+  const [versionId, setVersionId] = useState(initialVersionId || '');
+  const [versions, setVersions] = useState<ProjectVersion[]>([]);
   const [estimatedTime, setEstimatedTime] = useState('');
   const [deadline, setDeadline] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -77,6 +93,7 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
         setDescription(task.description || '');
         setProjectId(task.projectId || defaultProjectId || '');
         setAssignedToId(task.assignedTo?.id || task.assignedToId || '');
+        setVersionId(task.versionId || task.version?.id || '');
         setEstimatedTime(task.estimatedTimeMinutes ? String(task.estimatedTimeMinutes / 60) : '');
         setDeadline(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '');
         
@@ -89,6 +106,9 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
         fetchComments();
       } else {
         resetForm();
+        if (initialVersionId) {
+          setVersionId(initialVersionId);
+        }
       }
     } else {
       setIsVisible(false);
@@ -100,6 +120,25 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
       setProjectId(defaultProjectId);
     }
   }, [defaultProjectId, isEditMode]);
+
+  useEffect(() => {
+    if (!projectId) {
+      setVersions([]);
+      return;
+    }
+
+    getProjectVersions(projectId)
+      .then((data) => {
+        setVersions(data);
+        if (!isEditMode) {
+          setVersionId((current) => current || pickTaskVersionId(data, initialVersionId));
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch project versions', err);
+        setVersions([]);
+      });
+  }, [projectId, isEditMode, initialVersionId]);
 
   const fetchUsers = async () => {
     try {
@@ -164,10 +203,18 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
     }
 
     try {
+      const openVersions = versions.filter((version) => version.status !== 'RELEASED' && version.status !== 'ARCHIVED');
+      if (openVersions.length > 0 && !versionId) {
+        toast.error('Escolha a versão alvo antes de salvar a tarefa.');
+        setSubmitting(false);
+        return;
+      }
+
       const payload: any = {
         title,
         description,
         assignedToId: assignedToId || undefined,
+        versionId: versionId || null,
         difficulty: mapLevelToDifficulty(taskLevel),
         estimatedTimeMinutes: estimatedTime ? parseFloat(estimatedTime) * 60 : undefined,
         dueDate: deadline ? new Date(deadline).toISOString() : undefined,
@@ -191,7 +238,13 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
       onClose();
     } catch (err: any) {
       console.error(err);
-      toast.error(err.response?.data?.message || (isEditMode ? "Erro ao atualizar tarefa." : "Erro ao criar tarefa."));
+      const validationErrors = err.response?.data?.errors;
+      if (validationErrors && Array.isArray(validationErrors)) {
+        const errorMsg = validationErrors.map((e: any) => `${e.path}: ${e.message}`).join(', ');
+        toast.error(`Erro de validação: ${errorMsg}`);
+      } else {
+        toast.error(err.response?.data?.message || (isEditMode ? "Erro ao atualizar tarefa." : "Erro ao criar tarefa."));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -201,6 +254,7 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
     setTitle('');
     setDescription('');
     setAssignedToId('');
+    setVersionId(initialVersionId || '');
     setEstimatedTime('');
     setDeadline('');
     setTaskLevel('medium');
@@ -340,8 +394,8 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
       ></div>
 
       {/* Modal Content */}
-      <div className={`relative bg-white dark:bg-surface-dark rounded-[2rem] w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl transition-all duration-300 transform ${isVisible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-4 opacity-0 scale-95'}`}>
-        <header className="flex-none bg-white dark:bg-surface-dark border-b border-gray-100 dark:border-gray-800 p-6 flex items-center justify-between z-10">
+      <div className={`relative bg-white dark:bg-surface-dark rounded-[2.5rem] overflow-hidden w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl transition-all duration-300 transform ${isVisible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-4 opacity-0 scale-95'}`}>
+        <header className="flex-none bg-white dark:bg-surface-dark border-b border-gray-100 dark:border-gray-800 px-6 py-4 flex items-center justify-between z-10">
           <div>
             <h2 className="text-2xl font-display font-extrabold text-secondary dark:text-white">
               {isEditMode ? 'Editar Tarefa' : 'Nova Tarefa'}
@@ -360,8 +414,8 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
-          <form id="task-form" onSubmit={handleSubmit} className="space-y-6">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-5">
+          <form id="task-form" onSubmit={handleSubmit} className="space-y-4">
 
             {/* Title */}
             <div>
@@ -374,7 +428,7 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 autoFocus
-                className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
+                className="w-full px-4 h-10 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400 text-sm"
                 placeholder="Ex: Implementar autenticação via Google"
               />
             </div>
@@ -402,53 +456,48 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
                 />
               </div>
               <textarea
-                rows={4}
+                rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400 resize-none"
+                className="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400 resize-none text-sm"
                 placeholder="Descreva o que precisa ser feito, critérios de aceitação e recursos necessários..."
               />
-              {description && (
-                <div className="mt-2 p-3 bg-gray-50 dark:bg-background-dark rounded-lg border border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-400">
-                  <div className="text-[10px] uppercase font-bold text-gray-400 mb-1">Pré-visualização</div>
-                  {renderContentWithImages(description)}
-                </div>
-              )}
               {uploading && <div className="text-xs text-primary animate-pulse mt-1">Enviando imagem...</div>}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Project Select - Only show if NO default project and NOT edit mode */}
-              {!defaultProjectId && !isEditMode && (
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <Folder size={16} className="text-primary" /> Projeto
-                  </label>
-                  {loadingProjects ? (
-                    <div className="h-12 w-full bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"></div>
-                  ) : (
-                    <Select
-                      value={projectId}
-                      onValueChange={(val) => setProjectId(val)}
-                    >
-                      <SelectTrigger className="w-full h-12 bg-gray-50 dark:bg-background-dark border-gray-200 dark:border-gray-700">
-                        <SelectValue placeholder="Selecione um projeto" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {projects.map((project: any) => (
-                          <SelectItem key={project.id} value={project.id}>{project.title}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-              )}
-
-              {/* Assignee Select */}
-              <div className={(defaultProjectId || isEditMode) ? "md:col-span-2" : ""}>
+            {/* Project Select - Only show if NO default project and NOT edit mode */}
+            {!defaultProjectId && !isEditMode && (
+              <div className="mb-6">
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <User size={16} className="text-primary" /> Responsável
+                  <Folder size={16} className="text-primary" /> Projeto
+                </label>
+                {loadingProjects ? (
+                  <div className="h-12 w-full bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"></div>
+                ) : (
+                  <Select
+                    value={projectId}
+                    onValueChange={(val) => setProjectId(val)}
+                  >
+                    <SelectTrigger className="w-full h-10 bg-gray-50 dark:bg-background-dark border-gray-200 dark:border-gray-700">
+                      <SelectValue placeholder="Selecione um projeto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.map((project: any) => (
+                        <SelectItem key={project.id} value={project.id}>{project.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
+
+            {/* Atribuído e Versão alvo lado a lado */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Assignee Select */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <User size={16} className="text-primary" /> Atribuído
                 </label>
                 <MemberSelect
                   members={users}
@@ -457,50 +506,50 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
                   loading={loadingUsers}
                   placeholder={projectMembers ? 'Selecionar membro do projeto...' : 'Atribuir a...'}
                   allowUnassigned={true}
-                  unassignedLabel="Sem responsável"
+                  unassignedLabel="Sem atribuição"
                 />
               </div>
-            </div>
 
-            {/* Task Level & Points */}
-            <div className="bg-sky-50 dark:bg-sky-900/10 rounded-xl p-4 border border-sky-100 dark:border-sky-900/30">
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                <BarChart3 size={16} className="text-primary" /> Nível da Tarefa
-              </label>
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                {[
-                  { id: 'basic', label: 'Básica', pts: 50 },
-                  { id: 'medium', label: 'Média', pts: 100 },
-                  { id: 'large', label: 'Grande', pts: 200 }
-                ].map((level) => (
-                  <button
-                    key={level.id}
-                    type="button"
-                    onClick={() => setTaskLevel(level.id as any)}
-                    className={`relative overflow-hidden py-3 px-2 rounded-lg border-2 transition-all text-center ${taskLevel === level.id
-                      ? 'border-primary bg-white dark:bg-surface-dark shadow-md'
-                      : 'border-transparent bg-white/50 dark:bg-white/5 text-gray-500 hover:bg-white hover:shadow-sm'
-                      }`}
-                  >
-                    <div className="text-xs font-bold uppercase tracking-wider mb-1 text-gray-500 dark:text-gray-400">{level.label}</div>
-                    <div className={`text-lg font-black ${taskLevel === level.id ? 'text-primary' : 'text-gray-400'}`}>
-                      {level.pts} 🪙
-                    </div>
-                    {taskLevel === level.id && (
-                      <div className="absolute top-0 right-0 p-1">
-                        <div className="w-2 h-2 rounded-full bg-primary"></div>
-                      </div>
-                    )}
-                  </button>
-                ))}
+              {/* Versão Alvo */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <Tag size={16} className="text-primary" /> Versão alvo
+                </label>
+                <Select
+                  value={versionId || 'unversioned'}
+                  onValueChange={(val) => setVersionId(val === 'unversioned' ? '' : val)}
+                  disabled={!projectId}
+                >
+                  <SelectTrigger className="h-10 w-full border-slate-200 bg-white dark:border-slate-700 dark:bg-background-dark">
+                    <SelectValue placeholder="Selecione a versão alvo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem
+                      value="unversioned"
+                      disabled={versions.some((version) => version.status !== 'RELEASED' && version.status !== 'ARCHIVED')}
+                    >
+                      Sem versão
+                    </SelectItem>
+                    {versions
+                      .filter((version) => (
+                        version.id === versionId ||
+                        (version.status !== 'RELEASED' && version.status !== 'ARCHIVED')
+                      ))
+                      .map((version) => (
+                        <SelectItem key={version.id} value={version.id}>
+                          {version.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-4">
               {/* Estimated Time */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <Clock size={16} className="text-primary" /> Duração (h)
+                  <Clock size={16} className="text-primary" /> Duração (h) (Opcional)
                 </label>
                 <input
                   type="number"
@@ -508,7 +557,7 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
                   step="0.5"
                   value={estimatedTime}
                   onChange={(e) => setEstimatedTime(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
+                  className="w-full px-4 h-10 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400 text-sm"
                   placeholder="Ex: 4"
                 />
               </div>
@@ -516,13 +565,13 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
               {/* Deadline */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <Calendar size={16} className="text-primary" /> Prazo
+                  <Calendar size={16} className="text-primary" /> Prazo (Opcional)
                 </label>
                 <input
                   type="date"
                   value={deadline}
                   onChange={(e) => setDeadline(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400"
+                  className="w-full px-4 h-10 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-secondary dark:text-white placeholder-gray-400 text-sm"
                 />
               </div>
             </div>
@@ -625,11 +674,11 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
           </form>
         </div>
 
-        <div className="flex-none bg-white dark:bg-surface-dark border-t border-gray-100 dark:border-gray-800 p-6 flex items-center justify-end gap-4">
+        <div className="flex-none bg-white dark:bg-surface-dark border-t border-gray-100 dark:border-gray-800 px-6 py-4 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+            className="px-5 h-10 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-sm font-bold hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             disabled={submitting}
           >
             Cancelar
@@ -638,9 +687,9 @@ const TaskModal = ({ isOpen, onClose, onSuccess, task, projectId: defaultProject
             type="button"
             onClick={() => handleSubmit()}
             disabled={submitting}
-            className="px-8 py-3 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:bg-blue-600 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 h-10 rounded-xl bg-primary text-white text-sm font-bold shadow-lg shadow-primary/30 hover:bg-blue-600 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? <Clock size={20} className="animate-spin" /> : <Check size={20} />}
+            {submitting ? <Clock size={16} className="animate-spin" /> : <Check size={16} />}
             {submitting ? (isEditMode ? 'Salvando...' : 'Criando...') : (isEditMode ? 'Salvar' : 'Criar')}
           </button>
         </div>

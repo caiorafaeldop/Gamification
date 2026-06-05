@@ -4,7 +4,8 @@ import { getProjectBoard, createColumnService, updateColumnService, deleteColumn
 export const getProjectKanban = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { projectId } = req.params;
-    const result = await getProjectBoard(projectId);
+    const versionFilter = typeof req.query.versionId === 'string' ? req.query.versionId : 'all';
+    const result = await getProjectBoard(projectId, versionFilter);
     res.json(result);
   } catch (error) {
     next(error);

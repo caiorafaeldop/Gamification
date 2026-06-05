@@ -3,6 +3,7 @@ import { X, Calendar, Clock, Paperclip, Users, Send, Trash2, Link, ChevronDown, 
 import { updateTask } from '../services/task.service';
 import { getComments, createComment, deleteComment } from '../services/comment.service';
 import { uploadImage } from '../services/upload.service';
+import { getProjectVersions, ProjectVersion } from '../services/project.service';
 import toast from 'react-hot-toast';
 
 interface TaskDetailModalProps {
@@ -34,6 +35,8 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [selectedColumnId, setSelectedColumnId] = useState('');
   const [showColumnDropdown, setShowColumnDropdown] = useState(false);
+  const [versionId, setVersionId] = useState('');
+  const [versions, setVersions] = useState<ProjectVersion[]>([]);
   
   // Campos Trello
   const [dueDate, setDueDate] = useState('');
@@ -68,6 +71,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
       setTitle(task.title || '');
       setDescription(task.description || '');
       setSelectedColumnId(task.columnId || '');
+      setVersionId(task.versionId || task.version?.id || '');
       setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : '');
       setStartDate(task.startDate ? new Date(task.startDate).toISOString().slice(0, 10) : '');
       setDurationMinutes(task.durationMinutes || '');
@@ -93,6 +97,20 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
       fetchComments();
     }
   }, [isOpen, task]);
+
+  useEffect(() => {
+    if (!isOpen || !task?.projectId) {
+      setVersions([]);
+      return;
+    }
+
+    getProjectVersions(task.projectId)
+      .then(setVersions)
+      .catch((err) => {
+        console.error('Failed to fetch project versions', err);
+        setVersions([]);
+      });
+  }, [isOpen, task?.projectId]);
   
   // Fechar dropdowns ao clicar fora - Moved specific refs logic to components, keeping global listeners minimal if needed or removing if generic.
   // Actually, handleColumnChange etc closes dropdowns. Components handle their own clicks outside for dropdowns now.
@@ -167,6 +185,18 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     setSelectedColumnId(columnId);
     setShowColumnDropdown(false);
     await handleSave('columnId', columnId);
+  };
+
+  const handleVersionChange = async (value: string) => {
+    const hasOpenVersions = versions.some((version) => version.status !== 'RELEASED' && version.status !== 'ARCHIVED');
+    if (value === 'unversioned' && hasOpenVersions) {
+      toast.error('Escolha uma versão alvo para manter a tarefa fora da triagem.');
+      return;
+    }
+
+    const nextVersionId = value === 'unversioned' ? '' : value;
+    setVersionId(nextVersionId);
+    await handleSave('versionId', nextVersionId || null);
   };
   
   const handleDateChange = async (field: 'startDate' | 'dueDate', value: string) => {
@@ -272,6 +302,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
       title={title} setTitle={setTitle} handleTitleBlur={handleTitleBlur} isEditingTitle={isEditingTitle} setIsEditingTitle={setIsEditingTitle}
       description={description} setDescription={setDescription} handleDescriptionBlur={handleDescriptionBlur} isEditingDescription={isEditingDescription} setIsEditingDescription={setIsEditingDescription} handleImageUpload={handleImageUpload} uploadingImage={uploadingImage}
       currentColumn={currentColumn} columns={columns} selectedColumnId={selectedColumnId} handleColumnChange={handleColumnChange} showColumnDropdown={showColumnDropdown} setShowColumnDropdown={setShowColumnDropdown}
+      versionId={versionId} versions={versions} handleVersionChange={handleVersionChange}
       assignees={assignees} toggleAssignee={toggleAssignee} showMemberPicker={showMemberPicker} setShowMemberPicker={setShowMemberPicker} projectMembers={projectMembers} activeAddGroup={activeAddGroup} setActiveAddGroup={setActiveAddGroup}
       startDate={startDate} dueDate={dueDate} handleDateChange={handleDateChange}
       durationMinutes={durationMinutes} setDurationMinutes={setDurationMinutes} handleDurationChange={handleDurationChange}

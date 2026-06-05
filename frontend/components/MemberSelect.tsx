@@ -59,7 +59,7 @@ const MemberSelect: React.FC<MemberSelectProps> = ({
 
   if (loading) {
     return (
-      <div className={`h-12 w-full bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse ${className}`}></div>
+      <div className={`h-10 w-full bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse ${className}`}></div>
     );
   }
 
@@ -69,13 +69,13 @@ const MemberSelect: React.FC<MemberSelectProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-left flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800/50"
+        className="w-full px-4 py-1.5 h-10 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-left flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800/50"
       >
         {selectedMember ? (
           <>
             <img
               src={selectedMember.avatarUrl || `https://ui-avatars.com/api/?name=${selectedMember.name}&background=random`}
-              className="w-8 h-8 rounded-full object-cover ring-2 ring-white dark:ring-gray-800"
+              className="w-6 h-6 rounded-full object-cover ring-2 ring-white dark:ring-gray-800"
               alt={selectedMember.name}
             />
             <div className="flex-1 min-w-0">
@@ -108,7 +108,7 @@ const MemberSelect: React.FC<MemberSelectProps> = ({
           <span className="text-gray-400 dark:text-gray-500">{placeholder}</span>
         ) : selectedId === '' ? (
           <>
-            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 font-bold text-xs">
+            <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 font-bold text-xs">
               ?
             </div>
             <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{unassignedLabel}</span>

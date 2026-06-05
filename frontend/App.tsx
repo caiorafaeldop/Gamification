@@ -5,7 +5,7 @@ import RequireAuth from './components/RequireAuth';
 import LoginScreen from './screens/LoginScreen';
 import LandingScreen from './screens/LandingScreen';
 import DashboardScreen from './screens/DashboardScreen';
-import ProjectDetailsScreen from './screens/ProjectDetailsScreen';
+import ProjectWorkspaceScreen from './screens/ProjectWorkspaceScreen';
 import RankingScreen from './screens/RankingScreen';
 import AchievementsScreen from './screens/AchievementsScreen';
 import NewTaskScreen from './screens/NewTaskScreen';
@@ -69,8 +69,8 @@ const App = () => {
 
             {/* Autenticadas */}
             <Route path="/dashboard" element={<RequireAuth><DashboardScreen /></RequireAuth>} />
-            <Route path="/project-details/:id" element={<RequireAuth><ProjectDetailsScreen /></RequireAuth>} />
-            <Route path="/kanban/:id" element={<RequireAuth><ProjectDetailsScreen /></RequireAuth>} />
+            <Route path="/project-details/:id" element={<RequireAuth><ProjectWorkspaceScreen /></RequireAuth>} />
+            <Route path="/kanban/:id" element={<RequireAuth><ProjectWorkspaceScreen defaultTab="versions" /></RequireAuth>} />
             <Route path="/achievements" element={<RequireAuth><AchievementsScreen /></RequireAuth>} />
             <Route path="/activities" element={<RequireAuth><ActivitiesScreen /></RequireAuth>} />
 

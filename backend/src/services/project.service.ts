@@ -39,6 +39,21 @@ export const createNewProject = async (data: CreateProjectInput, creatorId: stri
       },
     }, tx);
 
+    // Automatically create a default version
+    const initialVersion = (data as any).initialVersion;
+
+    await tx.projectVersion.create({
+      data: {
+        name: initialVersion?.name?.trim() || 'v1.0 MVP',
+        description: 'Primeira versão do projeto. Foco em definir o escopo principal (MVP).',
+        status: initialVersion?.status || 'PLANNED',
+        ...(initialVersion?.description !== undefined ? { description: initialVersion.description } : {}),
+        startDate: initialVersion?.startDate || null,
+        dueDate: initialVersion?.dueDate || null,
+        projectId: project.id,
+      },
+    });
+
     await createActivityLog({
       user: { connect: { id: creatorId } },
       type: ActivityType.PROJECT_CREATED,
@@ -46,7 +61,7 @@ export const createNewProject = async (data: CreateProjectInput, creatorId: stri
     }, tx);
 
     return project;
-  });
+  }, { maxWait: 10000, timeout: 20000 });
 
   // Check achievements after transaction commits
   const uniqueMemberIdsForAchievements = new Set(data.memberIds || []);

@@ -97,6 +97,13 @@ export const getProjectDetails = async (req: Request, res: Response, next: NextF
                 members: { include: { user: { select: { id: true, name: true, avatarColor: true, avatarUrl: true } } } },
                 leader: { select: { id: true, name: true, avatarColor: true, avatarUrl: true } },
                 tasks: { select: { status: true } },
+                versions: {
+                    orderBy: [{ dueDate: 'asc' }, { createdAt: 'asc' }],
+                    include: {
+                        _count: { select: { tasks: true } },
+                        tasks: { select: { id: true, status: true, completedAt: true } },
+                    },
+                },
                 activityLogs: { select: { userId: true, pointsChange: true }, where: { pointsChange: { not: null } } },
                 Group: { select: { id: true, name: true, logoUrl: true, color: true } }
             }

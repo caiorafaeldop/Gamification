@@ -7,17 +7,39 @@ import {
 } from '../services/task.service';
 import api from '../services/api';
 import { getProfile } from '../services/user.service';
-import { uploadProjectCover, updateProject, transferProjectOwnership } from '../services/project.service';
+import { uploadProjectCover, updateProject, transferProjectOwnership, getProjectVersions } from '../services/project.service';
 import { useProjectDetails } from '../hooks/useProjects';
 
 export const useProjectKanban = (id: string) => {
     const navigate = useNavigate();
     const { project, setProject, loading: loadingProject, refetch: refetchProject } = useProjectDetails(id!);
     const [columns, setColumns] = useState<any>(null);
+    const [versions, setVersions] = useState<any[]>([]);
+    const [versionFilter, setVersionFilter] = useState<string>('all');
     const [loadingKanban, setLoadingKanban] = useState(true);
     const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
     const [uploadingCover, setUploadingCover] = useState(false);
     const [user, setUser] = useState<any>(null);
+
+    useEffect(() => {
+        if (!id) return;
+        getProjectVersions(id)
+            .then((data) => {
+                const activeVersions = data.filter((v: any) => v.status !== 'ARCHIVED');
+                setVersions(activeVersions);
+                if (activeVersions.length > 0) {
+                    const defaultVer = activeVersions.find((v: any) => v.status === 'IN_PROGRESS') ||
+                                      activeVersions.find((v: any) => v.status === 'PLANNED') ||
+                                      activeVersions[0];
+                    if (defaultVer) {
+                        setVersionFilter(defaultVer.id);
+                    }
+                } else {
+                    setVersionFilter('none');
+                }
+            })
+            .catch((err) => console.error("Failed to fetch versions in hook", err));
+    }, [id]);
     
     // Column Editing State
     const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
@@ -94,11 +116,16 @@ export const useProjectKanban = (id: string) => {
 
     useEffect(() => {
         if (id) fetchKanban();
-    }, [id]);
+    }, [id, versionFilter]);
 
     const fetchKanban = async () => {
+        if (versionFilter === 'none') {
+            setColumns([]);
+            setLoadingKanban(false);
+            return;
+        }
         try {
-            const data = await getProjectKanban(id!);
+            const data = await getProjectKanban(id!, versionFilter);
             setColumns(data);
         } catch (err) {
             console.error("Failed to fetch kanban", err);
@@ -182,7 +209,12 @@ export const useProjectKanban = (id: string) => {
 
         setIsCreatingInline(true);
         try {
-            await createQuickTask(id!, inlineCreatingColumnId, inlineTaskTitle.trim());
+            await createQuickTask(
+                id!,
+                inlineCreatingColumnId,
+                inlineTaskTitle.trim(),
+                versionFilter !== 'all' && versionFilter !== 'unversioned' && versionFilter !== 'none' ? versionFilter : undefined,
+            );
             window.dispatchEvent(new Event('pointsUpdated'));
             toast.success('Cartão criado!');
             setInlineCreatingColumnId(null);
@@ -399,6 +431,7 @@ export const useProjectKanban = (id: string) => {
         selectedTask, setSelectedTask, isTaskDetailsOpen, setIsTaskDetailsOpen,
         refetchKanban: fetchKanban, kanbanRef, handleMoveTask, handleToggleCompletion,
         allColumns: columns, // Export raw columns without filter for the move menu
-        isRequestsModalOpen, setIsRequestsModalOpen, pendingRequestsCount, fetchRequestsCount
+        isRequestsModalOpen, setIsRequestsModalOpen, pendingRequestsCount, fetchRequestsCount,
+        versions, versionFilter, setVersionFilter
     };
 };

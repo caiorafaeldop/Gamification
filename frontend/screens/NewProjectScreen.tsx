@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Upload, Type, Hash, ArrowLeft, Rocket, LayoutGrid, Crown,
-  Target, Loader, Check, Eye, Sparkles, FlaskConical
+  Target, Loader, Check, Eye, Sparkles, FlaskConical, Milestone, Calendar, GitBranch
 } from 'lucide-react';
 import { createProject, uploadProjectCover, getProjectDetails, updateProject } from '../services/project.service';
 import toast from 'react-hot-toast';
@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { PageHero, SurfaceCard, SectionHeader } from '../components/ui';
 import { useGroups } from '../hooks/useGroups';
 import { useAuth } from '../hooks/useAuth';
+
+const toIsoOrNull = (value: string) => (value ? new Date(`${value}T12:00:00`).toISOString() : null);
 
 const NewProjectScreen = () => {
   const navigate = useNavigate();
@@ -27,6 +29,13 @@ const NewProjectScreen = () => {
     coverUrl: '',
     visibility: 'PUBLIC_LIKE' as 'PRIVATE' | 'PUBLIC_VIEW' | 'PUBLIC_LIKE' | 'PUBLIC_OPEN',
     groupId: '' as string,
+  });
+
+  const [initialVersion, setInitialVersion] = useState({
+    name: 'v1.0 MVP',
+    description: 'Primeira entrega do projeto. Defina aqui o escopo que precisa sair do papel primeiro.',
+    startDate: '',
+    dueDate: '',
   });
 
   const { user } = useAuth();
@@ -74,7 +83,7 @@ const NewProjectScreen = () => {
         });
       } catch (err: any) {
         toast.error('Erro ao carregar projeto');
-        navigate('/projects');
+        navigate(`/project-details/${id}`);
       } finally {
         setLoadingProject(false);
       }
@@ -91,6 +100,10 @@ const NewProjectScreen = () => {
         toast.error('Selecione um grupo para o projeto.');
         return;
       }
+      if (!isEditing && !initialVersion.name.trim()) {
+        toast.error('Dê um nome para a primeira versão do projeto.');
+        return;
+      }
       if (isEditing && id) {
         await updateProject(id, {
           title: formData.name,
@@ -103,7 +116,7 @@ const NewProjectScreen = () => {
         toast.success('Projeto atualizado com sucesso! ✓');
         navigate(`/project-details/${id}`);
       } else {
-        await createProject({
+        const createdProject = await createProject({
           title: formData.name,
           description: formData.description,
           category: formData.category,
@@ -112,9 +125,16 @@ const NewProjectScreen = () => {
           coverUrl: formData.coverUrl,
           visibility: formData.visibility,
           groupId: formData.groupId,
+          initialVersion: {
+            name: initialVersion.name.trim(),
+            description: initialVersion.description.trim() || null,
+            status: 'PLANNED',
+            startDate: toIsoOrNull(initialVersion.startDate),
+            dueDate: toIsoOrNull(initialVersion.dueDate),
+          },
         });
         toast.success('Projeto criado com sucesso! 🚀');
-        navigate('/projects');
+        navigate(`/project-details/${createdProject.id}`);
       }
     } catch (err: any) {
       toast.error(`Erro ao ${isEditing ? 'atualizar' : 'criar'} projeto: ` + (err.response?.data?.message || err.message));
@@ -187,7 +207,7 @@ const NewProjectScreen = () => {
             </button>
             <button
               onClick={submitForm}
-              disabled={loading || !formData.groupId}
+              disabled={loading || !formData.groupId || (!isEditing && !initialVersion.name.trim())}
               className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-blue-600 disabled:opacity-50"
             >
               {loading ? <Loader className="animate-spin" size={18} /> : (isEditing ? <Check size={18} /> : <Rocket size={18} />)}
@@ -305,6 +325,102 @@ const NewProjectScreen = () => {
                 </div>
               </div>
             </div>
+          </SurfaceCard>
+
+          <SurfaceCard padding="lg">
+            <SectionHeader
+              icon={<Milestone size={22} />}
+              title={isEditing ? 'Versionamento do projeto' : 'Primeira versão'}
+              description={
+                isEditing
+                  ? 'As entregas, prazos e status ficam no workspace versionado do projeto.'
+                  : 'Todo projeto nasce com uma entrega planejada. Essa versão será o filtro principal do quadro.'
+              }
+            />
+
+            {!isEditing ? (
+              <div className="mt-5 space-y-5">
+                <div className="rounded-xl border border-sky-100 bg-sky-50 p-4 dark:border-sky-900/30 dark:bg-sky-900/10">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-white">
+                      <GitBranch size={18} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-secondary dark:text-white">Versão antes do Kanban</p>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                        A equipe começa pela entrega, depois quebra o trabalho em tarefas. Itens sem versão ficam para triagem.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                    <Milestone size={16} className="text-primary" /> Nome da versão <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={initialVersion.name}
+                    onChange={(event) => setInitialVersion({ ...initialVersion, name: event.target.value })}
+                    required={!isEditing}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
+                    placeholder="Ex: v1.0 MVP, Beta professores, Sprint Junho"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                    <Target size={16} className="text-primary" /> Objetivo da versão
+                  </label>
+                  <textarea
+                    value={initialVersion.description}
+                    onChange={(event) => setInitialVersion({ ...initialVersion, description: event.target.value })}
+                    rows={4}
+                    className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
+                    placeholder="O que precisa estar pronto para esta entrega ser considerada boa?"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                      <Calendar size={16} className="text-primary" /> Início
+                    </label>
+                    <input
+                      type="date"
+                      value={initialVersion.startDate}
+                      onChange={(event) => setInitialVersion({ ...initialVersion, startDate: event.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
+                      <Calendar size={16} className="text-primary" /> Prazo da entrega
+                    </label>
+                    <input
+                      type="date"
+                      value={initialVersion.dueDate}
+                      onChange={(event) => setInitialVersion({ ...initialVersion, dueDate: event.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 font-medium text-slate-900 shadow-inner transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-background-dark dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-background-dark">
+                <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                  Para criar, fechar ou priorizar versões, abra o workspace do projeto. A edição aqui fica só nos dados institucionais.
+                </p>
+                {id && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/project-details/${id}`)}
+                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-sky-500"
+                  >
+                    <GitBranch size={14} /> Abrir workspace
+                  </button>
+                )}
+              </div>
+            )}
           </SurfaceCard>
         </div>
 

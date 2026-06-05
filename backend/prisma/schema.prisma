@@ -76,10 +76,30 @@ model Project {
   Group                  Group?          @relation(fields: [groupId], references: [id], onUpdate: NoAction)
   leader                 User            @relation("ProjectLeader", fields: [leaderId], references: [id], onDelete: Cascade)
   members                ProjectMember[]
+  versions               ProjectVersion[]
   likes                  ProjectLike[]
   tasks                  Task[]
   events                 Event[]
   joinRequests           ProjectJoinRequest[]
+}
+
+model ProjectVersion {
+  id          String               @id @default(uuid())
+  name        String
+  description String?
+  status      ProjectVersionStatus @default(PLANNED)
+  startDate   DateTime?
+  dueDate     DateTime?
+  releasedAt  DateTime?
+  projectId   String
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  project     Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+
+  @@unique([projectId, name])
+  @@index([projectId, status])
+  @@index([projectId, dueDate])
 }
 
 model ProjectMember {
@@ -109,6 +129,7 @@ model Task {
   assignedToId         String?
   requiredTierId       String?
   projectId            String
+  versionId            String?
   difficulty           Int
   columnId             String?
   attachmentUrl        String?
@@ -120,8 +141,11 @@ model Task {
   KanbanColumn         KanbanColumn?   @relation(fields: [columnId], references: [id])
   createdBy            User            @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: Cascade)
   project              Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version              ProjectVersion? @relation(fields: [versionId], references: [id], onDelete: SetNull)
   requiredTier         Tier?           @relation("RequiredTier", fields: [requiredTierId], references: [id])
   assignees            TaskAssignee[]
+
+  @@index([projectId, versionId])
 }
 
 model Tier {
@@ -389,6 +413,14 @@ enum Role {
   ADMIN
   LEADER
   MEMBER
+}
+
+enum ProjectVersionStatus {
+  PLANNED
+  IN_PROGRESS
+  LOCKED
+  RELEASED
+  ARCHIVED
 }
 
 enum ProjectStatus {

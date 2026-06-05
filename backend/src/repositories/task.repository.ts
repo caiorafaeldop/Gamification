@@ -6,6 +6,7 @@ const taskInclude = {
   assignedTo: { select: { id: true, name: true, email: true, avatarUrl: true } },
   createdBy: { select: { id: true, name: true, email: true } },
   project: { select: { id: true, title: true } },
+  version: { select: { id: true, name: true, status: true, dueDate: true } },
   requiredTier: true,
   assignees: {
     include: {
@@ -70,6 +71,7 @@ export const findTasksByProjectId = async (projectId: string): Promise<Task[]> =
     include: {
       assignedTo: { select: { id: true, name: true, avatarUrl: true } },
       createdBy: { select: { id: true, name: true, avatarUrl: true } },
+      version: { select: { id: true, name: true, status: true, dueDate: true } },
       requiredTier: true,
       assignees: {
         include: {
@@ -93,6 +95,7 @@ export const findUserTasks = async (userId: string, additionalWhere?: Prisma.Tas
     },
     include: {
       project: { select: { id: true, title: true } },
+      version: { select: { id: true, name: true, status: true, dueDate: true } },
       requiredTier: true,
       assignees: {
         include: {

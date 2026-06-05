@@ -11,13 +11,13 @@ export const getTask = async (id: string) => {
   return response.data;
 };
 
-export const getTasks = async (projectId: string) => {
-  const response = await api.get(`/kanban/projects/${projectId}`);
+export const getTasks = async (projectId: string, versionId: string = 'all') => {
+  const response = await api.get(`/kanban/projects/${projectId}`, { params: { versionId } });
   return response.data;
 };
 
-export const getProjectKanban = async (projectId: string) => {
-  const response = await api.get(`/kanban/projects/${projectId}`);
+export const getProjectKanban = async (projectId: string, versionId: string = 'all') => {
+  const response = await api.get(`/kanban/projects/${projectId}`, { params: { versionId } });
   return response.data;
 };
 
@@ -68,10 +68,11 @@ export const reorderColumns = async (projectId: string, columnIds: string[]) => 
 };
 
 // Criação rápida de task com apenas título (estilo Trello)
-export const createQuickTask = async (projectId: string, columnId: string, title: string) => {
+export const createQuickTask = async (projectId: string, columnId: string, title: string, versionId?: string | null) => {
   const response = await api.post('/tasks', {
     projectId,
     columnId,
+    versionId: versionId || undefined,
     title,
     difficulty: 2, // Default: média
   });

@@ -15,9 +15,22 @@ import {
   listProjectJoinRequestsController,
   respondToProjectJoinRequestController,
 } from '../controllers/project.controller';
+import {
+  createProjectVersion,
+  deleteProjectVersion,
+  listProjectVersions,
+  updateProjectVersion,
+} from '../controllers/projectVersion.controller';
 import { toggleLike, getLikeStatus } from '../controllers/like.controller';
 import { unifiedAuth } from '../middlewares/unifiedAuth';
 import { optionalAuth } from '../middlewares/optionalAuth';
+import { validate } from '../middlewares/validation.middleware';
+import {
+  createProjectVersionSchema,
+  deleteProjectVersionSchema,
+  listProjectVersionsSchema,
+  updateProjectVersionSchema,
+} from '../schemas/projectVersion.schema';
 import upload from '../middlewares/upload.middleware';
 
 const router = Router();
@@ -32,6 +45,10 @@ router.get('/:id/like', optionalAuth, getLikeStatus);
 router.post('/upload-cover', unifiedAuth, upload.single('image') as any, uploadProjectCover);
 router.post('/', unifiedAuth, createProject);
 router.patch('/:id', unifiedAuth, updateProject);
+router.get('/:id/versions', unifiedAuth, validate(listProjectVersionsSchema), listProjectVersions);
+router.post('/:id/versions', unifiedAuth, validate(createProjectVersionSchema), createProjectVersion);
+router.patch('/:id/versions/:versionId', unifiedAuth, validate(updateProjectVersionSchema), updateProjectVersion);
+router.delete('/:id/versions/:versionId', unifiedAuth, validate(deleteProjectVersionSchema), deleteProjectVersion);
 router.post('/:id/join', unifiedAuth, joinProject);
 router.post('/:id/interest', unifiedAuth, registerInterest);
 router.post('/:id/request-join', unifiedAuth, requestJoinProjectController);

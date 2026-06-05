@@ -129,75 +129,113 @@ export const getCatalogForUser = async (userId?: string) => {
     }),
   ]);
 
-  // Hidrata "Em alta" com os projetos completos (groupBy retorna só ids/contagens)
+  // Hidrata "Em alta" e "Mais ativos" em paralelo, além de carregar todos os projetos de grupos e categorias em lote (evitando queries N+1)
   const trendingIds = trendingAgg.map((t) => t.projectId);
-  const trendingProjects = trendingIds.length
-    ? await prisma.project.findMany({
-        where: baseSelectableProject({
-          id: { in: trendingIds },
-          visibility: visibleToOutsider,
-        }),
-        include: projectInclude,
-      })
-    : [];
-  // mantém ordem do groupBy (mais Likes primeiro)
+  const mostActiveIds = mostActiveAgg
+    .map((a) => a.projectId)
+    .filter((id): id is string => Boolean(id));
+
+  const [trendingProjects, mostActiveProjects, allGroupProjects, allCategoryProjects] = await Promise.all([
+    // Hidratação Trending
+    trendingIds.length
+      ? prisma.project.findMany({
+          where: baseSelectableProject({
+            id: { in: trendingIds },
+            visibility: visibleToOutsider,
+          }),
+          include: projectInclude,
+        })
+      : Promise.resolve([]),
+
+    // Hidratação Mais ativos
+    mostActiveIds.length
+      ? prisma.project.findMany({
+          where: baseSelectableProject({
+            id: { in: mostActiveIds },
+            visibility: visibleToOutsider,
+          }),
+          include: projectInclude,
+        })
+      : Promise.resolve([]),
+
+    // Projetos agrupados por Grupo (Batch Query)
+    prisma.project.findMany({
+      where: baseSelectableProject({
+        groupId: { not: null },
+        visibility: visibleToOutsider,
+      }),
+      include: projectInclude,
+      orderBy: { likeCount: 'desc' },
+    }),
+
+    // Projetos agrupados por Categoria (Batch Query)
+    prisma.project.findMany({
+      where: baseSelectableProject({
+        category: { not: null },
+        visibility: visibleToOutsider,
+      }),
+      include: projectInclude,
+      orderBy: { likeCount: 'desc' },
+    }),
+  ]);
+
+  // Mantém a ordem do groupBy original para Trending (mais likes primeiro)
   const trendingMap = new Map(trendingProjects.map((p) => [p.id, p]));
   const trending = trendingIds
     .map((id) => trendingMap.get(id))
     .filter((p): p is NonNullable<typeof p> => Boolean(p));
 
-  // Hidrata "Mais ativos" com os projetos completos
-  const mostActiveIds = mostActiveAgg
-    .map((a) => a.projectId)
-    .filter((id): id is string => Boolean(id));
-  const mostActiveProjects = mostActiveIds.length
-    ? await prisma.project.findMany({
-        where: baseSelectableProject({
-          id: { in: mostActiveIds },
-          visibility: visibleToOutsider,
-        }),
-        include: projectInclude,
-      })
-    : [];
+  // Mantém a ordem do groupBy original para Mais ativos
   const mostActiveMap = new Map(mostActiveProjects.map((p) => [p.id, p]));
   const mostActive = mostActiveIds
     .map((id) => mostActiveMap.get(id))
     .filter((p): p is NonNullable<typeof p> => Boolean(p));
 
-  // Por grupo: 1 query paralela por grupo
-  const byGroup = await Promise.all(
-    allGroups.map(async (g) => ({
-      group: g,
-      projects: await prisma.project.findMany({
-        where: baseSelectableProject({
-          groupId: g.id,
-          visibility: visibleToOutsider,
-        }),
-        include: projectInclude,
-        orderBy: { likeCount: 'desc' },
-        take: ROW_LIMIT,
-      }),
-    })),
-  );
+  // Agrupamento na memória por Grupo (limitando a ROW_LIMIT por grupo)
+  const groupProjectsMap = new Map<string, any[]>();
+  for (const proj of allGroupProjects) {
+    if (proj.groupId) {
+      if (!groupProjectsMap.has(proj.groupId)) {
+        groupProjectsMap.set(proj.groupId, []);
+      }
+      const list = groupProjectsMap.get(proj.groupId)!;
+      if (list.length < ROW_LIMIT) {
+        list.push(proj);
+      }
+    }
+  }
 
-  // Por categoria: idem
+  // Agrupamento na memória por Categoria (limitando a ROW_LIMIT por categoria)
+  const categoryProjectsMap = new Map<string, any[]>();
+  for (const proj of allCategoryProjects) {
+    if (proj.category) {
+      if (!categoryProjectsMap.has(proj.category)) {
+        categoryProjectsMap.set(proj.category, []);
+      }
+      const list = categoryProjectsMap.get(proj.category)!;
+      if (list.length < ROW_LIMIT) {
+        list.push(proj);
+      }
+    }
+  }
+
+  const byGroup = allGroups
+    .map((g) => ({
+      group: g,
+      projects: groupProjectsMap.get(g.id) || [],
+    }))
+    .filter((g) => g.projects.length > 0);
+
   const categories = distinctCategories
     .map((c) => c.category)
     .filter((c): c is string => Boolean(c));
-  const byCategory = await Promise.all(
-    categories.map(async (cat) => ({
+
+  const byCategory = categories
+    .map((cat) => ({
       category: cat,
-      projects: await prisma.project.findMany({
-        where: baseSelectableProject({
-          category: cat,
-          visibility: visibleToOutsider,
-        }),
-        include: projectInclude,
-        orderBy: { likeCount: 'desc' },
-        take: ROW_LIMIT,
-      }),
-    })),
-  );
+      projects: categoryProjectsMap.get(cat) || [],
+    }))
+    .filter((c) => c.projects.length > 0);
 
   const decorate = (p: any) => ({ ...p, liked: likedSet.has(p.id) });
   const decorateList = (list: any[]) => list.map(decorate);
@@ -208,12 +246,14 @@ export const getCatalogForUser = async (userId?: string) => {
     mostActive: decorateList(mostActive),
     recent: decorateList(recentRaw),
     openForJoining: decorateList(openRaw),
-    byGroup: byGroup
-      .filter((g) => g.projects.length > 0)
-      .map((g) => ({ group: g.group, projects: decorateList(g.projects) })),
-    byCategory: byCategory
-      .filter((c) => c.projects.length > 0)
-      .map((c) => ({ category: c.category, projects: decorateList(c.projects) })),
+    byGroup: byGroup.map((g) => ({
+      group: g.group,
+      projects: decorateList(g.projects),
+    })),
+    byCategory: byCategory.map((c) => ({
+      category: c.category,
+      projects: decorateList(c.projects),
+    })),
     fromYourGroups: decorateList(fromYourGroupsRaw),
   };
 };
