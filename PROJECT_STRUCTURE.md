@@ -67,14 +67,17 @@ O frontend é uma aplicação moderna em React, focada em performance e experiê
 
 ### Organização de Pastas (`/frontend/src`)
 
-| Diretório | Descrição |
+| Caminho | Descrição |
 |-----------|-----------|
-| `screens/` | **Páginas**. Componentes de alto nível que representam rotas/telas completas (ex: `DashboardScreen`, `ProjectDetailsScreen`). |
-| `components/` | **Componentes UI**. Elementos reutilizáveis (botões, modais, cards). Ex: `TaskDetailModal`; |
-| `services/` | **Integração API**. Funções para fazer chamadas HTTP ao backend (fetch/axios). |
-| `hooks/` | **Custom Hooks**. Lógica de estado reutilizável e efeitos colaterais. |
-| `assets/` | **Recursos**. Imagens, fontes e arquivos estáticos. |
-| `types.ts` | **Tipagem**. Interfaces globais do frontend (Muitas vezes espelhando os dados do backend). |
+| `src/screens/` | **Páginas**. Componentes de alto nível que representam rotas/telas completas (ex: `DashboardScreen`, `ProjectDetailsScreen`). |
+| `src/components/` | **Componentes UI**. Elementos reutilizáveis (botões, modais, cards). Ex: `TaskDetailModal`. |
+| `src/services/` | **Integração API**. Funções para fazer chamadas HTTP ao backend (fetch/axios). |
+| `src/hooks/` | **Custom Hooks**. Lógica de estado reutilizável e efeitos colaterais. |
+| `src/contexts/` | **Contextos React**. Estado global compartilhado (ex: `BrandingContext`). |
+| `src/utils/` | **Utilitários**. Funções auxiliares (formatação de dados, etc.). |
+| `src/App.tsx` | **Componente Raiz**. Ponto de entrada que gerencia as rotas principais. |
+| `src/index.tsx` | **Renderizador**. Monta o React no elemento root do HTML. |
+| `src/types.ts` | **Tipagem**. Interfaces globais do frontend. |
 
 ## 5. Scripts de Automação
 
